@@ -19,8 +19,6 @@ use think\Config;
 
 class PayApi extends Base {
 
-    private $UsersConfigData = [];
-
     /**
      * 构造方法
      */
@@ -28,10 +26,6 @@ class PayApi extends Base {
         parent::__construct();
         $this->language_access(); // 多语言功能操作权限
         $this->pay_api_config_db = Db::name('pay_api_config');
-
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig', $this->UsersConfigData);
     }
 
     /**
@@ -219,4 +213,97 @@ class PayApi extends Base {
         }
     }
     /* END */
+
+    public function file_upload()
+    {
+        header('Content-Type: text/html; charset=utf-8');
+
+        // 获取上传的文件信息，若获取不到则定义为空
+        $files = request()->file();
+        $file = !empty($files['file']) ? $files['file'] : '';
+
+        // 文件过大或文件已损坏
+        if (empty($file)) {
+            echo json_encode(['msg' => '文件过大或文件已损坏']);
+            exit;
+        }
+
+        // 其他错误
+        $error = $file->getError();
+        if (!empty($error)) {
+            echo json_encode(['msg' => $error]);
+            exit;
+        }
+
+        // 文件类型
+        $image_type = tpCache('basic.image_type');
+        $file_type = tpCache('basic.file_type');
+        $file_type = !empty($file_type) ? str_replace('|', ',', $file_type) : 'zip,gz,rar,iso,doc,xls,ppt,wps,docx,xlsx,pptx,pdf,pem';
+        if (strpos($file_type, 'pem') === false) $file_type = $file_type . ',pem';
+        // 获取定义的上传最大参数
+        $upload_max_filesize = upload_max_filesize();
+        $result = $this->validate(
+            ['file' => $file],
+            ['file'=>'fileSize:'.$upload_max_filesize.'|fileExt:'.$file_type],
+            ['file.fileSize' => '上传文件过大','file.fileExt'=>'上传文件后缀名必须为'.$file_type]
+        );
+        // 文件后缀名
+        $fileName = $file->getInfo('name');
+        $file_ext = pathinfo($fileName, PATHINFO_EXTENSION);
+        /*验证图片一句话木马*/
+        if (in_array($file_ext, explode('|', $image_type))) {
+            if (false === check_illegal($file->getInfo('tmp_name'), false, $file_ext)) {
+                $result = '疑似木马图片！';
+            }
+        }
+        /*--end*/
+
+        if (true !== $result || empty($file)) {
+            echo json_encode(['msg' => $result]);
+            exit;
+        }
+
+        // 定义文件名
+        $newfileName = preg_replace('/\.([^\.]+)$/', '', $fileName);
+        $newfileName = preg_replace('#(\\\|\/|\.)#i', '', $newfileName);
+        $fileName = $newfileName . '.' . $file_ext;
+        // 中文转码
+        $this->uploadfileName = iconv("utf-8", "gb2312//IGNORE", $fileName);
+        // 上传文件
+        $saveData = 'vendor/wechat_' . model('PayApi')->getEyouCmsSerialNumber() . '/';
+        $info = $file->rule(function ($file) { return $this->uploadfileName; })->move($saveData);
+        // 上传后续操作
+        if (!empty($info)) {
+            $file_path = $saveData . $info->getSaveName();
+            $result = [
+                'file_url'  => '/' . $saveData . $info->getSaveName(),
+                'file_mime' => $file->getInfo('type'),
+                'file_name' => $fileName,
+                'file_ext'  => '.' . $file_ext,
+                'file_size' => $info->getSize(),
+                'uhash'     => $this->uhash($file_path),
+                'md5file'   => md5_file($file_path),
+            ];
+            sleep(1);
+            $this->success('上传成功', null, $result);
+        } else {
+            $this->error($info->getError());
+        }
+    }
+
+    private function uhash($file)
+    {
+        $fragment = 65536;
+
+        $rh = fopen($file, 'rb');
+        $size = filesize($file);
+
+        $part1 = fread( $rh, $fragment );
+        fseek($rh, $size-$fragment);
+        $part2 = fread( $rh, $fragment);
+        fclose($rh);
+
+        return md5( $part1.$part2 );
+    }
+
 }

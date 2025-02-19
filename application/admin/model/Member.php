@@ -42,11 +42,10 @@ class Member extends Model
         }
         // 会员属性
         $where = array(
-            'lang'        => $this->admin_lang,
             'is_hidden'   => 0, // 是否隐藏属性，0为否
             'is_required' => 1, // 是否必填属性，1为是
         );
-        $para_data =Db::name('users_parameter')->where($where)->field('title,name')->select();
+        $para_data = model('UsersParameter')->getList('title,name', $where);
 
         // 判断提交的属性中必填项是否为空
         foreach ($para_data as $value) {
@@ -73,10 +72,9 @@ class Member extends Model
         // 匹配手机和邮箱数据
         $where_1 = [
             'is_system'=> 1,
-            'lang'     => $this->admin_lang,
         ];
         $where_1[] = Db::raw(" ( name LIKE 'email_%' OR name LIKE 'mobile_%' ) ");
-        $users_parameter = Db::name('users_parameter')->where($where_1)->field('para_id,title,name')->getAllWithIndex('name');
+        $users_parameter = model('UsersParameter')->getList('para_id,title,name', $where_1, 'name');
 
         // 判断手机和邮箱格式是否正确
         foreach ($post_users as $key => $val) {
@@ -125,9 +123,8 @@ class Member extends Model
             $parawhere = [
                 'name'      => ['LIKE', "email_%"],
                 'is_system' => 1,
-                'lang'      => $this->admin_lang,
             ];
-            $paraData = Db::name('users_parameter')->where($parawhere)->field('para_id')->find();
+            $paraData = model('UsersParameter')->getInfo('para_id', $parawhere);
             $listwhere = [
                 'para_id'   => $paraData['para_id'],
                 'users_id'  => $users_id,
@@ -143,9 +140,8 @@ class Member extends Model
             $parawhere_1 = [
                 'name'      => ['LIKE', "mobile_%"],
                 'is_system' => 1,
-                'lang'     => $this->admin_lang,
             ];
-            $paraData_1 = Db::name('users_parameter')->where($parawhere_1)->field('para_id')->find();
+            $paraData_1 = model('UsersParameter')->getInfo('para_id', $parawhere_1);
             $listwhere_1 = [
                 'para_id'   => $paraData_1['para_id'],
                 'users_id'  => $users_id,
@@ -167,18 +163,11 @@ class Member extends Model
     {
         // 字段及内容数据处理
         $where = array(
-            'lang'       => $this->admin_lang,
             'is_hidden'  => 0, // 是否隐藏属性，0为否
         );
-
-        $row =Db::name('users_parameter')->field('*')
-            ->where($where)
-            ->order('sort_order asc,para_id asc')
-            ->select();
-
+        $row = model('UsersParameter')->getList('*', $where);
         // 根据所需数据格式，拆分成一维数组
         $addonRow = array();
-
         // 根据不同字段类型封装数据
         $list = $this->showViewFormData($row, 'users_', $addonRow);
         return $list;
@@ -371,102 +360,52 @@ class Member extends Model
         if (!empty($users_ids)) {
             eyou_statistics_data(4, count($users_ids), '', 'dec');//统计新增会员数
             try {
-                /*同步删除会员投稿数据*/
-                Db::name('archives')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除文章订单表数据*/
-                Db::name('article_order')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除内置问答表数据*/
-                Db::name('ask')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除内置问答表数据*/
-                Db::name('ask_answer')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除问答点赞表数据*/
-                Db::name('ask_answer_like')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除下载记录表数据*/
-                Db::name('download_log')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除下载订单表数据*/
-                Db::name('download_order')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除留言表数据*/
-                Db::name('guestbook')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除视频播放记录表数据*/
-                Db::name('media_log')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除视频订单表数据*/
-                Db::name('media_order')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除视频播放时长表数据*/
-                Db::name('media_play_record')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除礼品兑换记录表数据*/
-                Db::name('memgiftget')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除搜索锁定表数据*/
-                Db::name('search_locking')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除搜索关键词表数据*/
-                Db::name('search_word')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城收货地址表数据*/
-                Db::name('shop_address')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除购物车表数据*/
-                Db::name('shop_cart')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除优惠券领券记录表数据*/
-                Db::name('shop_coupon_use')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单表数据*/
-                Db::name('shop_order')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单评论表数据*/
-                Db::name('shop_order_comment')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单详情表数据*/
-                Db::name('shop_order_details')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单日志表数据*/
-                Db::name('shop_order_log')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单售后表数据*/
-                Db::name('shop_order_service')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单售后日志表数据*/
-                Db::name('shop_order_service_log')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除商城订单统一支付表数据*/
-                Db::name('shop_order_unified_pay')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除邮件发送记录表数据*/
-                Db::name('smtp_record')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除我的收藏表数据*/
-                Db::name('users_collection')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除我的足迹数据*/
-                Db::name('users_footprint')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除转发记录表数据*/
-                Db::name('users_forward')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除我喜欢的表数据*/
-                Db::name('users_like')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除会员属性表数据*/
-                Db::name('users_list')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除会员登录日志表数据*/
-                Db::name('users_login_log')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除金额明细表数据*/
-                Db::name('users_money')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除站内通知表数据*/
-                Db::name('users_notice')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除用户已读站内通知表数据*/
-                Db::name('users_notice_read')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除站内信发送接收记录表数据*/
-                Db::name('users_notice_tpl_content')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除积分详情表数据*/
-                Db::name('users_score')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除用户签到表数据*/
-                Db::name('users_signin')->where("users_id",'IN',$users_ids)->delete();
-                /*同步删除微信小程序用户表数据*/
-                Db::name('wx_users')->where("users_id",'IN',$users_ids)->delete();
+                $tables_del_data = ['archives','article_order','ask','ask_answer','ask_answer_like','download_log','download_order','guestbook','media_log','media_order','media_play_record','memgiftget','search_locking','search_word','shop_address','shop_cart','shop_coupon_use','shop_order','shop_order_comment','shop_order_details','shop_order_log','shop_order_service','shop_order_service_log','shop_order_unified_pay','smtp_record','users_collection','users_footprint','users_forward','users_like','users_list','users_login_log','users_money','users_notice','users_notice_read','users_notice_tpl_content','users_score','users_signin','wx_users'];
                 // 同步删除插件数据
                 $Prefix = config('database.prefix');
                 if (is_dir('./weapp/Ask/')) {
                     $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'weapp_ask\'');
                     if (!empty($isTable)) {
-                        /*同步删除内置问答表数据*/
-                        Db::name('weapp_ask')->where("users_id",'IN',$users_ids)->delete();
-                        /*同步删除内置问答表数据*/
-                        Db::name('weapp_ask_answer')->where("users_id",'IN',$users_ids)->delete();
-                        /*同步删除问答点赞表数据*/
-                        Db::name('weapp_ask_answer_like')->where("users_id",'IN',$users_ids)->delete();
+                        $tables_del_data[] = 'weapp_ask';
+                        $tables_del_data[] = 'weapp_ask_answer';
+                        $tables_del_data[] = 'weapp_ask_answer_like';
                     }
                 }
                 if (is_dir('./weapp/Comment/')) {
                     $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'weapp_comment\'');
                     if (!empty($isTable)) {
-                        /*同步删除插件评论表数据*/
-                        Db::name('weapp_comment')->where(['users_id'=>['IN', $users_ids]])->delete();
-                        /*同步删除插件评论点赞表数据*/
-                        Db::name('weapp_comment_like')->where("users_id",'IN',$users_ids)->delete();
+                        $tables_del_data[] = 'weapp_comment';
+                        $tables_del_data[] = 'weapp_comment_like';
+                    }
+                }
+                if (is_dir('./weapp/QqLogin/')) {
+                    $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'weapp_qqlogin\'');
+                    if (!empty($isTable)) {
+                        $tables_del_data[] = 'weapp_qqlogin';
+                    }
+                }
+                if (is_dir('./weapp/WxLogin/')) {
+                    $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'weapp_wxlogin\'');
+                    if (!empty($isTable)) {
+                        $tables_del_data[] = 'weapp_wxlogin';
+                    }
+                }
+                if (is_dir('./weapp/GoogleLogin/')) {
+                    $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'weapp_google_login\'');
+                    if (!empty($isTable)) {
+                        $tables_del_data[] = 'weapp_google_login';
+                    }
+                }
+                foreach ($tables_del_data as $key => $table) {
+                    Db::name($table)->where("users_id",'IN',$users_ids)->delete();
+                }
+                // Im客服系统
+                if (is_dir('./weapp/Im/') && file_exists('./application/plugins/logic/ImLogic.php')) {
+                    try {
+                        $imLogic = new \app\plugins\logic\ImLogic;
+                        $imLogic->opt_users_token('del', $users_ids);
+                    } catch (\Exception $e) {
+                        
                     }
                 }
             } catch (\Exception $e) {

@@ -174,7 +174,24 @@ class Article extends Base
                     ->join('__ARCTYPE__ b', 'a.typeid = b.id', 'LEFT')
                     ->where('a.aid', 'in', $aids)
                     ->getAllWithIndex('aid');
+                $cityRow = get_citysite_list();
                 foreach ($list as $key => $val) {
+                    $row[$val['aid']]['areas']  = '';
+                    if($row[$val['aid']]['area_id']>0){
+                        if (isset($cityRow[$row[$val['aid']]['area_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['area_id']]['name'];     
+                        }
+                    }elseif($row[$val['aid']]['city_id']>0){
+                        if (isset($cityRow[$row[$val['aid']]['city_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['city_id']]['name'];     
+                        }
+                    }elseif($row[$val['aid']]['province_id']>0){                        
+                        if (isset($cityRow[$row[$val['aid']]['province_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['province_id']]['name'];     
+                        }
+                    } else{
+                        $row[$val['aid']]['areas']  = '全国';
+                    }
                     $row[$val['aid']]['arcurl'] = get_arcurl($row[$val['aid']]);
                     $row[$val['aid']]['litpic'] = handle_subdir_pic($row[$val['aid']]['litpic']);
                     $list[$key] = $row[$val['aid']];
@@ -242,13 +259,7 @@ class Article extends Base
             }
 
             // 自动获取内容第一张图片作为封面图
-            $is_remote = !empty($post['is_remote']) ? $post['is_remote'] : 0;
-            $litpic = '';
-            if ($is_remote == 1) {
-                $litpic = $post['litpic_remote'];
-            } else {
-                $litpic = $post['litpic_local'];
-            }
+            $litpic = $post['litpic'];
             if (empty($litpic)) {
                 $litpic = get_html_first_imgurl($content);
             }
@@ -263,7 +274,7 @@ class Article extends Base
             // SEO描述
             $seo_description = '';
             if (empty($post['seo_description']) && !empty($content)) {
-                $seo_description = @msubstr(checkStrHtml($content), 0, config('global.arc_seo_description_length'), false);
+                $seo_description = @msubstr(checkStrHtml($content), 0, get_seo_description_length(), false);
             } else {
                 $seo_description = $post['seo_description'];
             }
@@ -305,6 +316,9 @@ class Article extends Base
                 if (is_dir('./weapp/Waimao/')) {
                     $waimaoLogic = new \weapp\Waimao\logic\WaimaoLogic;
                     $waimaoLogic->get_new_htmlfilename($htmlfilename, $post, 'add', $this->globalConfig);
+                } else {
+                    $foreignLogic = new \app\admin\logic\ForeignLogic;
+                    $foreignLogic->get_new_htmlfilename($htmlfilename, $post, 'add', $this->globalConfig);
                 }
             }
             $post['htmlfilename'] = $htmlfilename;
@@ -352,6 +366,8 @@ class Article extends Base
                 'lang'  => $this->admin_lang,
                 'sort_order'    => 100,
                 'crossed_price'     => empty($post['crossed_price']) ? 0 : floatval($post['crossed_price']),
+                'users_price'      => empty($post['users_price']) ? 0 : floatval($post['users_price']),
+                'old_price'      => empty($post['old_price']) ? 0 : floatval($post['old_price']),
                 'add_time'     => strtotime($post['add_time']),
                 'update_time'  => strtotime($post['add_time']),
             );
@@ -521,13 +537,7 @@ class Article extends Base
             }
 
             // 自动获取内容第一张图片作为封面图
-            $is_remote = !empty($post['is_remote']) ? $post['is_remote'] : 0;
-            $litpic = '';
-            if ($is_remote == 1) {
-                $litpic = $post['litpic_remote'];
-            } else {
-                $litpic = $post['litpic_local'];
-            }
+            $litpic = $post['litpic'];
             if (empty($litpic)) {
                 $litpic = get_html_first_imgurl($content);
             }
@@ -556,7 +566,7 @@ class Article extends Base
             // SEO描述
             $seo_description = '';
             if (!empty($basic_update_seo_description) || empty($post['seo_description'])) {
-                $seo_description = @msubstr(checkStrHtml($content), 0, config('global.arc_seo_description_length'), false);
+                $seo_description = @msubstr(checkStrHtml($content), 0, get_seo_description_length(), false);
             } else {
                 $seo_description = $post['seo_description'];
             }
@@ -602,6 +612,9 @@ class Article extends Base
                 if (is_dir('./weapp/Waimao/')) {
                     $waimaoLogic = new \weapp\Waimao\logic\WaimaoLogic;
                     $waimaoLogic->get_new_htmlfilename($htmlfilename, $post, 'edit', $this->globalConfig);
+                } else {
+                    $foreignLogic = new \app\admin\logic\ForeignLogic;
+                    $foreignLogic->get_new_htmlfilename($htmlfilename, $post, 'edit', $this->globalConfig);
                 }
             }
             $post['htmlfilename'] = $htmlfilename;
@@ -648,12 +661,14 @@ class Article extends Base
                 'seo_keywords'     => $seo_keywords,
                 'seo_description'     => $seo_description,
                 'crossed_price'     => empty($post['crossed_price']) ? 0 : floatval($post['crossed_price']),
+                'users_price'      => empty($post['users_price']) ? 0 : floatval($post['users_price']),
+                'old_price'      => empty($post['old_price']) ? 0 : floatval($post['old_price']),
                 'add_time'     => strtotime($post['add_time']),
                 'update_time'     => getTime(),
             );
             $data = array_merge($post, $newData);
             $r = Db::name('archives')->where(['aid' => $data['aid'], 'lang'  => $this->admin_lang])->update($data);
-            if (!empty($r)) {
+            if ($r !== false) {
                 if (!empty($post['restric_type']) && 0 < $post['restric_type']) {
                     if (empty($post['size'])) {$post['size'] = 1;}
                     $free_content = !empty($post['free_content']) ? $post['free_content'] : '';
@@ -687,7 +702,7 @@ class Article extends Base
                     $mbackendLogic = new \weapp\Mbackend\logic\MbackendLogic;
                     $mbackendLogic->fileCacheHandle('del');
                 }
-
+                $_POST['aid'] = $data['aid'];
                 // 生成静态页面代码
                 $successData = [
                     'aid'       => $data['aid'],
@@ -732,17 +747,12 @@ class Article extends Base
         // 栏目信息
         $arctypeInfo = Db::name('arctype')->find($typeid);
         $info['channel'] = $arctypeInfo['current_channel'];
-        if (is_http_url($info['litpic'])) {
-            $info['is_remote'] = 1;
-            $info['litpic_remote'] = handle_subdir_pic($info['litpic']);
-        } else {
-            $info['is_remote'] = 0;
-            $info['litpic_local'] = handle_subdir_pic($info['litpic']);
-        }
+        // 封面图
+        $info['litpic'] = handle_subdir_pic($info['litpic']);
     
         // SEO描述
         // if (!empty($info['seo_description'])) {
-        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, get_seo_description_length(), false);
         // }
         $assign_data['field'] = $info;
 

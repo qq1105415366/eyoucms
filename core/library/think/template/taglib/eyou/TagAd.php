@@ -13,6 +13,8 @@
 
 namespace think\template\taglib\eyou;
 
+use think\Db;
+
 /**
  * 单个广告信息
  */

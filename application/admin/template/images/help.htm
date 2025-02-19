@@ -67,8 +67,8 @@
                 <div class="help-title"><i class="iconfont e-shezhi1"></i>功能向导</div>
                 <dl class="help-row">
                     <dd class="help-opt">
-                        <input type="hidden" id="pen_name" name="pen_name" value="{$Think.session.admin_info.pen_name|default='小编'}" />
-                        <a href="javascript:void(0);" onclick="set_top_author();" class=""><em>作者</em></a>设置默认值（将同步至管理员笔名）&nbsp;<a href="javascript:void(0);" onclick="set_top_author();" class=""><i class="iconfont e-fenxiang_2" title="传送门"></i></a>
+                        <input type="hidden" id="author" name="author" value="{$Think.session.admin_info.pen_name|default='小编'}" />
+                        <a href="javascript:void(0);" onclick="set_author($('#author').val());" class=""><em>作者</em></a>设置默认值（将同步至管理员笔名）&nbsp;<a href="javascript:void(0);" onclick="set_author($('#author').val());" class=""><i class="iconfont e-fenxiang_2" title="传送门"></i></a>
                     </dd>
                 </dl>
                 <dl class="help-row">
@@ -108,39 +108,6 @@
                     success: function(res){
                         if (res.code == 1) {
                             $('#system_originlist_str').val(res.data.originlist_str);
-                            top.layer.msg(res.msg, {icon: 1, time:1000});
-                        } else {
-                            showErrorMsg(res.msg);
-                            return false;
-                        }
-                    },
-                    error: function(e){
-                        showErrorMsg(e.responseText);
-                        return false;
-                    }
-                });
-                top.layer.close(index);
-            }
-        );
-    }
-    function set_top_author(){
-        var value = $("#pen_name").val();
-        top.layer.prompt({
-                title:'设置作者默认名称',
-                shade: layer_shade,
-                btnAlign:'r',
-                closeBtn: 3,
-                value: value
-            },
-            function(val, index){
-                $.ajax({
-                    url: eyou_basefile + "?m=admin&c=Admin&a=ajax_setfield&_ajax=1",
-                    type: 'POST',
-                    dataType: 'JSON',
-                    data: {field:'pen_name',value:val},
-                    success: function(res){
-                        if (res.code == 1) {
-                            $('#pen_name').val(val);
                             top.layer.msg(res.msg, {icon: 1, time:1000});
                         } else {
                             showErrorMsg(res.msg);

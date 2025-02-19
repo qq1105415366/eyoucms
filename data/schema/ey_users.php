@@ -84,7 +84,7 @@ return array (
   'users_money' => 
   array (
     'name' => 'users_money',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -93,7 +93,7 @@ return array (
   'frozen_money' => 
   array (
     'name' => 'frozen_money',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -219,7 +219,7 @@ return array (
   'discount' => 
   array (
     'name' => 'discount',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '1.00',
     'primary' => false,
@@ -228,7 +228,7 @@ return array (
   'total_amount' => 
   array (
     'name' => 'total_amount',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -237,7 +237,7 @@ return array (
   'order_total_amount' => 
   array (
     'name' => 'order_total_amount',
-    'type' => 'decimal(10,2) unsigned',
+    'type' => 'decimal(20,2) unsigned',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,

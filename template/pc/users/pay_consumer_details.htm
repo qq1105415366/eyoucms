@@ -40,7 +40,7 @@
                                             </div>
                                         </div>
                                         <div class="shop-oper-r">
-                                            <div class="users-money">账户余额&nbsp;:&nbsp;￥<span class="red fb">{$users.users_money}</span> <a href="{:url('user/Pay/pay_account_recharge')}" class="el-button el-button--primary is-plain el-button--small ml10">充值</a></div>
+                                            <div class="users-money">账户余额&nbsp;:&nbsp;￥<span class="fc-colours fb">{$users.users_money}</span> <a href="{:url('user/Pay/pay_account_recharge')}" class="fc-colours ml10">充值</a></div>
                                         </div>
                                     </div>
                                 </div>
@@ -63,7 +63,6 @@
                                                     <td class="border-none" align="center" axis="col0" colspan="50">
                                                         <div class="cell pt100 tc">
                                                            <span class="mb10"><img id='litpic_img'  src="{eyou:static file='users/skin/images/null-data.png' /}"/></span>
-                                                           <p>当前暂无余额明细哦~</p>
                                                          </div>
                                                     </td>
                                                 </tr>
@@ -91,7 +90,7 @@
                                     </div>
                                     {$page}
                                     {eyou:if condition="!empty($pager->totalRows)"}
-                                    <div class="fytotal">共{$pager->totalRows}条记录</div>
+                                    <div class="fytotal">{:sprintf(foreign_lang('page5'), $pager->totalPages, $pager->totalRows)}</div>
                                     {/eyou:if}
                                 </div>
                             </div>

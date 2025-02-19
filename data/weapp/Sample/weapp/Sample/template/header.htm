@@ -33,10 +33,16 @@
 <link href="__SKIN__/js/perfect-scrollbar.min.css?v={$version}" rel="stylesheet" type="text/css"/>
 <style type="text/css">html, body { overflow: visible;}</style>
 <link href="__SKIN__/css/diy_style.css?v={$version}" rel="stylesheet" type="text/css" />
-{if condition="file_exists(ROOT_PATH.'public/static/admin/css/theme_style.css')"}
-    <link href="__SKIN__/css/theme_style.css?v={$version}_{$global['web_theme_style_uptime']|default=0}" rel="stylesheet" type="text/css">
-{elseif condition="file_exists(APP_PATH.'admin/template/public/theme_css.htm') && function_exists('hex2rgba')" /}
-    {include file="/application/admin/template/public/theme_css.htm" /}
+{if condition="'zan' == config('global.project_type')"}
+    {if condition="!empty($global['web_theme_css_tplname']) && file_exists(ROOT_PATH.'public/static/admin/css/theme/'.$global['web_theme_css_tplname'])" /}
+        <link href="__SKIN__/css/theme/{$global['web_theme_css_tplname']|default='css_1.css'}?v={$version}_{$global['web_theme_style_uptime']|default=0}" rel="stylesheet" type="text/css">
+    {/if}
+{else /}
+    {if condition="file_exists(ROOT_PATH.'public/static/admin/css/theme_style.css')"}
+        <link href="__SKIN__/css/theme_style.css?v={$version}_{$global['web_theme_style_uptime']|default=0}" rel="stylesheet" type="text/css">
+    {elseif condition="file_exists(APP_PATH.'admin/template/public/theme_css.htm') && function_exists('hex2rgba')" /}
+        {include file="/application/admin/template/public/theme_css.htm" /}
+    {/if}
 {/if}
 <script type="text/javascript" src="__STATIC__/common/js/jquery.min.js?v={$version}"></script>
 <script type="text/javascript" src="__SKIN__/js/jquery-ui/jquery-ui.min.js?v={$version}"></script>

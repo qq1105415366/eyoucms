@@ -29,10 +29,6 @@ class Level extends Base {
         $this->users_type_manage_db  = Db::name('users_type_manage');   // 会员等级表
         /*结束*/
 
-        // 是否开启支付功能设置
-        $UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig',$UsersConfigData);
-
         // 模型是否开启
         $channeltype_row = \think\Cache::get('extra_global_channeltype');
         $this->assign('channeltype_row',$channeltype_row);

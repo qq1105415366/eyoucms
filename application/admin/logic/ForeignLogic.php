@@ -42,7 +42,7 @@ class ForeignLogic
                 $foreign_is_status = tpSetting('foreign.foreign_is_status', '', 'cn');
                 $seo_titleurl_format = !empty($seo_config['seo_titleurl_format']) ? intval($seo_config['seo_titleurl_format']) : 0;
                 if (!empty($foreign_is_status) && !empty($seo_titleurl_format)) {
-                    $htmlfilename = $post['htmlfilename'].'_'.$aid;
+                    $htmlfilename = $post['htmlfilename'] . $seo_config['seo_title_symbol'] . $aid;
                     Db::name('archives')->where(['aid'=>$aid])->update(['htmlfilename'=>$htmlfilename]);
                 }
             }
@@ -67,10 +67,11 @@ class ForeignLogic
             if (!empty($foreign_is_status) && !empty($seo_titleurl_format)) {
                 $htmlfilename = $this->get_title_htmlfilename(trim($post['title']));
                 if ('edit' == $opt) {
-                    $htmlfilename .= '_'.$post['aid'];
+                    $htmlfilename .= $globalConfig['seo_title_symbol'] . $post['aid'];
                 }
             }
         }
+        return $htmlfilename;
     }
 
     /**
@@ -83,6 +84,7 @@ class ForeignLogic
      */
     public function get_title_htmlfilename($str, $ishead = 0, $isclose = 1)
     {
+        $seo_title_symbol = tpCache('seo.seo_title_symbol');
         $str = str_replace(['—'], ' ', $str);
         $str = preg_replace('/(\s+)/i', ' ', $str);
         try{
@@ -120,12 +122,12 @@ class ForeignLogic
                             $restr .= $pinyins[$c][0];
                         }
                     } else {
-                        $restr .= "-";
+                        $restr .= $seo_title_symbol;
                     }
                 } else if (preg_match("/[a-z0-9]/i", $str[$i])) {
                     $restr .= $str[$i];
                 } else {
-                    $restr .= "-";
+                    $restr .= $seo_title_symbol;
                 }
             }
             if ($isclose == 0) {
@@ -136,6 +138,7 @@ class ForeignLogic
             $restr = preg_replace('/([\-]+)/i', '-', $restr);
             $restr = preg_replace('/([\_]+)/i', '_', $restr);
             $restr = trim($restr, '-');
+            $restr = trim($restr, $seo_title_symbol);
             return $restr;
         }catch (\Exception $e){
             return "";
@@ -143,22 +146,22 @@ class ForeignLogic
     }
 
     /**
-     * 处理更新文档的自定义文件名
+     * 批量更新文档的自定义文件名、SEO描述等
      * $achievepage 已完成文档数
      * $batch       是否分批次执行，true：分批，false：不分批
      * limit        每次执行多少条数据
      */
-    public function handelUpdateArticle($foreign_htmlfilename_mode = 0, $achievepage = 0, $batch = true, $limit = '')
+    public function batchHandelUpdate($handle_type, $achievepage = 0, $batch = true, $limit = '')
     {
         $msg                  = "";
-        $result               = $this->getArticleData($achievepage, $limit);
+        $result               = $this->getArticleData($handle_type, $achievepage, $limit);
         $info                 = $result['info'];
         $data['allpagetotal'] = $pagetotal = $result['pagetotal'];
         $data['achievepage']  = $achievepage;
         $data['pagetotal']    = 0;
 
         if ($batch && $pagetotal > $achievepage) {
-            $msg .= $msg_temp = $this->updateHtmlfilename($foreign_htmlfilename_mode, $info);
+            $msg .= $msg_temp = $this->batchUpdateAll($handle_type, $info);
             $data['achievepage'] += count($info);
         }
 
@@ -168,50 +171,75 @@ class ForeignLogic
     /**
      * 获取详情页数据
      */
-    private function getArticleData($offset = 0, $limit = 0)
+    private function getArticleData($handle_type, $offset = 0, $limit = 0)
     {
         empty($limit) && $limit = 500;
         $map = [];
         $allow_release_channel = config('global.allow_release_channel');
         $map['channel'] = ['IN', $allow_release_channel];
-        $map['arcrank'] = ['>=', -1];
+        // $map['arcrank'] = ['>=', -1];
         $info = [];
-        $list = Db::name('archives')->field("aid,title,htmlfilename")
+        $list = Db::name('archives')->field("aid,title,channel,htmlfilename,seo_description")
             ->where($map)
             ->order('aid asc')
             ->limit($offset, $limit)
             ->select();
+        $arc_arr = [];
         foreach ($list as $key=>$val){
             $info_value = [];
             $info_value['aid'] = $val['aid'];
             $info_value['title'] = trim($val['title']);
             $info_value['htmlfilename'] = $val['htmlfilename'];
+            $info_value['seo_description'] = $val['seo_description'];
             $info[] = $info_value;
+
+            $arc_arr[$val['channel']][] = $val['aid'];
         }
 
         // 总文档数
         $pagetotal = Db::name('archives')->field('aid')->where($map)->count();
 
+        if (in_array('up_seo_desc', $handle_type)) {
+            $content_arr = [];
+            foreach ($arc_arr as $key => $val) {
+                $channeltype_info = model('Channeltype')->getInfo($key);
+                $row = Db::name("{$channeltype_info['table']}_content")->where(['aid'=>['IN', $val]])->select();
+                foreach ($row as $_k => $_v) {
+                    $content_arr[$_v['aid']] = $_v;
+                }
+            }
+            foreach ($info as $key=>$val){
+                $val['content'] = empty($content_arr[$val['aid']]) ? '' : htmlspecialchars_decode($content_arr[$val['aid']]['content']);
+                $info[$key] = $val;
+            }
+        }
+
         return ['info' => $info, 'pagetotal' => $pagetotal];
     }
 
     /*
-     * 更新文档的自定义文件名
+     * 更新文档的自定义文件名、SEO描述
      */
-    private function updateHtmlfilename($foreign_htmlfilename_mode, $result)
+    private function batchUpdateAll($handle_type, $result)
     {
         $msg = "";
         $globalConfig = tpCache('global');
+        $update = [];
         foreach ($result as $key => $val) {
-            $htmlfilename = '';
-            if (empty($foreign_htmlfilename_mode)) {
-                $this->get_new_htmlfilename($htmlfilename, $val, 'edit', $globalConfig);
+            $update[$key] = [
+                'aid' => $val['aid'],
+            ];
+            if (in_array('up_htmlfilename', $handle_type)) {
+                $htmlfilename = $this->get_new_htmlfilename($val['htmlfilename'], $val, 'edit', $globalConfig);
+                $update[$key]['htmlfilename'] = $htmlfilename;
             }
-            $val['htmlfilename'] = $htmlfilename;
-            $result[$key] = $val;
+            if (in_array('up_seo_desc', $handle_type)) {
+                $seo_description = @msubstr(checkStrHtml($val['content']), 0, get_seo_description_length(), false);
+                $update[$key]['seo_description'] = $seo_description;
+            }
         }
         $archivesModel = new \app\admin\model\Archives;
-        $r2 = $archivesModel->saveAll($result);
+        $r2 = $archivesModel->saveAll($update);
         if ($r2 !== false) {
             
         } else {

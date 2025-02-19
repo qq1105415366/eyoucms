@@ -44,17 +44,24 @@
                                             <div class="user-actions">
                                                 <ul class="action-list">
                                                     <li>会员等级：
-                                                    <a href="{eyou:url link='user/Level/level_centre'/}">
-                                                        {eyou:egt name='$users.level' value='3'}<span class="grade">{else/}<span class="grade">{/eyou:egt}{$users.level_name}</span>
-                                                    </a>
+                                                        <a href="{eyou:url link='user/Level/level_centre'/}">
+                                                            <span class="grade">{$users.level_name}</span>
+                                                        </a>
                                                     </li>
+                                                    {eyou:neq name='$users.level' value='1'}
+                                                    <li>会员天数：
+                                                        <a href="{eyou:url link='user/Level/level_centre'/}">
+                                                             <span>{$users.maturity_date}</span> 
+                                                        </a>
+                                                    </li>
+                                                    {/eyou:neq}
                                                     {empty name="$users.is_mobile"}
-                                                    <li>绑定手机： <span><span class="tel"><a href="{eyou:url link='user/Users/info' /}">去绑定</a></span></span> </li>
+                                                    <li>绑定手机： <span><span class="tel"><a class="grade" href="{eyou:url link='user/Users/info' /}">绑定</a></span></span> </li>
                                                     {else/}
                                                     <li>绑定手机： <span><span class="tel">{$users.mobile}</span></span> </li>
                                                     {/empty}
                                                     {empty name="$users.is_email"}
-                                                    <li>绑定邮箱： <span><span class="email"><a href="{eyou:url link='user/Users/info' /}">去绑定</a></span></span> </li>
+                                                    <li>绑定邮箱： <span><span class="email"><a class="grade" href="{eyou:url link='user/Users/info' /}">绑定</a></span></span> </li>
                                                     {else/}
                                                     <li>绑定邮箱： <span><span class="email">{$users.email}</span></span> </li>
                                                     {/empty}
@@ -96,34 +103,34 @@
                                             <ul class="info-list clearfix">
                                                 {eyou:spstatus id="field3"}
                                                 <li>
-                                                    <div class="pic"> <img src="{eyou:static file='users/skin/images/portal-icon-1.png' /}"> </div>
+                                                    <div class="pic"><a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=dzf'/}"> <img src="{eyou:static file='users/skin/images/portal-icon-1.png' /}"></a> </div>
                                                     <div class="info">
-                                                        <h3>待支付的订单：<span class="num">{$field3.PendingPayment}</span></h3>
-                                                        <a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=dzf'/}">查看待支付订单<i class="iconfont"></i></a>
+                                                        <h3>待付款的订单：<a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=dzf'/}"><span class="num">{$field3.PendingPayment}</span></a></h3>
+                                                        <a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=dzf'/}">查看待付款订单<i class="iconfont-users2 icon-users2-youjiantou"></i></a>
                                                     </div>
                                                 </li>
                                                 <li>
-                                                    <div class="pic"> <img src="{eyou:static file='users/skin/images/portal-icon-2.png' /}"> </div>
+                                                    <div class="pic"><a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=2'/}"> <img src="{eyou:static file='users/skin/images/portal-icon-2.png' /}"></a> </div>
                                                     <div class="info">
-                                                        <h3>待收货的订单：<span class="num">{$field3.PendingReceipt}</span></h3>
-                                                    <a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=2'/}">查看待收货订单<i class="iconfont"></i></a>
+                                                        <h3>待收货的订单：<a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=2'/}"><span class="num">{$field3.PendingReceipt}</span></a></h3>
+                                                    <a href="{eyou:url link='user/Shop/shop_centre' vars='select_status=2'/}">查看待收货订单<i class="iconfont-users2 icon-users2-youjiantou"></a></i>
                                                     </div>
                                                 </li>
                                                 {if isset($usersConfig['shop_open']) && $usersConfig['shop_open'] == 1 && $php_servicemeal >= 2}
                                                 <li>
-                                                    <div class="pic"> <img src="{eyou:static file='users/skin/images/portal-icon-3.png' /}"> </div>
+                                                    <div class="pic"><a href="{eyou:url link='user/ShopComment/need_comment_list'/}"> <img src="{eyou:static file='users/skin/images/portal-icon-3.png' /}"> </a></div>
                                                     <div class="info">
-                                                        <h3>待评价商品数：<span class="num">{$field3.waitComment}</span></h3>
-                                                        <a href="{eyou:url link='user/ShopComment/need_comment_list'/}">查看待评价商品<i class="iconfont"></i></a>
+                                                        <h3>待评价商品数：<a href="{eyou:url link='user/ShopComment/need_comment_list'/}"><span class="num">{$field3.waitComment}</span></a></h3>
+                                                        <a href="{eyou:url link='user/ShopComment/need_comment_list'/}">查看待评价商品<i class="iconfont-users2 icon-users2-youjiantou"></i></a>
                                                     </div>
                                                 </li>
                                                 {/if}
                                                 {eyou:gt name='$php_servicemeal' value='1'}
                                                 <li>
-                                                    <div class="pic"> <img src="{eyou:static file='users/skin/images/portal-icon-5.png' /}"> </div>
+                                                    <div class="pic"><a href="{eyou:url link='user/Shop/after_service' vars='status=ing'/}"> <img src="{eyou:static file='users/skin/images/portal-icon-5.png' /}"> </a></div>
                                                     <div class="info">
-                                                        <h3>售后中的商品：<span class="num">{$field3.AfterService}</span></h3>
-                                                        <a href="{eyou:url link='user/Shop/after_service'/}">查看售后中的商品<i class="iconfont"></i></a>
+                                                        <h3>售后中的商品：<a href="{eyou:url link='user/Shop/after_service' vars='status=ing'/}"><span class="num">{$field3.AfterService}</span></a></h3>
+                                                        <a href="{eyou:url link='user/Shop/after_service' vars='status=ing'/}">查看售后中的商品<i class="iconfont-users2 icon-users2-youjiantou"></i></a>
                                                     </div>
                                                 </li>
                                                 {/eyou:gt}

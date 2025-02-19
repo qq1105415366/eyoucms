@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" >
+<html style="padding-right: unset;">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Language" content="zh-cn"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta name='robots' content='noindex,nofollow' />
+    <title>二次验证 - 后台登录</title>
+    <link rel="shortcut icon" type="image/x-icon" href="__ROOT_DIR__/favicon.ico?v={$version}" media="screen"/>
+    <link href="__PUBLIC__/plugins/bootstrap/css/bootstrap.min.css?v={$version}" rel="stylesheet" type="text/css" />
+    <link href="__SKIN__/css/login_twofactor.css?v={$version}" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="__STATIC__/common/js/jquery.min.js?v={$version}"></script>
+    <script type="text/javascript" src="__PUBLIC__/plugins/layer-v3.1.0/layer.js?v={$version}"></script>
+    <style type="text/css">
+      .layui-layer-btn .layui-layer-btn0 {
+          border-color: #2189be;
+          background-color: #2189be;
+      }
+    </style>
+  </head>
+  <body style="padding-right: unset;">
+    <div id="main">
+      <div class="container">
+        <div class="form">
+          <div id="notice" style="display: none;">
+            <div class="alert alert-danger" style="display: block;" role="alert">
+              <button class="close" id="close_alert" type="button">
+                <span>×</span>
+              </button>
+              <div class="message"></div>
+            </div>
+          </div>
+          <div class="normal">
+            <div class="two-factor-header">
+              <h4 class="bold">
+                二次验证
+              </h4>
+            </div>
+            <p class="text-info">
+              点击“发送验证码”按钮，我们会往您后台设置的手机号发送一条短信验证码
+            </p>
+            <p class="text-info">
+              {$admin_info['mobile_subhide']}
+            </p>
+            <div class="form-group field-captcha captcha-div hide" id="vertify-div">
+              <div class="input-group">
+                <input class="form-control" id="vertify" type="text" placeholder="请输入右边图片验证码">
+                <div class="input-group-addon">
+                  <img id="vertify_image" class="loading_vertify" src="__STATIC__/common/images/loading.gif?v={$version}" alt="" onclick="fleshVerify();">
+                </div>
+              </div>
+              <span class="help-block">
+                验证码不能为空
+              </span>
+            </div>
+            <div class="form-group field-totp-code">
+              <input class="form-control" id="twofactor_code" type="text" placeholder="请输入短信验证码" autofocus="" autocomplete="off">
+              <div class="send_button">
+                <button class="btn btn-primary" id="send_code" data-send_type="sms">发送验证码</button>
+                <button class="btn hide" id="send-code-timeout" disabled=""></button>
+              </div>
+              <span class="help-block">
+                验证码不能为空
+              </span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block btn-emphasis" id="submit-button" type="button">提 交</button>
+          <div class="text-right forget-container">
+            <a href="javascript:void(0);" onclick="showConfirm('通过FTP在根目录/data/conf/ ，新建一个内容为空 twofactor_login_open.txt 文件，便可以跳过后台二次验证，再重新登录即可')">没法发送验证码？</a>&nbsp;|&nbsp;
+            <a id="forget" href="{$Request.baseFile}">返回登录</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+        var mobile = "{$admin_info['mobile']}";
+
+        $(function(){
+            $('#send_code').click(function(){
+                var send_type = $(this).data('send_type');
+                if ('sms' == send_type) {
+                    get_mobile_code();
+                }
+            });
+        });
+
+        function showConfirm(title){
+            layer.confirm(title, {
+                area: ['480px', '190px'],
+                move: false,
+                title: '临时解决方法',
+                shade: [0.7, '#fafafa'],
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['关闭'] ,//按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            });
+        }
+
+        function get_mobile_code() {
+            // 设置为不可点击
+            $("#send_code").text('正在发送…').attr('disabled', 'disabled');
+            //loading层
+            var loading = layer.load(3, {
+                shade: [0.1,'#fff'] //0.1透明度的白色背景
+            });
+            $.ajax({
+                url: '__ROOT_DIR__/index.php?m=api&c=Ajax&a=SendMobileCode&_ajax=1',
+                data: {type:'admin_login', mobile:mobile, is_mobile:0, title:'二次验证', IsVertify:0, source:30},
+                type:'post',
+                dataType:'json',
+                success:function(res){
+                    layer.closeAll();
+                    if (res.code == 1) {
+                        countdown();
+                        $('#twofactor_code').focus();
+                        layer.msg(res.msg, {time: 1500});
+                    } else {
+                        $("#send_code").text('发送验证码').removeAttr("disabled");
+                        layer.alert(res.msg, {icon: 5, title:false, closeBtn: false});
+                    }
+                },
+                error : function(e) {
+                    layer.closeAll();
+                    $("#send_code").text('发送验证码').removeAttr("disabled");
+                    layer.alert(e.responseText, {icon: 5, title:false, closeBtn: false});
+                }
+            });
+        };
+
+        function countdown() {
+            // 倒计时
+            var setTime;
+            var time = 120;
+            setTime = setInterval(function() {
+                if(0 >= time){
+                    clearInterval(setTime);
+                    return;
+                }
+                time--;
+                $("#send_code").text(time+'秒').attr('disabled', 'disabled');
+                if(time == 0) $("#send_code").text('发送验证码').removeAttr("disabled");
+            }, 1000);
+        };
+
+        function fleshVerify(){
+            var src =  '__ROOT_DIR__/index.php?m=api&c=Ajax&a=vertify&type=admin_login';
+            if (src.indexOf('?') > -1) {
+                src += '&';
+            } else {
+                src += '?';
+            }
+            src += 't='+Math.floor(Math.random()*10000000);
+            $('#vertify_image').attr('src', src);
+        }
+
+        /**
+         * 封装的加载层
+         */
+        function layer_loading(msg){
+            var loading = layer.msg(
+            msg+'...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;请勿刷新页面', 
+            {
+                icon: 1,
+                time: 3600000, //1小时后后自动关闭
+                shade: [0.2] //0.1透明度的白色背景
+            });
+            //loading层
+            var index = layer.load(3, {
+                shade: [0.1,'#fff'] //0.1透明度的白色背景
+            });
+
+            return loading;
+        }
+        
+        $(function(){
+            
+            /*setTimeout(function(){
+                $('.loading_vertify').removeClass('loading_vertify').attr('src', '');
+                fleshVerify();
+            },800);*/
+
+            $(document).keydown(function(event){
+                if(event.keyCode ==13){
+                    $('#submit-button').trigger("click");
+                }
+            });
+
+            $('#submit-button').on('click',function(){
+                var twofactor_code = $('#twofactor_code').val();
+                if (twofactor_code == '') {
+                    layer.msg('请输入短信验证码！', {time: 1500});
+                    $('#twofactor_code').focus();
+                    return false;
+                }
+
+                var url = "{:url('Admin/login', ['_ajax'=>1])}";
+                if (url.indexOf('?') > -1) {
+                    url += '&';
+                } else {
+                    url += '?';
+                }
+                url += 't='+Math.random();
+                layer_loading('准备进入');
+                $.ajax({
+                    async:false,
+                    url: url,
+                    data: {twofactor_code:twofactor_code, twofactor_check:1},
+                    type:'post',
+                    dataType:'json',
+                    success:function(res){
+                        if(1 == res.code){
+                            top.location.href = res.url;
+                        }else{
+                            layer.closeAll();
+                            layer.alert(res.msg, {icon: 5, title:false, closeBtn: false});
+                            return false;
+                        }
+                    },
+                    error : function(e) {
+                        layer.closeAll();
+                        layer.alert(e.responseText, {icon: 5, title:false, closeBtn: false});
+                    }
+                });
+            });
+        });
+    </script>
+
+    {include file="public/footer" /}

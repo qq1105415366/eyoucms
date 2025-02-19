@@ -34,7 +34,7 @@ class DownloadFile extends Model
      */
     public function getDownFile($aid, $field = '*')
     {
-        $result = Db::name('DownloadFile')->field($field)
+        $result = Db::name('download_file')->field($field)
             ->where('aid', $aid)
             ->order('sort_order asc')
             ->select();
@@ -60,7 +60,7 @@ class DownloadFile extends Model
         if (!is_array($aid)) {
             $aid = array($aid);
         }
-        $result = Db::name('DownloadFile')->where(array('aid'=>array('IN', $aid)))->delete();
+        $result = Db::name('download_file')->where(array('aid'=>array('IN', $aid)))->delete();
         if ($result !== false) {
             Db::name('download_log')->where(array('aid'=>array('IN', $aid)))->delete();
         }
@@ -157,7 +157,7 @@ class DownloadFile extends Model
         // 添加到数据库
         if (!empty($data_new_new)) {
             // 批量添加
-            Db::name('DownloadFile')->insertAll($data_new_new);
+            Db::name('download_file')->insertAll($data_new_new);
         }
     }
 }

@@ -87,6 +87,13 @@
                 {include file="/weapp/ToSms/template/admin/system/sms_conf.htm" /}
             {/if}
             <!-- ToSms短信通知插件内置代码 end -->
+            <dl class="row none">
+                <dt class="tit"><em>*</em>管理员手机号区号</dt>
+                <dd class="opt">
+                    + &nbsp;<input value="{$sms.sms_nation_code|default='86'}" name="sms_nation_code" id="sms_nation_code" style="width: 60px !important;text-align: right;" placeholder="例如中国的区号:86" class="input-txt" type="text" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" onpaste="this.value=this.value.replace(/[^\d]/g,'')" autocomplete="off">
+                    <p class="notic">如存在多个管理员手机号,仅支持同一个国家的手机号</p>
+                </dd>
+            </dl>
             <dl class="row">
                 <dt class="tit"><em>*</em>管理员手机号</dt>
                 <dd class="opt">
@@ -166,7 +173,7 @@
 
         var mobile = $('#sms_test_mobile').val();
         if (mobile == '') {
-            showErrorMsg('接收的手机号码不能为空！');
+            showErrorMsg('管理员手机号不能为空！');
             $('#postSmsForm input[name=sms_test_mobile]').focus();
             return false;
         }
@@ -230,7 +237,7 @@
 		
         var mobile = $('#sms_test_mobile').val();
         if (mobile == '') {
-            showErrorMsg('接收的手机号码不能为空！');
+            showErrorMsg('管理员手机号不能为空！');
             $('#postSmsForm input[name=sms_test_mobile]').focus();
             return false;
         }
@@ -272,7 +279,7 @@
 
     function openArticle() {
         var new_sms_type = $("input[name=sms_type]:checked").val();
-        var aid = new_sms_type == 1?8754:11143;
+        var aid = new_sms_type == 1 ? 8754 : 11143;
         click_to_eyou_1575506523('https://www.eyoucms.com/plus/view.php?aid='+aid+'&origin_eycms=1','短信配置教程');
     }
 </script> 

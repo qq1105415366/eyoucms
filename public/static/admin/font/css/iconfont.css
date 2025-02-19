@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 2552404 */
-  src: url('../fonts/iconfont.woff2?t=1711261696060') format('woff2'),
-       url('../fonts/iconfont.woff?t=1711261696060') format('woff'),
-       url('../fonts/iconfont.ttf?t=1711261696060') format('truetype');
+  src: url('../fonts/iconfont.woff2?t=1733471333705') format('woff2'),
+       url('../fonts/iconfont.woff?t=1733471333705') format('woff'),
+       url('../fonts/iconfont.ttf?t=1733471333705') format('truetype');
 }
 
 .iconfont {
@@ -13,10 +13,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.e-aizhushou:before {
+  content: "\e63c";
+}
+
+.e-anquan:before {
+  content: "\e686";
+}
+
+.e-xiaoxitongzhi:before {
+  content: "\ec35";
+}
+
 .e-erweima:before {
   content: "\e651";
 }
-
 
 .e-caiwuzhongxin:before {
   content: "\10102";

@@ -565,7 +565,7 @@ class Buildhtml extends Base
         $msg = "";
         $aid = $result['aid'];
         static $arc_seo_description_length = null;
-        null === $arc_seo_description_length && $arc_seo_description_length = config('global.arc_seo_description_length');
+        null === $arc_seo_description_length && $arc_seo_description_length = get_seo_description_length();
         $this->request->get(['aid' => $aid]); // post
         $this->request->get(['tid' => $result['typeid']]); // post
 
@@ -1076,6 +1076,8 @@ class Buildhtml extends Base
         $msg = "";
         $this->request->get(['page' => $i]);
         $row['seo_title'] = set_typeseotitle($row['typename'], $row['seo_title_tmp'], $this->eyou['site']);
+        $row['seo_keywords'] = site_seo_handle($row['seo_keywords'], $this->eyou['site']);
+        $row['seo_description'] = site_seo_handle($row['seo_description'], $this->eyou['site']);
         // $row        = $this->lists_logic($row, $has_children_Row);  // 模型对应逻辑
         $row['pageurl'] = get_list_only_pageurl($row['pageurl'], $row['typeid'], $row['rulelist'], $i);
         $eyou       = array(
@@ -1276,8 +1278,9 @@ class Buildhtml extends Base
         if (!isset($result['seo_title_tmp'])) {
             $result['seo_title_tmp'] = $result['seo_title'];
         }
-        $result['seo_title'] = set_typeseotitle($result['typename'], $result['seo_title_tmp']);
-
+        $result['seo_title'] = set_typeseotitle($result['typename'], $result['seo_title_tmp'], $this->eyou['site']);
+        $result['seo_keywords'] = site_seo_handle($result['seo_keywords'], $this->eyou['site']);
+        $result['seo_description'] = site_seo_handle($result['seo_description'], $this->eyou['site']);
         $result['pageurl'] = $result['typeurl']; // 获取当前页面URL
         $result['pageurl_m'] = pc_to_mobile_url($result['pageurl'], $result['typeid']); // 获取当前页面对应的移动端URL
         // 移动端域名

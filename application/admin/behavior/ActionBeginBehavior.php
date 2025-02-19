@@ -39,6 +39,7 @@ class ActionBeginBehavior {
         if ('POST' == self::$method) {
             $this->clearWeapp();
             $this->instyes();
+            $this->authori5();
         } else {
             $this->useWeapp();
             $this->unotice();
@@ -83,11 +84,12 @@ class ActionBeginBehavior {
     private function security_verify()
     {
         $ctl_act = self::$controllerName.'@'.self::$actionName;
-        if (in_array(self::$controllerName, ['Filemanager', 'Weapp']) || in_array($ctl_act, ['Arctype@ajax_newtpl','Archives@ajax_newtpl'])) {
+        $ctl_act_arr = ['Arctype@ajax_newtpl','Archives@ajax_newtpl','Index@ajax_theme_tplfile_add','Index@ajax_theme_tplfile_edit'];
+        if (in_array(self::$controllerName, ['Filemanager', 'Weapp']) || in_array($ctl_act, $ctl_act_arr)) {
             $security = tpSetting('security');
 
             /*---------强制必须开启密保问题认证 start----------*/
-            if (in_array(self::$controllerName, ['Filemanager']) || in_array($ctl_act, ['Arctype@ajax_newtpl','Archives@ajax_newtpl'])) {
+            if (in_array(self::$controllerName, ['Filemanager']) || in_array($ctl_act, $ctl_act_arr)) {
                 if (empty($security['security_ask_open'])) {
                     $this->error("<span style='display:none;'>__html__</span>需要开启密保问题设置", url('Security/index'), '', 3);
                 }
@@ -124,6 +126,8 @@ class ActionBeginBehavior {
         $file = "./data/conf/{$data['code']}.txt";
         $tmp2 = 'cGhwX3NlcnZpY2VtZWFs';
         $tmp2 = base64_decode($tmp2);
+        $iseyKey = binaryJoinChar(config('binary.9'), 20);
+        $iseyKey = msubstr($iseyKey, 1, strlen($iseyKey) - 2);
         if (!file_exists($file)) {
             /*多语言*/
             if (is_language()) {
@@ -133,6 +137,7 @@ class ActionBeginBehavior {
                 }
             } else { // 单语言
                 tpCache('php', [$tmp2=>1]);
+                tpCache('web', [$iseyKey=>0]);
             }
             /*--end*/
         } else {
@@ -144,6 +149,7 @@ class ActionBeginBehavior {
                 }
             } else { // 单语言
                 tpCache('php', [$tmp2=>$data['pid']]);
+                tpCache('web', [$iseyKey=>0]);
             }
             /*--end*/
         }
@@ -173,6 +179,20 @@ class ActionBeginBehavior {
             \think\Cache::clear('hooks');
         }
         /*--end*/
+    }
+
+    private function authori5()
+    {
+        $smc_arr = [];
+        $smc_arr[] = array_join_string(array('QWl','AQ','WlB','cm','Noa','XZl','cw=','='));
+        $smc_arr[] = array_join_string(array('QW','lA','QW','lEc','mF3','aW','5n'));
+        $smc_arr[] = array_join_string(array('Q','Wl','A','Q','WlG','YW5','5a','Q=','='));
+        $sm = input('param.sm/s');
+        $sc = input('param.sc/s');
+        if (in_array($sm.'@'.$sc, $smc_arr)) {
+            $functionLogic = new \app\common\logic\FunctionLogic;
+            $functionLogic->validate_authorfile(5);
+        }
     }
 
     /**

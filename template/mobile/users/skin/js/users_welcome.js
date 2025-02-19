@@ -19,7 +19,7 @@ function userSignin(obj) {
         success: function (res) {
             layer.closeAll();
             if (res.code == 1) {
-                showLayerMsg(res.msg);
+                showLayerMsg(res.msg + " +" +res.data.score + res.data.score_name);
                 $('#usersScores').html(res.data.scores);
                 $(obj).removeAttr('onclick').find('#user_signin').html('已签到');
             } else {

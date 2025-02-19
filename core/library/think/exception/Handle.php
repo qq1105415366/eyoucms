@@ -18,6 +18,7 @@ use think\console\Output;
 use think\Lang;
 use think\Log;
 use think\Response;
+use think\Request;
 
 class Handle
 {
@@ -188,9 +189,8 @@ class Handle
 
         ob_start();
         extract($data);
-        
         /*调试模式与运营模式的错误页面不同 by 小虎哥*/
-        if (true === Config::get('app_debug') || defined('BIND_MODULE')) {
+        if (true === Config::get('app_debug') || defined('BIND_MODULE') || 'Buildhtml' == Request::instance()->controller()) {
             include Config::get('exception_tmpl');
         }
         else {

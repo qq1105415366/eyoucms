@@ -240,7 +240,7 @@ class Citysite extends Base
                 }
                 $insert_name[] = $val;
                 $domain = preg_replace("/[^a-zA-Z0-9]+/", "", get_pinyin($val));
-                $domain = $this->rand_domain($domain);
+                $domain = $this->rand_domain($domain,$level);
                 $addData[] = [
                     'name'  => $val,
                     'domain'  => $domain,
@@ -701,17 +701,23 @@ class Citysite extends Base
     /**
      * 生成随机子域名，确保唯一性
      */
-    private function rand_domain($domain = '')
+    private function rand_domain($domain = '',$level)
     {
         if (empty($domain)) {
             $domain = strtolower(get_rand_str(6, 0, 1));
         }
         if (!$this->domain_unique($domain)) {
-            $domain = $domain . mt_rand(0,9);
-            return $this->rand_domain($domain);
+            //20241118              
+            if($level==1){
+                $new_domain = $domain . mt_rand(1,9);
+                Db::name('citysite')->where(['domain'=>$domain,'level'=>['neq',1]])->update(['domain'=>$new_domain]);
+            }else{
+                $domain = $domain . mt_rand(1,9);
+            }
+            return $this->rand_domain($domain,$level);
+        }else{
+            return $domain;   
         }
-
-        return $domain;
     }
 
     /*
@@ -1415,9 +1421,13 @@ class Citysite extends Base
                 if (!empty($nameArr)) {
                     $addData = [];
                     foreach ($nameArr as $key => $val) {
-                        $domain = preg_replace("/[^a-zA-Z0-9]+/", "", get_pinyin($val));
+                        if($province_id==41877){
+                            $domain = 'shaanxi';
+                        }else{  
+                            $domain = preg_replace("/[^a-zA-Z0-9]+/", "", get_pinyin($val));
+                        }
                         if (in_array($domain, $domainArr)) {
-                            $domain = $this->rand_domain($domain);
+                           $domain = $this->rand_domain($domain,1);
                         }
                         $addData[] = [
                             'name'  => $val,
@@ -1475,13 +1485,13 @@ class Citysite extends Base
                 }
                 if (!empty($nameArr)) {
                     $addData = [];
-                    $domainArr = Db::name('citysite')->where(['id'=>['gt', 0]])->column('domain');
+                    //$domainArr = Db::name('citysite')->where(['id'=>['gt', 0]])->column('domain');
                     foreach ($nameArr as $key => $val) {
                         $domain = preg_replace("/[^a-zA-Z0-9]+/", "", get_pinyin($val));
-                        if (in_array($domain, $domainArr)) {
-                            $domain = $this->rand_domain($domain);
-                        }
-                        $addData[] = [
+                        //if (in_array($domain, $domainArr)) {
+                        $domain = $this->rand_domain($domain,2);
+                        //}
+                        $addData = [
                             'name'  => $val,
                             'domain'  => $domain,
                             'level' => 2,
@@ -1499,8 +1509,9 @@ class Citysite extends Base
                             'add_time'    => getTime(),
                             'update_time'    => getTime(),
                         ];
+                        $r = model('Citysite')->insert($addData);
+                        unset($domain,$r);
                     }
-                    $r = model('Citysite')->saveAll($addData);
                     if ($r === false) {
                         $err++; 
                     } else {
@@ -1552,13 +1563,13 @@ class Citysite extends Base
                     foreach ($nameArr as $key_tmp => $val_tmp) {
                         if (!empty($val_tmp)) {
                             $addData = [];
-                            $domainArr = Db::name('citysite')->where(['id'=>['gt', 0]])->column('domain');
+                            //$domainArr = Db::name('citysite')->where(['id'=>['gt', 0]])->column('domain');                            
                             foreach ($val_tmp as $key => $val) {
                                 $domain = preg_replace("/[^a-zA-Z0-9]+/", "", get_pinyin($val));
-                                if (in_array($domain, $domainArr)) {
-                                    $domain = $this->rand_domain($domain);
-                                }
-                                $addData[] = [
+                                //if (in_array($domain, $domainArr)) {
+                                $domain = $this->rand_domain($domain,3);
+                                //}
+                                $addData = [
                                     'name'  => $val,
                                     'domain'  => $domain,
                                     'level' => 3,
@@ -1576,8 +1587,9 @@ class Citysite extends Base
                                     'add_time'    => getTime(),
                                     'update_time'    => getTime(),
                                 ];
+                                $r = model('Citysite')->insert($addData);
+                                unset($r,$domain);
                             }
-                            $r = model('Citysite')->saveAll($addData);
                             if ($r === false) {
                                 $err++; 
                             }

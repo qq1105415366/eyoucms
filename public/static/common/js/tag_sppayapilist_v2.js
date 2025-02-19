@@ -23,6 +23,9 @@ function selectPayType(obj) {
     // 余额支付后剩余显示
     $('#yezf_balance_tips').hide();
     if ('yezf_balance' == type) $('#yezf_balance_tips').show();
+    // 余额支付后剩余显示
+    $('#yezf_scores_tips').hide();
+    if ('yezf_scores' == type) $('#yezf_scores_tips').show();
     // 在线支付or线下支付
     $('#payment_method').val(0);
     if ('hdfk_payOnDelivery' == type) $('#payment_method').val(1);

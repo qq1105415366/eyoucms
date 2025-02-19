@@ -57,7 +57,7 @@ return [
         'name'  => '网站设置',
         'is_modules'    => 1,
         'sort_order'    => 10,
-        'auths' => 'System@web',
+        'auths' => 'System@web,System@index',
     ],
     [
         'id' => 5,

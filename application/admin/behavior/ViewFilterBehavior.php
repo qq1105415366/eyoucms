@@ -40,7 +40,8 @@ class ViewFilterBehavior {
     private function security_verify(&$params)
     {
         $ctl_act = self::$controllerName.'@'.self::$actionName;
-        if ('GET' == self::$method && in_array(self::$controllerName, ['Filemanager', 'Weapp']) || in_array($ctl_act, ['Arctype@ajax_newtpl','Archives@ajax_newtpl'])) {
+        $ctl_act_arr = ['Arctype@ajax_newtpl','Archives@ajax_newtpl','Index@ajax_theme_tplfile_add','Index@ajax_theme_tplfile_edit'];
+        if ('GET' == self::$method && (in_array(self::$controllerName, ['Filemanager', 'Weapp']) || in_array($ctl_act, $ctl_act_arr))) {
             $security = tpSetting('security');
             if (empty($security['security_ask_open']) || !security_verify_func($ctl_act)) {
                 return true;
@@ -63,10 +64,10 @@ class ViewFilterBehavior {
             function autoload_security()
             {
                 layer.prompt({
-                    title: '密保问题',
                     id: 'layerid_1645598368',
+                    title: '密保问题<style type="text/css">#layerid_1645598368 {font-size: 13px; font-family: "Microsoft Yahei", "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;}</style>',
                     btn: ['确定'],
-                    shade: layer_shade,
+                    shade: [0.7, '#fafafa'],
                     closeBtn: 3,
                     success: function(layero, index) {
                         var before_str = "<div style='margin: -8px 0px 10px 0px;color: red;font-weight: bold;'>{$security_ask}</div>";
@@ -116,6 +117,7 @@ class ViewFilterBehavior {
             }
         });
     </script>
+</body>
 EOF;
 
             $params = str_ireplace('</body>', $replace, $params);

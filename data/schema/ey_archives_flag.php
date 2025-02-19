@@ -45,6 +45,15 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'ifsystem' => 
+  array (
+    'name' => 'ifsystem',
+    'type' => 'tinyint(1)',
+    'notnull' => false,
+    'default' => '0',
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'sort_order' => 
   array (
     'name' => 'sort_order',

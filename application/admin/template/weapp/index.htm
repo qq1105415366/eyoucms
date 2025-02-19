@@ -68,7 +68,7 @@
             {else /}
                 <script>
                     var update_admin_menu_url = "{:url('Ajax/update_admin_menu', ['_ajax'=>1])}";   //添加、删除入口地址
-                    var is_founder = {$is_founder};
+                    var is_founder = {$is_founder|default=0};
                     $(function(){
                         //添加、取消成为栏目
                         $(".bodystyle").on('click','.e-jiahao2',function (){
@@ -76,7 +76,7 @@
                                 return false;
                             }
                             var menu_id = $(this).data('menu_id');
-                            var title = $(this).data('name');
+                            var title = original_title = $.trim($(this).data('name'));
                             var controller_name = "Weapp" ;
                             var action_name = "execute" ;
                             var param = $(this).data('param');
@@ -100,30 +100,64 @@
                                     }
                                 });
                             }else{          //原本为未添加，添加到我的菜单
-                                $.ajax({
-                                    type: "POST",
-                                    url: update_admin_menu_url,
-                                    data: {title:title,controller_name:controller_name,action_name:action_name,menu_id:menu_id,icon:icon,param:param,target:target,type:1,is_switch:0},
-                                    dataType: 'json',
-                                    success:function (res) {
-                                        if(res.code == 1){
-                                            //修改状态
-                                            $(_this).addClass('e-jianhao');
-                                            //添加左侧菜单
-                                            var html = '<a data-child="0"  data-id="'+menu_id+ '" class="left_menu_'+menu_id+ ' '+controller_name+'_'+action_name+'_'+menu_id+'" id="'+controller_name+'_'+action_name+'"  data-menu_id="' + menu_id + '" href="javascript:void(0);" data-param="'+controller_name+'|'+action_name+param+'" data-target="'+target+'" >'
-                                                +'<i class="'+icon+'"></i>'+title+'</a>';
-                                            if (parent.$(".left_menu_2004")){
-                                                parent.$(".left_menu_2004").before(html);
-                                            }else{
-                                                parent.$("#sub-menu").append(html);
+                                layer.prompt({
+                                    title: '加入左侧菜单',
+                                    id: 'layerid_1733984832',
+                                    value: title,
+                                    btn: ['确定'],
+                                    shade: layer_shade,
+                                    closeBtn: 3,
+                                    success: function(layero, index) {
+                                        var before_str = "<div style='margin: -8px 0px 10px 0px;font-weight: bold;'>原名称："+title+"</div>";
+                                        $("#layerid_1733984832").prepend(before_str);
+                                        $("#layerid_1733984832").find('input').attr('placeholder', '请填写简短的菜单名称');
+                                        $("#layerid_1733984832").find('input').bind('keydown', function(event) {
+                                            if (event.keyCode == 13) {
+                                                if ($(this).val()) {
+                                                    title = $(this).val();
+                                                }
+                                                add_weapp_menu(menu_id,controller_name,action_name,param,icon,target,title,original_title);
                                             }
-                                        }
+                                        });
+                                    },
+                                    btn2: function(index, layero){
                                         return false;
                                     }
+                                }, function(value, index) {
+                                    if (value) {
+                                        title = value;
+                                    }
+                                    add_weapp_menu(menu_id,controller_name,action_name,param,icon,target,title,original_title);
                                 });
                             }
                         });
                     });
+
+                    //添加插件模块菜单到导航和左侧菜单
+                    function add_weapp_menu(menu_id,controller_name,action_name,param,icon,target,title,original_title) {
+                        $.ajax({
+                            type: "POST",
+                            url: update_admin_menu_url,
+                            data: {title:title,original_title:original_title,controller_name:controller_name,action_name:action_name,menu_id:menu_id,icon:icon,param:param,target:target,type:1,is_switch:0},
+                            dataType: 'json',
+                            success:function (res) {
+                                if(res.code == 1){
+                                    layer.closeAll();
+                                    //修改状态
+                                    $(_this).addClass('e-jianhao');
+                                    //添加左侧菜单
+                                    var html = '<a data-child="0"  data-id="'+menu_id+ '" class="left_menu_'+menu_id+ ' '+controller_name+'_'+action_name+'_'+menu_id+'" id="'+controller_name+'_'+action_name+'"  data-menu_id="' + menu_id + '" href="javascript:void(0);" data-param="'+controller_name+'|'+action_name+param+'" data-target="'+target+'" >'
+                                        +'<i class="'+icon+'"></i>'+title+'</a>';
+                                    if (parent.$(".left_menu_2004")){
+                                        parent.$(".left_menu_2004").before(html);
+                                    }else{
+                                        parent.$("#sub-menu").append(html);
+                                    }
+                                }
+                                return false;
+                            }
+                        });
+                    }
                 </script>
                 {foreach name="list" item="vo" key="k" }
                 <div class="plug-item-content">
@@ -257,8 +291,15 @@
         var status = $(obj).attr('data-status');
         if (0 == status) {
             layer.alert('请先安装该插件！', {
-                title:false,//name,
-                icon: 0
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '提示',
+                btnAlign:'r',
+                closeBtn: 3,
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
             });
             return false;
         }
@@ -360,8 +401,8 @@
                 closeBtn: 3,
                 btn: ['确定', '取消'] ,//按钮
                 success: function () {
-                      $(".layui-layer-content").css('text-align', 'left');
-                  }
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
             }, function(){
                 layer.close(confirm);
                 uninstall_true(obj);
@@ -376,7 +417,6 @@
     function uninstall_true(obj)
     {
         var id = $(obj).attr('data-id');
-
         layer_loading('正在处理');
         // 确定
         $.ajax({
@@ -390,10 +430,14 @@
                     layer.msg(res.msg, {icon: 1, time: 1000}, function(){
                         var menu_id = $(obj).attr('data-menu_id');
                         $(".Weapp_execute_" + menu_id, window.parent.document).remove();
-                        window.location.reload();
+                        if ('_parent' == res.data.install_target) {
+                            top.window.location.reload();
+                        } else {
+                            window.location.reload();
+                        }
                     });
                 }else{
-                    layer.alert(res.msg, {icon: 5, title:false});
+                    showErrorAlert(res.msg);
                 }
             },
             error: function(e) {
@@ -404,7 +448,7 @@
                         window.location.reload();
                     });
                 } else {
-                    layer.alert(e.responseText, {icon: 5, title:false});
+                    showErrorAlert(e.responseText);
                 }
             }
         });

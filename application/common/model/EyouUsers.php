@@ -75,5 +75,50 @@ class EyouUsers extends Model
             'login_count' => Db::raw('login_count+1'),
         ];
         Db::name('users')->where('users_id', $users['users_id'])->update($data);
+
+        // Im客服系统
+        if (is_dir('./weapp/Im/') && file_exists('./application/plugins/logic/ImLogic.php')) {
+            try {
+                $imLogic = new \app\plugins\logic\ImLogic;
+                $imLogic->opt_users_token('add', $users['users_id']);
+            } catch (\Exception $e) {
+                
+            }
+        }
+    }
+
+    // 会员注册之后的业务逻辑
+    public function regAfter($users_id)
+    {
+        cookie('users_id', $users_id);
+        eyou_statistics_data(4, 1); // 统计新增会员数
+
+        // Im客服系统
+        if (is_dir('./weapp/Im/') && file_exists('./application/plugins/logic/ImLogic.php')) {
+            try {
+                $imLogic = new \app\plugins\logic\ImLogic;
+                $imLogic->opt_users_token('add', $users_id);
+            } catch (\Exception $e) {
+                
+            }
+        }
+    }
+
+    // 会员退出之后的业务逻辑
+    public function logoutAfter($users_id)
+    {
+        // 清除微信授权 Cookie
+        model('ShopPublicHandle')->weChatauthorizeCookie($users_id, 'del');
+        
+        // Im客服系统
+        if (is_dir('./weapp/Im/') && file_exists('./application/plugins/logic/ImLogic.php')) {
+            try {
+                $token = cookie('token');
+                $imLogic = new \app\plugins\logic\ImLogic;
+                $imLogic->opt_users_token('del', 0, $token);
+            } catch (\Exception $e) {
+                
+            }
+        }
     }
 }

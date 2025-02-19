@@ -89,7 +89,6 @@ class Canal extends Base
         $baidu_data = tpSetting("OpenMinicode.conf_baidu", [], $this->main_lang);
         $baidu_data = json_decode($baidu_data, true);
         $this->assign('baidu_data', $baidu_data);
-
         // 小程序码
         $baidu_qrcodeurl = "";
         if (!empty($baidu_data['appid'])) {
@@ -104,6 +103,15 @@ class Canal extends Base
         $toutiao_data = tpSetting("OpenMinicode.conf_toutiao", [], $this->main_lang);
         $toutiao_data = !empty($toutiao_data) ? json_decode($toutiao_data, true) : [];
         $this->assign('toutiao_data', $toutiao_data);
+        // 小程序码
+        $toutiao_qrcodeurl = "";
+        if (!empty($toutiao_data['appid'])) {
+            $filepath = UPLOAD_PATH."allimg/20220515/tt-{$toutiao_data['appid']}.png";
+            if (is_file($filepath)) {
+                $toutiao_qrcodeurl = "{$this->root_dir}/".$filepath;
+            }
+        }
+        $this->assign('toutiao_qrcodeurl', $toutiao_qrcodeurl);
 
         return $this->fetch();
     }
@@ -444,6 +452,56 @@ class Canal extends Base
     }
 
     /**
+     * 获取头条(抖音)小程序码
+     * @return [type] [description]
+     */
+    public function ajax_get_toutiao_qrcode()
+    {
+        $data = tpSetting("OpenMinicode.conf_toutiao", [], $this->main_lang);
+        $data = json_decode($data, true);
+        $appid = !empty($data['appid']) ? $data['appid'] : '';
+        $secret = !empty($data['secret']) ? $data['secret'] : '';
+        $salt = !empty($data['salt']) ? $data['salt'] : '';
+        if (!empty($appid) && !empty($secret)) {
+            $url = "https://open.douyin.com/oauth/client_token/";
+            $post_data = array(
+                "client_key" => $appid,
+                "client_secret" => $secret,
+                "grant_type" => "client_credential",
+            );
+            $headers = ["content-type: application/json"];
+            $response = httpRequest($url, 'POST', json_encode($post_data, JSON_UNESCAPED_UNICODE), $headers);
+            $params = json_decode($response,true);
+            if (isset($params['data']['access_token'])) {
+                $url = "https://open.douyin.com/api/apps/v1/qrcode/create/";
+                $post_data = array(
+                    "appid" => $appid,
+                    "is_circle_code" => true,
+                );
+                $headers = ["content-type: application/json", "access-token: {$params['data']['access_token']}"];
+                $response = httpRequest($url, 'POST', json_encode($post_data, JSON_UNESCAPED_UNICODE), $headers);
+                $params = json_decode($response,true);
+                if (empty($params['data']['img'])) {
+                    $msg = !empty($params['err_msg']) ? $params['err_msg'] : '可能没发布小程序';
+                    $this->error($msg);
+                } else {
+                    $qrcodeurl = UPLOAD_PATH.'allimg/20220515';
+                    tp_mkdir($qrcodeurl);
+                    $qrcodeurl = $qrcodeurl."/tt-{$appid}.png";
+                    if (@file_put_contents($qrcodeurl, base64_decode($params['data']['img']))){
+                        $qrcodeurl = $this->root_dir.'/'.$qrcodeurl;
+                        $this->success('生成小程序码成功', null, ['qrcodeurl'=>$qrcodeurl]);
+                    } else {
+                        $this->error('生成小程序码失败');
+                    }
+                }
+            }
+        }
+
+        $this->error('不存在信息');
+    }
+
+    /**
      * 启用、关闭 开放API
      * @return [type] [description]
      */
@@ -478,6 +536,13 @@ class Canal extends Base
             $wechat_data = !empty($wechat_data) ? json_decode($wechat_data, true) : [];
             if (empty($wechat_data['appid'])) {
                 $this->error("请先完善公众号配置");
+            }
+
+            $post = input('post.');
+            foreach ($post as $key => $val) {
+                if (in_array($key, ['wechat']) && is_array($val)) {
+                    tpCache($key, $val);
+                }
             }
 
             $send_scene_arr = input('post.send_scene_arr/a');
@@ -603,6 +668,17 @@ class Canal extends Base
             $list[$key] = $val;
         }
         $assign_data['list'] = $list;
+
+        // 已有N人绑定并关注公众号
+        $admin_list = Db::name('admin')->where(['wechat_followed'=>1])->getAllWithIndex('admin_id');
+        $assign_data['adminBindNum'] = count($admin_list);
+        // 当前管理员是否绑定
+        $admin_id = (int)session('admin_id');
+        $assign_data['cur_admin_bind'] = empty($admin_list[$admin_id]) ? 0 : 1;
+        // 是否填写微信公众号配置
+        $wechat_data = tpSetting("OpenMinicode.conf_wechat");
+        $wechat_data = !empty($wechat_data) ? json_decode($wechat_data, true) : [];
+        $assign_data['wechat_data'] = $wechat_data;
 
         $this->assign($assign_data);
         return $this->fetch();

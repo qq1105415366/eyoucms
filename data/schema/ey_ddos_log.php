@@ -21,9 +21,9 @@ return array (
   'file_name' => 
   array (
     'name' => 'file_name',
-    'type' => 'varchar(500)',
+    'type' => 'text',
     'notnull' => false,
-    'default' => '',
+    'default' => NULL,
     'primary' => false,
     'autoinc' => false,
   ),
@@ -45,19 +45,28 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
-  'file_num_ky' => 
+  'file_doubt_total' => 
   array (
-    'name' => 'file_num_ky',
+    'name' => 'file_doubt_total',
     'type' => 'int(10)',
     'notnull' => false,
     'default' => '0',
     'primary' => false,
     'autoinc' => false,
   ),
-  'is_suspicious' => 
+  'file_excess' => 
   array (
-    'name' => 'is_suspicious',
-    'type' => 'tinyint(1)',
+    'name' => 'file_excess',
+    'type' => 'int(5)',
+    'notnull' => false,
+    'default' => '0',
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'file_grade' => 
+  array (
+    'name' => 'file_grade',
+    'type' => 'int(10)',
     'notnull' => false,
     'default' => '0',
     'primary' => false,
@@ -66,9 +75,18 @@ return array (
   'html' => 
   array (
     'name' => 'html',
-    'type' => 'text',
+    'type' => 'longtext',
     'notnull' => false,
     'default' => NULL,
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'admin_id' => 
+  array (
+    'name' => 'admin_id',
+    'type' => 'int(11)',
+    'notnull' => false,
+    'default' => '0',
     'primary' => false,
     'autoinc' => false,
   ),

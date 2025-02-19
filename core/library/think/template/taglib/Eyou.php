@@ -29,8 +29,8 @@ class Eyou extends Taglib
     protected $tags = [
         // 标签定义： attr 属性列表 close 是否闭合（0 或者1 默认1） alias 标签别名 level 嵌套层次
         'php'        => ['attr' => ''],
-        'channel'    => ['attr' => 'typeid,notypeid,type,row,loop,currentstyle,currentclass,id,name,key,empty,mod,titlelen,offset,limit', 'alias' => 'models'],
-        'channelartlist' => ['attr' => 'typeid,type,row,loop,id,key,empty,titlelen,mod,currentstyle,currentclass', 'alias' => 'modelsartlist'],
+        'channel'    => ['attr' => 'modelid,channelid,typeid,notypeid,type,row,loop,currentstyle,currentclass,id,name,key,empty,mod,titlelen,offset,limit', 'alias' => 'models'],
+        'channelartlist' => ['attr' => 'modelid,channelid,typeid,type,row,loop,id,key,empty,titlelen,mod,currentstyle,currentclass', 'alias' => 'modelsartlist'],
         'arclist'    => ['attr' => 'modelid,channelid,typeid,notypeid,keyword,row,loop,offset,titlelen,limit,orderby,ordermode,orderway,noflag,flag,bodylen,infolen,empty,mod,name,id,key,addfields,tagid,pagesize,thumb,joinaid,arcrank,release,idlist,idrange,aid,type,siteall', 'alias' => 'artlist'],
         'arcpagelist'=> ['attr' => 'tagid,pagesize,id,tips,loading,callback', 'alias' => 'artpagelist'],
         'list'       => ['attr' => 'modelid,channelid,typeid,notypeid,pagesize,loop,keyword,titlelen,orderby,ordermode,orderway,noflag,flag,bodylen,infolen,empty,mod,id,key,addfields,thumb,arcrank,idlist,idrange,siteall'],
@@ -94,7 +94,7 @@ class Eyou extends Taglib
         'diyfield'   => ['attr' => 'name,id,key,mod,type,empty,limit'],
         'attribute'  => ['attr' => 'aid,type,row,loop,limit,empty,id,mod,key'],
         'attr'       => ['attr' => 'aid,name', 'close' => 0],
-        'user'       => ['attr' => 'type,id,key,mod,empty,currentstyle,currentclass,img,txt,txtid,afterhtml,htmlid'],
+        'user'       => ['attr' => 'type,id,key,mod,empty,currentstyle,currentclass,img,txt,txtid,afterhtml,viewfile'],
         'weapplist'  => ['attr' => 'type,id,key,mod,empty,currentstyle,currentclass'], // 网站应用插件列表
         'usermenu'   => ['attr' => 'row,loop,id,empty,key,mod,currentstyle,currentclass,limit'], 
         // 购物行为标签
@@ -121,7 +121,7 @@ class Eyou extends Taglib
         'sppayapilist'  => ['attr' => 'id,key,mod,empty'],
 
         // 筛选搜索
-        'screening' => ['attr' => 'empty,id,mod,key,currentstyle,currentclass,addfields,addfieldids,alltxt,typeid'],
+        'screening' => ['attr' => 'empty,id,mod,key,currentstyle,currentclass,addfields,addfieldids,alltxt,typeid,anchor'],
         // 会员列表
         'memberlist' => ['attr' => 'row,loop,titlelen,limit,empty,mod,id,key,orderby,ordermode,orderway,js', 'alias' => 'userslist'],
         // 会员信息
@@ -578,6 +578,9 @@ class Eyou extends Taglib
      */
     public function tagChannel($tag, $content)
     {
+        $modelid   = isset($tag['modelid']) ? $tag['modelid'] : (isset($tag['channelid']) ? $tag['channelid'] : '');
+        $modelid  = $this->varOrvalue($modelid);
+
         $typeid  = !empty($tag['typeid']) ? $tag['typeid'] : '';
         $typeid  = $this->varOrvalue($typeid);
 
@@ -618,6 +621,7 @@ class Eyou extends Taglib
         // 声明变量
         /*typeid的优先级别从高到低：装修数据 -> 标签属性值 -> 外层标签channelartlist属性值*/
         $parseStr .= ' if(isset($ui_typeid) && !empty($ui_typeid)) : $typeid = $ui_typeid; else: $typeid = '.$typeid.'; endif;';
+        $parseStr .= ' if(isset($ui_modelid) && !empty($ui_modelid)) : $modelid = $ui_modelid; else: $modelid = '.$modelid.'; endif;';
         $parseStr .= ' if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif; ';
         /*--end*/
         $parseStr .= ' if(isset($ui_row) && !empty($ui_row)) : $row = $ui_row; else: $row = '.$row.'; endif;';
@@ -642,7 +646,7 @@ class Eyou extends Taglib
 
         } else { // 查询数据库获取的数据集
             $parseStr .= ' $tagChannel = new \think\template\taglib\eyou\TagChannel;';
-            $parseStr .= ' $_result = $tagChannel->getChannel($typeid, "'.$type.'", "'.$currentclass.'", '.$notypeid.');';
+            $parseStr .= ' $_result = $tagChannel->getChannel($typeid, "'.$type.'", "'.$currentclass.'", '.$notypeid.', $modelid);';
             $parseStr .= ' if(is_array($_result) || $_result instanceof \think\Collection || $_result instanceof \think\Paginator): $' . $key . ' = 0; $e = 1;';
             // 设置了输出数组长度
             if (0 != $offset || 'null' != $row) {
@@ -696,6 +700,9 @@ class Eyou extends Taglib
      */
     public function tagChannelartlist($tag, $content)
     {
+        $modelid   = isset($tag['modelid']) ? $tag['modelid'] : (isset($tag['channelid']) ? $tag['channelid'] : '');
+        $modelid  = $this->varOrvalue($modelid);
+
         $typeid  = !empty($tag['typeid']) ? $tag['typeid'] : '';
         $typeid  = $this->varOrvalue($typeid);
 
@@ -715,11 +722,12 @@ class Eyou extends Taglib
         $parseStr = '<?php ';
         // 声明变量
         $parseStr .= ' if(isset($ui_typeid) && !empty($ui_typeid)) : $typeid = $ui_typeid; else: $typeid = '.$typeid.'; endif;';
+        $parseStr .= ' if(isset($ui_modelid) && !empty($ui_modelid)) : $modelid = $ui_modelid; else: $modelid = '.$modelid.'; endif;';
         $parseStr .= ' if(isset($ui_row) && !empty($ui_row)) : $row = $ui_row; else: $row = '.$row.'; endif;';
 
         // 查询数据库获取的数据集
         $parseStr .= ' $tagChannelartlist = new \think\template\taglib\eyou\TagChannelartlist;';
-        $parseStr .= ' $_result = $tagChannelartlist->getChannelartlist($typeid, "'.$type.'","'.$currentclass.'");';
+        $parseStr .= ' $_result = $tagChannelartlist->getChannelartlist($typeid, "'.$type.'","'.$currentclass.'", $modelid);';
         $parseStr .= ' if(is_array($_result) || $_result instanceof \think\Collection || $_result instanceof \think\Paginator): $' . $key . ' = 0; $e = 1;';
         // 设置了输出数组长度
         if ('null' != $row) {
@@ -837,10 +845,10 @@ class Eyou extends Taglib
         // 声明变量
         /*typeid的优先级别从高到低：装修数据 -> 标签属性值 -> 外层标签channelartlist属性值*/
         $parseStr .= ' if(isset($ui_typeid) && !empty($ui_typeid)) : $typeid = $ui_typeid; else: $typeid = '.$typeid.'; endif;';
+        $parseStr .= ' if(isset($ui_modelid) && !empty($ui_modelid)) : $modelid = $ui_modelid; else: $modelid = '.$modelid.'; endif;';
         $parseStr .= ' if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif; ';
         /*--end*/
         $parseStr .= ' if(isset($ui_row) && !empty($ui_row)) : $row = $ui_row; else: $row = '.$row.'; endif;';
-        $parseStr .= ' $modelid = '.$modelid.';';
 
         if ($name) { // 从模板中传入数据集
             $symbol     = substr($name, 0, 1);
@@ -979,6 +987,8 @@ class Eyou extends Taglib
         /*typeid的优先级别从高到低：装修数据 -> 标签属性值 -> 外层标签channelartlist属性值*/
         $parseStr .= ' $typeid = '.$typeid.'; ';
         $parseStr .= ' if(empty($typeid) && isset($channelartlist["id"]) && !empty($channelartlist["id"])) : $typeid = intval($channelartlist["id"]); endif; ';
+        $parseStr .= ' $modelid = '.$modelid.'; ';
+        $parseStr .= ' if(empty($modelid) && isset($channelartlist["current_channel"]) && !empty($channelartlist["current_channel"])) : $modelid = intval($channelartlist["current_channel"]); endif; ';
         /*--end*/
 
         // 查询数据库获取的数据集
@@ -987,7 +997,7 @@ class Eyou extends Taglib
         $parseStr .= '      "notypeid"=> '.$notypeid.',';
         $parseStr .= '      "flag"=> "'.$flag.'",';
         $parseStr .= '      "noflag"=> "'.$noflag.'",';
-        $parseStr .= '      "channel"=> '.$modelid.',';
+        $parseStr .= '      "channel"=> $modelid,';
         $parseStr .= '      "keyword"=> '.$keyword.',';
         $parseStr .= '      "idlist"=> '.$idlist.',';
         $parseStr .= '      "idrange"=> '.$idrange.',';
@@ -1607,10 +1617,10 @@ class Eyou extends Taglib
     {
         $param = [];
         $name     = isset($tag['name']) ? $tag['name'] : '';
-        !empty($name) && $param['name'] = $name;
+        !empty($name) && $param['name'] = preg_replace('/([^\w\-]+)/i', '', $name);
 
         $const     = isset($tag['const']) ? $tag['const'] : '';
-        !empty($const) && $param['const'] = $const;
+        !empty($const) && $param['const'] = preg_replace('/([^\w\-]+)/i', '', $const);
 
         $parseStr = '<?php ';
 
@@ -3015,11 +3025,11 @@ class Eyou extends Taglib
         }
         $afterhtml  =  !empty($tag['afterhtml']) ? $tag['afterhtml'] : '';
         $afterhtml  = $this->varOrvalue($afterhtml);
-        $htmlid  =  !empty($tag['htmlid']) ? $tag['htmlid'] : '';
+        $viewfile  =  !empty($tag['viewfile']) ? $tag['viewfile'] : '';
 
         $parseStr = '<?php ';
         $parseStr .= ' $tagUser = new \think\template\taglib\eyou\TagUser;';
-        $parseStr .= ' $__LIST__ = $tagUser->getUser("'.$type.'", "'.$img.'", "'.$currentclass.'", '.$txt.', "'.$txtid.'", '.$afterhtml.', "'.$htmlid.'");';
+        $parseStr .= ' $__LIST__ = $tagUser->getUser("'.$type.'", "'.$img.'", "'.$currentclass.'", '.$txt.', "'.$txtid.'", '.$afterhtml.', "'.$viewfile.'");';
         $parseStr .= '?>';
 
         $parseStr .= '<?php if(!empty($__LIST__) || (($__LIST__ instanceof \think\Collection || $__LIST__ instanceof \think\Paginator ) && $__LIST__->isEmpty())): ?>';
@@ -3622,6 +3632,7 @@ class Eyou extends Taglib
         $mod    = !empty($tag['mod']) && is_numeric($tag['mod']) ? $tag['mod'] : '2';
         $empty  = isset($tag['empty']) ? $tag['empty'] : '';
         $empty  = htmlspecialchars($empty);
+        $anchor    = !empty($tag['anchor']) ? $tag['anchor'] : '';
 
         // 自定义class
         $currentclass = !empty($tag['currentclass']) ? $tag['currentclass'] : '';
@@ -3649,7 +3660,7 @@ class Eyou extends Taglib
 
         // 查询数据库获取的数据集
         $parseStr .= ' $tagScreening = new \think\template\taglib\eyou\TagScreening;';
-        $parseStr .= ' $_result = $tagScreening->getScreening("'.$currentclass.'", '.$addfields.', '.$addfieldids.', '.$alltxt.', '.$typeid.');';
+        $parseStr .= ' $_result = $tagScreening->getScreening("'.$currentclass.'", '.$addfields.', '.$addfieldids.', '.$alltxt.', '.$typeid.', "'.$anchor.'");';
         $parseStr .= '?>';
 
         $parseStr .= '<?php if(!empty($_result["list"]) || (($_result["list"] instanceof \think\Collection || $_result["list"] instanceof \think\Paginator ) && $_result["list"]->isEmpty())): ?>';

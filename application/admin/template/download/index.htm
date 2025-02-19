@@ -34,6 +34,11 @@
                         <th abbr="download_title" axis="col3" class="w70">
                             <div class="tc">ID</div>
                         </th>
+                        {notempty name="$global.web_citysite_open"}
+                        <th abbr="article_title" axis="col3" class="w100">
+                            <div class="tc">区域</div>
+                        </th>
+                        {/notempty}
                         <th abbr="download_title" axis="col3" class="">
                             <div style="text-align: left; padding-left: 10px;" class="">标题</div>
                         </th>
@@ -92,6 +97,13 @@
                                     {$vo.aid}
                                 </div>
                             </td>
+                            {notempty name="$global.web_citysite_open"}
+                            <td class="">
+                                <div class="tc w100">
+                                    {$vo.areas|default=''}
+                                </div>
+                            </td>
+                            {/notempty}
                             <td style="width: 100%;">
                                 <div class="tl" style="padding-left: 10px;">
                                     {notempty name="$vo.is_litpic"}
@@ -208,18 +220,18 @@
                     {eq name="'Archives@move'|is_check_access" value="1"}
                     <a href="javascript:void(0);" onclick="func_move(this, 'ids');" data-url="{:url('Archives/move', array('typeid'=>$Request.param.typeid))}">移动文档</a>
                     {/eq}
-                    {eq name="$Think.const.CONTROLLER_NAME.'@del'|is_check_access" value="1"}
-                    <a href="javascript:void(0);" onclick="batch_del(this, 'ids');" data-url="{:url('Download/del')}" {eq name="$global['web_recycle_switch']" value='1'} data-deltype="del" {else /} data-deltype="pseudo" {/eq}>删除文档</a>
-                    {/eq}
                     {eq name="'Archives@check'|is_check_access" value="1"}
                     <hr class="layui-bg-gray">
-                    <a href="javascript:void(0);" onclick="batch_check(this, 'ids');" data-url="{:url('Archives/check')}">审核文档</a>
-                    <a href="javascript:void(0);" onclick="batch_check(this, 'ids');" data-url="{:url('Archives/uncheck')}">取消审核</a>
+                    <a href="javascript:void(0);" onclick="batch_check(this, 'ids');" data-type="check" data-url="{:url('Archives/check')}">审核文档</a>
+                    <a href="javascript:void(0);" onclick="batch_check(this, 'ids');" data-type="uncheck" data-url="{:url('Archives/uncheck')}">取消审核</a>
                     {/eq}
                 </div>
             </div>
+            {eq name="$Think.const.CONTROLLER_NAME.'@del'|is_check_access" value="1"}
+            <a href="javascript:void(0);" onclick="batch_del(this, 'ids');" data-url="{:url('Download/del')}" {eq name="$global['web_recycle_switch']" value='1'} data-deltype="del" {else /} data-deltype="pseudo" {/eq} class="layui-btn layui-btn-primary" title="删除文档">删除文档</a>
+            {/eq}
             {eq name="'RecycleBin@archives_index'|is_check_access" value="1"}
-            {neq name="$global['web_recycle_switch']" value='1'} <a href="{:url('RecycleBin/archives_index')}" class="layui-btn layui-btn-primary" title="回收站">回收站</a> {/neq}
+                {neq name="$global['web_recycle_switch']" value='1'} <a href="{:url('RecycleBin/archives_index')}" class="layui-btn layui-btn-primary" title="回收站">回收站</a> {/neq}
             {/eq}
             {include file="public/page" /}
         </div>
@@ -307,74 +319,6 @@
             area: ['480px', '360px'],
             content: url
         });
-    }
-
-    /**
-     * 批量审核
-     */
-    function batch_check(obj, name) {
-
-        var url = $(obj).attr('data-url');
-
-        var a = [];
-        $('input[name^='+name+']').each(function(i,o){
-            if($(o).is(':checked')){
-                a.push($(o).val());
-            }
-        })
-        if(a.length == 0){
-            layer.alert('请至少选择一项', {
-                shade: layer_shade,
-                area: ['480px', '190px'],
-                move: false,
-                title: '提示',
-                btnAlign:'r',
-                closeBtn: 3,
-                success: function () {
-                      $(".layui-layer-content").css('text-align', 'left');
-                  }
-            });
-            return;
-        }
-
-        // title = '批量审核';
-        // btn = ['确定', '取消']; //按钮
-        // // 删除按钮
-        // layer.confirm(title, {
-        //     title: false,
-        //     btn: btn //按钮
-        // }, function () {
-        layer_loading('正在处理');
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: {ids:a, _ajax:1},
-            dataType: 'json',
-            success: function (data) {
-                layer.closeAll();
-                if(data.code == 1){
-                    layer.msg(data.msg, {icon: 1});
-                    window.location.reload();
-                }else{
-                    layer.alert(data.msg, {icon: 2, title:false});
-                }
-            },
-            error:function(e){
-                layer.closeAll();
-                layer.alert(e.responseText, {icon: 2, title:false});
-            }
-        });
-        // }, function (index) {
-        //     layer.closeAll(index);
-        // });
-    }
-
-    /**
-     * 获取修改之前的内容
-     */
-    function get_aids()
-    {
-        return aids;
     }
 </script>
 

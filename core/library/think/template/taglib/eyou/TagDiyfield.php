@@ -13,6 +13,8 @@
 
 namespace think\template\taglib\eyou;
 
+use think\Db;
+
 /**
  * 自定义字段
  */

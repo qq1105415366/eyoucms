@@ -361,7 +361,9 @@ class Seo extends Base
                 if (false != $strContent && !stristr($strContent, 'data-ey_fc35fdc="html"')) {
                     $replace = 'htmlentities($url) . \'" data-ey_fc35fdc="html" data-tmp="1\'';
                     $strContent = str_replace('htmlentities($url)', $replace, $strContent);
-                    @chmod($file,0777);
+                    if (function_exists('chmod')) {
+                        @chmod($file,0777);
+                    }
                     @file_put_contents($file, $strContent);
                 }
             }

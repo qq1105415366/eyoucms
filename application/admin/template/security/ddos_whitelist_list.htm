@@ -1,0 +1,249 @@
+{include file="public/layout" /}
+<body class="bodystyle" style="cursor: default; -moz-user-select: inherit;">
+<div id="append_parent"></div>
+<div id="ajaxwaitid"></div>
+<div class="page min-hg-c-10">
+    <div class="flexigrid">
+        <div class="mDiv pt0">
+            <form class="navbar-form form-inline" id="searchForm" action="{:U('Security/ddos_whitelist_list')}" method="get" onsubmit="layer_loading('正在处理');">
+                {$searchform.hidden|default=''}
+                <div class="sDiv">
+                    <div class="sDiv2">
+                        <input type="text" size="30" name="keywords" value="{$Request.param.keywords}" class="qsbox" placeholder="搜索文件名...">
+                        <input type="submit" class="btn" value="搜索">
+                        <i class="iconfont e-sousuo"></i>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="hDiv">
+            <div class="hDivBox">
+                <table cellspacing="0" cellpadding="0" style="width: 100%">
+                    <thead>
+                    <tr>
+                        <th class="sign w40" axis="col0">
+                            <div class="tc"><input type="checkbox" autocomplete="off" class="checkAll"></div>
+                        </th>
+                        <th abbr="article_show" axis="col5" class="w40">
+                            <div class="tc">ID</div>
+                        </th>
+                        <th abbr="ac_id" axis="col4">
+                            <div class="text-l10">文件名称</div>
+                        </th>
+                        <th abbr="article_time" axis="col6" class="w100">
+                            <div class="tc">新增时间</div>
+                        </th>
+                        <th axis="col1" class="w100">
+                            <div class="tc">操作</div>
+                        </th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <div class="bDiv" style="height: auto;">
+            <div id="flexigrid" cellpadding="0" cellspacing="0" border="0">
+                <table style="width: 100%">
+                    <tbody>
+                    {empty name="list"}
+                        <tr>
+                            <td class="no-data" align="center" axis="col0" colspan="50">
+                                <div class="no_row">
+                                    <div class="no_pic"><img src="__SKIN__/images/null-data.png"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    {else/}
+                        {foreach name="list" item="vo" key="k" }
+                        <tr>
+                            <td class="sign">
+                                <div class="w40 tc"><input type="checkbox" autocomplete="off" name="ids[]" value="{$vo.id}"></div>
+                            </td>
+                            <td class="sort">
+                                <div class="w40 tc">
+                                    {if condition="$pager->nowPage > 1"}
+                                        {$pager->listRows * ($pager->nowPage-1) + $k+1}
+                                    {else /}
+                                        {$k+1}
+                                    {/if}
+                                </div>
+                            </td>
+                            <td style="width: 100%">
+                                <div class="text-l10">
+                                    <p style="margin-top: -5px;">
+                                        <a style="color: #3b639f;" href="{:url('Security/ddos_download_file', ['source'=>'whitelist','md5key'=>$vo['md5key']])}" target="_blank">{$vo.file_alias_name}</a>
+                                    </p>
+                                    
+                                    <p style="margin-top: -5px;color: #999;">
+                                        路径：根目录/{$vo.file_name}
+                                    </p>
+                                </div>
+                            </td>
+                            <td class="">
+                                <div class="w100 tc">
+                                    {$vo.add_time|date='Y-m-d',###}
+                                </div>
+                            </td>
+                            <td class="operation">
+                                <div class="w100 tc">
+                                    {eq name="'Security@ddos_whitelist_del'|is_check_access" value="1"}
+                                    <a class="btn red"  href="javascript:void(0)" data-url="{:U('Security/ddos_whitelist_del')}" data-id="{$vo.id}" onClick="del_whitelist(this);">移出白名单</a>
+                                    {/eq}
+                                </div>
+                            </td>
+                        </tr>
+                        {/foreach}
+                    {/empty}
+                    </tbody>
+                </table>
+            </div>
+            <div class="iDiv" style="display: none;"></div>
+        </div>
+        {notempty name="list"}
+        <div class="tDiv">
+            <div class="tDiv2">
+                <div class="fbutton checkboxall">
+                    <input type="checkbox" autocomplete="off" class="checkAll">
+                </div>
+                {eq name="'Security@del'|is_check_access" value="1"}
+                <div class="fbutton">
+                    <a onclick="batch_whitelist_del(this, 'ids');" data-url="{:U('Security/ddos_whitelist_del')}" class="layui-btn layui-btn-primary">
+                        <span>批量移出</span>
+                    </a>
+                </div>
+                {/eq}
+                {include file="public/page" /}
+            </div>
+            <div style="clear:both"></div>
+        </div>
+        {/notempty}
+    </div>
+</div>
+<script>
+    $(function(){
+        $('input[name*=ids]').click(function(){
+            if ($('input[name*=ids]').length == $('input[name*=ids]:checked').length) {
+                $('.checkAll').prop('checked','checked');
+            } else {
+                $('.checkAll').prop('checked', false);
+            }
+        });
+        $('input[type=checkbox].checkAll').click(function(){
+            $('input[type=checkbox]').prop('checked',this.checked);
+        });
+
+        $('#searchForm select[name=groupid]').change(function(){
+            $('#searchForm').submit();
+        });
+    });
+    
+    $(document).ready(function(){
+        // 表格行点击选中切换
+        $('#flexigrid > table>tbody >tr').click(function(){
+            $(this).toggleClass('trSelected');
+        });
+
+        // 点击刷新数据
+        $('.fa-refresh').click(function(){
+            location.href = location.href;
+        });
+    });
+
+    /**
+     * 单个删除
+     */
+    function del_whitelist(obj)
+    {
+        // 确定
+        layer_loading('正在处理');
+        $.ajax({
+            type : 'POST',
+            url : $(obj).attr('data-url'),
+            data : {del_id:$(obj).attr('data-id'),_ajax:1},
+            dataType : 'json',
+            success : function(res){
+                layer.closeAll();
+                if(res.code == 1){
+                    layer.msg(res.msg, {icon: 1, time:1000}, function(){
+                        window.location.reload();
+                    });
+                }else{
+                    showErrorAlert(res.msg);
+                }
+            },
+            error:function(e){
+                layer.closeAll();
+                showErrorAlert(e.responseText);
+            }
+        })
+    }
+
+    /**
+     * 批量删除提交
+     */
+    function batch_whitelist_del(obj, name)
+    {
+        var url = $(obj).attr('data-url');
+
+        var a = [];
+        $('input[name^='+name+']').each(function(i,o){
+            if($(o).is(':checked')){
+                a.push($(o).val());
+            }
+        })
+        if(a.length == 0){
+            layer.alert('请至少选择一项', {
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '提示',
+                btnAlign:'r',
+                closeBtn: 3,
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            });
+            return;
+        }
+
+        // 删除按钮
+        layer.confirm('确定批量移出白名单？', {
+            shade: layer_shade,
+            area: ['480px', '190px'],
+            move: false,
+            title: '提示',
+            btnAlign:'r',
+            closeBtn: 3,
+            btn: ['确定', '取消'], //按钮
+            success: function () {
+                $(".layui-layer-content").css('text-align', 'left');
+            }
+        }, function () {
+            layer_loading('正在处理');
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {del_id:a, _ajax:1},
+                dataType: 'json',
+                success: function (data) {
+                    layer.closeAll();
+                    if(data.code == 1){
+                        layer.msg(data.msg, {icon: 1, time:1000}, function(){
+                            window.location.reload()
+                        });
+                    }else{
+                        showErrorAlert(data.msg);
+                    }
+                },
+                error:function(e){
+                    layer.closeAll();
+                    showErrorAlert(e.responseText);
+                }
+            });
+        }, function (index) {
+            layer.closeAll(index);
+        });
+    }
+</script>
+
+{include file="public/footer" /}

@@ -138,7 +138,7 @@ class TagField extends Base
                 if (stristr($parseStr, '|')) {
                     $arr = explode('|', $parseStr);
                     $parseStr = $arr[0];
-                    $parseStr = ROOT_DIR . "/index.php?m=home&c=View&a=custom_download_file&aid={$aid}&field={$fieldname}";
+                    $parseStr = ROOT_DIR . "/index.php?m=home&c=View&a=custom_download_file&aid={$aid}&field=".mchStrCode($fieldname, 'ENCODE', $aid.get_auth_code());
                 }
             }
         }

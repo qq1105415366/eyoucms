@@ -39,7 +39,7 @@
                                     账户余额 : 
                                 </div>
                                 <div class="from-row-r">
-                                    <span class="red">{$users.users_money}</span>元
+                                    <span class="fc-colours fb">{$users.users_money}</span>元
                                 </div>
                             </div>
                             <div class="item-from-row">
@@ -78,7 +78,7 @@
                             <div class="el-row mt20 ">
                                 <input type="hidden" name="payment_type" value="zxzf_wechat">
                                 <input type="hidden" name="unified_number" value="{$unified_number}">
-                                <a href="JavaScript:void(0);" id='pay_btn' onclick="pay_money();" class="button2 el-button--primary">
+                                <a href="JavaScript:void(0);" id='pay_btn' onclick="pay_money();" class="button3 el-button--primary">
                                     立即支付
                                 </a>
                             </div>
@@ -116,17 +116,17 @@
     function pay_money(){
         var money = $('input[name=money]');
         if($.trim(money.val()) == ''){
-            layer.msg('充值金额不能为空！', {icon: 5, time: 1000});
+            layer.msg(ey_foreign_users13, {icon: 5, time: 1500});
             money.focus();
             return false;
         } else if(isNaN($.trim(money.val()))){
-            layer.msg('请输入正确的充值金额！', {icon: 5, time: 1000});
+            layer.msg(ey_foreign_users14, {icon: 5, time: 1500});
             money.focus();
             return false;
         }
 
         if($('input[name=payment_type]').val() == ''){
-            layer.msg('请选择支付方式！', {icon: 5, time: 1000});
+            layer.msg(ey_foreign_users15, {icon: 5, time: 1500});
             return false;
         }
 

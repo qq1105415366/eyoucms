@@ -337,7 +337,6 @@ class Api extends Base
         if (empty($this->globalConfig['web_users_switch'])) {
             $this->error('后台会员中心尚未开启！');
         }
-
         $userModel = model('v1.User');
         return $this->renderSuccess([
             'users_id' => $userModel->login(input('post.', null, 'htmlspecialchars_decode')),
@@ -393,7 +392,14 @@ class Api extends Base
             $verifyLogic = new \app\plugins\logic\VerifyLogic($users);
             $data['showVerifyOrder'] = $verifyLogic->showVerifyOrder($weappInfo);
         }
-
+        // 是否安装订单核销插件
+        $data['showVerifyOrder'] = false;
+        $weappInfo = model('ShopPublicHandle')->getWeappVerifyInfo();
+        if (!empty($weappInfo)) {
+            // 调用订单核销逻辑层方法
+            $verifyLogic = new \app\plugins\logic\VerifyLogic($users);
+            $data['showVerifyOrder'] = $verifyLogic->showVerifyOrder($weappInfo);
+        }
         // 是否安装抽奖插件
         $data['showLotterydraw'] = false;
         $weappInfo = model('ShopPublicHandle')->getWeappInfo("Lotterydraw");
@@ -407,6 +413,111 @@ class Api extends Base
         $data = array_merge($data, $tagData);
         return $this->renderSuccess($data);
     }
+        /**
+     * 发送 POST 请求
+     */
+    private function makePostRequest($url, array $data)
+    {
+        $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  // 设置返回内容
+        curl_setopt($ch, CURLOPT_POST, true);  // 设置 POST 请求
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);  // 设置 POST 请求的数据
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json'  // 设置请求的内容类型为 JSON
+        ]);
+        curl_setopt($ch, CURLOPT_VERBOSE, true); // 开启 cURL 调试模式
+        
+        $response = curl_exec($ch);
+    
+        // 如果 curl_exec 失败
+        if ($response === false) {
+            $error = curl_error($ch);  // 获取详细的错误信息
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  // 获取 HTTP 状态码
+            // 输出调试信息
+            throw new \Exception("CURL 请求失败: $error, HTTP 状态码: $httpCode");
+        }
+    
+        curl_close($ch);
+        return $response;
+    }
+      /**
+     * 发起 GET 请求
+     */
+    private function httpGet($url)
+    {
+        // 使用 cURL 发起 HTTP GET 请求
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        curl_close($ch);
+    
+        // 将返回的 JSON 数据解析成数组
+        return json_decode($response, true);
+    }
+    public function Logisticswx()
+    {
+        if (IS_AJAX) {
+            // 判断是否安装了物流小程序插件（假设插件名为 Logisticswx）
+            $weappInfo = model('ShopPublicHandle')->getWeappInfo('Logisticswx');
+            
+            if (!empty($weappInfo)) {
+                // 插件已安装，执行相关操作
+                $trackingNumber = input('post.trackingNumber', '', 'trim'); // 获取 POST 请求中的 trackingNumber
+                $userId = input('post.userId', '', 'trim'); // 获取 POST 请求中的 userId
+                $mobile = input('post.mobile', '', 'trim'); // 获取 POST 请求中的 userId
+                $delivery = input('post.delivery', '', 'trim'); // 获取 POST 请求中的 userId
+    
+                if (empty($trackingNumber)) {
+                    return json(['code' => 0, 'msg' => 'Tracking number cannot be empty']);
+                }
+    
+                if (empty($userId)) {
+                    return json(['code' => 0, 'msg' => 'User ID cannot be empty']);
+                }
+    
+                try {
+                    // 获取微信 access_token
+                    $accessToken =  get_weixin_access_token(true, 'other');
+                    if (!$accessToken) {
+                        return json(['code' => 0, 'msg' => 'Failed to get access token']);
+                    }
+    
+                    // 查询用户的 openid
+                    $openid = Db::name('wx_users')->where(['users_id' => $userId])->value('openid');
+                    if (empty($openid)) {
+                        return json(['code' => 0, 'msg' => 'openid not found for user']);
+                    }
+    
+                    // 调用微信物流 API 获取运单信息
+                    $url = "https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/trace_waybill?access_token={$accessToken['access_token']}";
+                    $postData = [
+                        'waybill_id' => $trackingNumber,
+                        'openid' => $openid, // 添加 openid 参数
+                        'receiver_phone' => $mobile,
+                        'delivery_id' => $delivery,
+                    ];
+    
+                    // 使用 makePostRequest 方法发送 POST 请求
+                    $response = $this->makePostRequest($url, $postData);
+                    $response = json_decode($response, true); // 解析返回的 JSON 响应
+                   
+                    if ($response && isset($response['errcode']) && $response['errcode'] == 0) {
+                        return json(['code' => 1, 'msg' => 'Success', 'data' => $response]);
+                    } else {
+                        return json(['code' => 0, 'msg' => 'Failed to retrieve waybill info']);
+                    }
+                } catch (\Exception $e) {
+                    return json(['code' => 0, 'msg' => 'Error: ' . $e->getMessage()]);
+                }
+            }
+        }
+    
+        // 如果不是 AJAX 请求，或者插件没有安装，返回错误
+        $this->error('请求错误！');
+    }
+
 
     /**
      * 微信支付成功异步通知 (shop_order)
@@ -624,30 +735,68 @@ class Api extends Base
         }
     }
 
-    // 提交文章评论
-    public function submitArticleComment()
-    {
-        if (IS_AJAX) {
-            if (!is_dir('./weapp/Comment/')){
-                $this->error('请先安装评论插件');
-            }
-            $param = input('param.');
-            if (empty($param['aid'])) $this->error('数据错误，刷新重试');
-            if (empty($param['content'])) $this->error('请输入您的评论内容');
+  
 
-            $users = $this->getUser(false);
+      // 提交文章评论
+      public function submitArticleComment()
+      {
+          if (IS_AJAX) {
+              if (!is_dir('./weapp/Comment/')){
+                  $this->error('请先安装评论插件');
+              }
+              $param = input('param.');
+              if (empty($param['aid'])) $this->error('数据错误，刷新重试');
+              if (empty($param['content'])) $this->error('请输入您的评论内容');
+  
+              $users = $this->getUser(false);
+  
+              // 添加文章评论模型
+              $res = model('v1.Api')->addArticleComment($param, $users);
+              if (0 < $res['code']) {
+                  $this->success($res['msg'], null, ['is_show'=>$res['is_show']]);
+              } else {
+                  $this->error($res['msg']);
+              }
+          }
+      }
+      // 提交文章评论回复
+    public function addArticleReply()
+        {
+            if (IS_AJAX) {
+                // 检查是否安装评论插件
+                if (!is_dir('./weapp/Comment/')) {
+                    $this->error('请先安装评论插件');
+                }
 
-            // 添加文章评论模型
-            $res = model('v1.Api')->addArticleComment($param, $users);
-            if (0 < $res['code']) {
-                $this->success($res['msg'], null, ['is_show'=>$res['is_show']]);
-            } else {
-                $this->error($res['msg']);
+                // 获取前端传递的参数
+                $param = input('param.');
+               
+                // 校验必填参数
+                if (empty($param['aid'])) {
+                    $this->error('数据错误，刷新重试');
+                }
+                if (empty($param['content'])) {
+                    $this->error('请输入您的评论内容');
+                }
+                
+                // 获取当前用户信息
+                $users = $this->getUser(false);
+                
+                // 获取评论或回复的父评论 ID
+                $param['comment_id'] = !empty($param['comment_id']) ? intval($param['comment_id']) : 0;
+           
+                // 调用模型方法添加评论回复
+                $res = model('v1.Api')->addArticleReply($param, $users);
+             
+                // 返回结果
+                if (0 < $res['code']) {
+                    $this->success($res['msg'], null, ['is_show' => $res['is_show']]);
+                } else {
+                    $this->error($res['msg']);
+                }
             }
         }
-    }
 
-    
     /**
      * 购物车列表
      */
@@ -679,13 +828,15 @@ class Api extends Base
             $file_type = input('param.file_type/s',"");
             $data = func_common('file', 'minicode',$file_type);
             $is_absolute = input('param.is_absolute/d',0);
-            if ($is_absolute && !empty($data['img_url'])){
-                $data['img_url'] = get_absolute_url($data['img_url'],'default',true);
+            if (!empty($data['img_url'])) {
+                if ($is_absolute){
+                    $data['img_url'] = get_absolute_url($data['img_url'],'default',true);
+                }
+                $this->success('上传成功！','',$data);
             }
-            $this->success('上传成功！','',$data);
         }
-
-        $this->error('非法上传！');
+        $msg = empty($data['errmsg']) ? '上传失败' : $data['errmsg'];
+        $this->error($msg);
     }
 
     /**
@@ -754,15 +905,16 @@ class Api extends Base
      {
         if (IS_AJAX_POST) {
             $data = func_common('file', 'minicode');
-            if (0 == $data['errcode'] && !empty($data['img_url'])){
+            if (!empty($data['img_url'])){
                 $data['url'] = $data['img_url'];
                 if (!is_http_url($data['img_url'])) {
                     $data['img_url'] = request()->domain().ROOT_DIR.$data['img_url'];
                 }
+                $this->success('上传成功！','',$data);
             }
-            $this->success('上传成功！','',$data);
         }
-        $this->error('非法上传！');
+        $msg = empty($data['errmsg']) ? '上传失败' : $data['errmsg'];
+        $this->error($msg);
      }
 
      //获取购物车数量
@@ -870,6 +1022,8 @@ class Api extends Base
             $typeid = !empty($post['typeid']) ? intval($post['typeid']) : $typeid;
             $form_type = !empty($post['form_type']) ? intval($post['form_type']) : 0;
             if (empty($typeid)) $this->error('post接口缺少typeid的参数与值！');
+            // 是否开源小程序提交
+            if (!empty($param['applets_id'])) $form_type = 1;
 
             /*留言间隔限制*/
             $channel_guestbook_interval = tpSetting('channel_guestbook.channel_guestbook_interval');
@@ -939,6 +1093,11 @@ class Api extends Base
                 'update_time' => getTime(),
             );
             $data    = array_merge($post, $newData);
+            // 是否开源小程序提交
+            if (!empty($param['applets_id'])) {
+                $data['source'] = 3;
+                $data['channel'] = 0;
+            }
 
             /*表单令牌*/
             $token_value = !empty($data[$token]) ? $data[$token] : '';
@@ -1019,6 +1178,12 @@ class Api extends Base
         $data = model('v1.Ask')->getAskList();
         $this->renderSuccess($data);
     }
+     //问题对应答案列表
+     public function get_ask_reply_list()
+     {
+         $data = model('v1.Ask')->getAskreplyList();
+         $this->renderSuccess($data);
+     }
     //问题类型列表
     public function get_ask_type_list(){
         $typeList = model('v1.Ask')->getTypeList();
@@ -1225,6 +1390,10 @@ class Api extends Base
     // 获取自由表单
     public function get_form()
     {
+        $count = Db::name('guestbook_attribute')->count();
+        if (empty($count)) {
+            $this->error('404报错，接口不生效');
+        }
         $data = $this->apiLogic->taglibData();
         $this->renderSuccess($data);
     }

@@ -239,11 +239,11 @@
     color: #757575
 }
 
-.page-main .order-info .show-detail .iconfont {
-    font-size: 24px;
+.page-main .order-info .show-detail i {
+    margin-left: 2px;
+    font-size: 14px;
     vertical-align: middle;
     position: relative;
-    top: -2px
 }
 
 .page-main .order-detail {

@@ -426,9 +426,7 @@ function CartUnifiedAlgorithm(symbol){
 // 去购车去
 function shop_cart_list(url) {
     window.location.href = url;
-    
-/*
-    if (!window.layer) {
+    /*if (!window.layer) {
         var mymessage = confirm('加入购物车成功，前往购物车！');
         if (mymessage == true) window.location.href = url;
     } else {
@@ -439,13 +437,13 @@ function shop_cart_list(url) {
             layer.close(confirms);
             window.location.href = url;
         });
-    }
-    */
+    }*/
 }
 
 // 去登陆
-function is_login(url){
-    if (document.getElementById('ey_login_id_v665117')) {
+function is_login(url) {
+    window.location.href = url;
+    /*if (document.getElementById('ey_login_id_v665117')) {
         $('#ey_login_id_v665117').trigger('click');
     } else {
         if (!window.layer) {
@@ -458,7 +456,7 @@ function is_login(url){
                 window.location.href = url;
             });
         }
-    }
+    }*/
 }
 
 function sortNumber(a, b) { 
@@ -531,6 +529,9 @@ function SpecSelect(spec_mark_id, spec_value_id, discount_price, spec_image) {
             }
             if (document.getElementById('sales_num')) {
                 document.getElementById('sales_num').innerText = SpecData[i]['spec_sales_num'];
+            }
+            if (document.getElementById('stock_code')) {
+                document.getElementById('stock_code').innerText = SpecData[i]['stock_code'];
             }
             if (document.getElementById('ey_stock_v602291')) {
                 document.getElementById('ey_stock_v602291').value = SpecData[i]['spec_stock'];

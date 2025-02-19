@@ -722,10 +722,10 @@ class getid3_lib
 		if (function_exists('simplexml_load_string') && function_exists('libxml_disable_entity_loader')) {
 			// http://websec.io/2012/08/27/Preventing-XEE-in-PHP.html
 			// https://core.trac.wordpress.org/changeset/29378
-			$loader = libxml_disable_entity_loader(true);
+			$loader = @libxml_disable_entity_loader(true);
 			$XMLobject = simplexml_load_string($XMLstring, 'SimpleXMLElement', LIBXML_NOENT);
 			$return = self::SimpleXMLelement2array($XMLobject);
-			libxml_disable_entity_loader($loader);
+			@libxml_disable_entity_loader($loader);
 			return $return;
 		}
 		return false;

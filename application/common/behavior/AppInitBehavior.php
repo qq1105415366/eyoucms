@@ -33,8 +33,12 @@ class AppInitBehavior {
                     return true;
                 session($key, 1);
 
-                $sql_mode = \think\Db::query("SELECT @@global.sql_mode AS sql_mode");
-                $system_sql_mode = isset($sql_mode[0]['sql_mode']) ? $sql_mode[0]['sql_mode'] : '';
+                if (config('database.type') == 'dm') { // 达梦优化
+                    $system_sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
+                } else {
+                    $sql_mode = \think\Db::query("SELECT @@global.sql_mode AS sql_mode");
+                    $system_sql_mode = isset($sql_mode[0]['sql_mode']) ? $sql_mode[0]['sql_mode'] : '';
+                }
                 /*多语言*/
                 if (is_language()) {
                     $langRow = \think\Db::name('language')->cache(true, EYOUCMS_CACHE_TIME, 'language')

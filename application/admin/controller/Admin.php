@@ -55,9 +55,9 @@ class Admin extends Base {
         /**
          * 数据查询
          */
-        $count = DB::name('admin')->alias('a')->where($condition)->count();// 查询满足要求的总记录数
+        $count = Db::name('admin')->alias('a')->where($condition)->count();// 查询满足要求的总记录数
         $Page = new Page($count, config('paginate.list_rows'));// 实例化分页类 传入总记录数和每页显示的记录数
-        $list = DB::name('admin')->field('a.*, b.name AS role_name')
+        $list = Db::name('admin')->field('a.*, b.name AS role_name')
             ->alias('a')
             ->join('__AUTH_ROLE__ b', 'a.role_id = b.id', 'LEFT')
             ->where($condition)
@@ -104,11 +104,14 @@ class Admin extends Base {
     public function login()
     {
         // 两步验证
-        $double_check = input('param.double_check/d', 0);
-        if (!empty($double_check)) {
-            if (IS_POST && function_exists('login_double')) {
-                $redata = login_double();
-                respose($redata);
+        $twofactor_check = input('param.twofactor_check/d', 0);
+        if (!empty($twofactor_check)) {
+            if (IS_POST && file_exists('application/admin/logic/DdosLogic.php')) {
+                $ddosLogic = new \app\admin\logic\DdosLogic;
+                if (method_exists($ddosLogic, 'twofactor_login_handle')) {
+                    $redata = $ddosLogic->twofactor_login_handle();
+                    respose($redata);
+                }
             }
         }
 
@@ -174,7 +177,7 @@ class Admin extends Base {
                 $this->error('请联系空间商，开启php的session扩展！');
             }
             if (!testWriteAble(ROOT_PATH.config('session.path').'/')) {
-                $this->error('请仔细检查以下问题：<br/>1、磁盘空间大小是否100%；<br/>2、站点目录权限是否为755；<br/>3、站点所有目录的权限，禁止用root:root ；<br/>4、如还没解决，请点击：<a href="http://www.eyoucms.com/wenda/6958.html" target="_blank">查看教程</a>');
+                $this->error('请仔细检查以下问题：<br/>1、磁盘空间大小是否100%；<br/>2、站点目录权限是否为755；<br/>3、站点所有目录的权限，禁止用root:root ；<br/>4、如还没解决，请点击：<a href="https://www.eyoucms.com/index.php?m=home&c=View&a=index&aid=31478" target="_blank">查看教程</a>');
             }
             
             if (1 == $is_vertify) {
@@ -203,14 +206,14 @@ class Admin extends Base {
             $password = input('post.password/s');
 
             /*---------登录错误次数的限制 start----------*/
-            $globalConfing = tpCache('global');
+            $globalConfig = tpCache('global');
             $web_login_lockopen = 0; // 是否开启登录失败锁定
-            if (!isset($globalConfing['web_login_lockopen']) || !empty($globalConfing['web_login_lockopen'])) {
+            if (!isset($globalConfig['web_login_lockopen']) || !empty($globalConfig['web_login_lockopen'])) {
                 $web_login_lockopen = 1;
                 $admin_count = Db::name('admin')->where(['user_name'=>$user_name])->count();
                 if (!empty($admin_count)) {
-                    $loginErrtotal = !empty($globalConfing['web_login_errtotal']) ? intval($globalConfing['web_login_errtotal']) : config('login_errtotal'); // 登录错误最大次数
-                    $loginErrexpire = !empty($globalConfing['web_login_errexpire']) ? intval($globalConfing['web_login_errexpire']) : config('login_errexpire'); // 登录错误最大限制时间
+                    $loginErrtotal = !empty($globalConfig['web_login_errtotal']) ? intval($globalConfig['web_login_errtotal']) : config('login_errtotal'); // 登录错误最大次数
+                    $loginErrexpire = !empty($globalConfig['web_login_errexpire']) ? intval($globalConfig['web_login_errexpire']) : config('login_errexpire'); // 登录错误最大限制时间
                     $clientIP = clientIP();
                     $login_errnum_key = 'adminlogin_'.md5('login_errnum_'.$user_name.$clientIP);
                     $login_errtime_key = 'adminlogin_'.md5('login_errtime_'.$user_name.$clientIP);
@@ -262,25 +265,32 @@ class Admin extends Base {
                         session('admin_login_pwdlevel', checkPasswordLevel($password));
 
                         // 两步验证
-                        if (function_exists('double_login_open') && double_login_open()) {
-                            $data = double_login_logic('login_action_begin', $admin_info);
-                            if (isset($data['code']) && 0 === $data['code']) {
-                                $this->error($data['msg']);
-                            } else {
-                                $this->success('正在检测', $data['url']);
+                        if (file_exists('application/admin/logic/DdosLogic.php')) {
+                            $ddosLogic = new \app\admin\logic\DdosLogic;
+                            if (method_exists($ddosLogic, 'twofactor_login_open') && $ddosLogic->twofactor_login_open()) {
+                                $data = $ddosLogic->twofactor_login_logic('login_action_begin', $admin_info);
+                                if (isset($data['code']) && 0 === $data['code']) {
+                                    $this->error($data['msg']);
+                                } else {
+                                    $this->success('正在检测', $data['url']);
+                                }
                             }
                         }
 
+                        $url = cookie('from_url') ? cookie('from_url') : $this->request->baseFile();
                         // 登录逻辑
                         $admin_info = adminLoginAfter($admin_info['admin_id'], $this->session_id);
 
                         adminLog('后台登录');
-                        $url = session('from_url') ? session('from_url') : $this->request->baseFile();
                         session('isset_author', null); // 内置勿动
 
                         // 同步追加一个后台管理员到会员用户表
                         $isFounder = !empty($admin_info['parent_id']) ? 0 : 1;
                         $this->syn_users_login($admin_info, $isFounder);
+                        
+                        // 清理管理员登录锁定的无效数据
+                        adminlogin_lock_clear('all');
+
                         $this->success('登录成功', $url);
                     }
                 }
@@ -288,6 +298,8 @@ class Admin extends Base {
 
             /*----------记录登录错误次数 start-----------*/
             if (!empty($admin_count) && !empty($web_login_lockopen)) {
+                // 清理管理员登录锁定的无效数据
+                adminlogin_lock_clear('default');
                 $login_errnum = $loginErrnum + 1;
                 $login_num = $loginErrtotal - $login_errnum;
                 tpSetting('adminlogin', [$login_errnum_key=>$login_errnum]);
@@ -309,6 +321,9 @@ class Admin extends Base {
 
         $ajaxLogic = new AjaxLogic;
         $ajaxLogic->login_handle();
+
+        // 清理管理员登录锁定的无效数据
+        adminlogin_lock_clear('default');
         
         // 仅微信扫码登录
         // if ('WechatLogin' == $third_login && 3 == $login_type) {
@@ -359,10 +374,16 @@ class Admin extends Base {
             return $this->fetch("{$viewfile}");
         } else {
             // 两步验证
-            if (function_exists('double_login_logic')) {
-                $data = double_login_logic('login_view');
-                if (!empty($data['viewfile'])) $viewfile = $data['viewfile'];
-                if (!empty($data['assign_data'])) $assign_data = array_merge($assign_data, $data['assign_data']);
+            if (file_exists('application/admin/logic/DdosLogic.php')) {
+                $ddosLogic = new \app\admin\logic\DdosLogic;
+                if (method_exists($ddosLogic, 'twofactor_login_logic')) {
+                    $data = $ddosLogic->twofactor_login_logic('login_view');
+                    if (!empty($data) && empty($data['code'])) {
+                        $this->error($data['msg'], null, [], 10);
+                    }
+                    if (!empty($data['viewfile'])) $viewfile = $data['viewfile'];
+                    if (!empty($data['assign_data'])) $assign_data = array_merge($assign_data, $data['assign_data']);
+                }
             }
             $this->assign($assign_data);
             return $this->fetch(":{$viewfile}");
@@ -392,7 +413,8 @@ class Admin extends Base {
             $admin_info = adminLoginAfter($we_user['admin_id'], session_id());
             if (!empty($admin_info)) {
                 adminLog('微信授权登录成功');
-                $this->success('登录成功', weapp_url('Mbackend/Mbackend/index'));
+                $eyou_admin_referurl = empty($we_user['referurl']) ? weapp_url('Mbackend/Mbackend/index') : $we_user['referurl'];
+                $this->success('登录成功', $eyou_admin_referurl);
             } else {
                 $this->success('404:您没有操作权限，请联系超级管理员分配权限');
             }
@@ -454,6 +476,11 @@ class Admin extends Base {
      */
     public function logout()
     {
+        //管理员退出成功的前置业务逻辑
+        if (function_exists('adminLogoutAfter')) {
+            adminLogoutAfter($this->admin_info['admin_id']);
+        }
+        
         adminLog('安全退出');
         session_unset();
         // session_destroy();
@@ -511,6 +538,16 @@ class Admin extends Base {
                     }
                 }
                 /*等保密码复杂度验证 end*/
+            }
+
+            $data['mobile'] = trim($data['mobile']);
+            if (!empty($data['mobile']) && !check_mobile($data['mobile'])) {
+                $this->error("手机号码格式不正确！");
+            }
+
+            $data['email'] = trim($data['email']);
+            if (!empty($data['email']) && !check_email($data['email'])) {
+                $this->error("Email邮箱格式不正确！");
             }
 
             $data['user_name'] = trim($data['user_name']);
@@ -703,6 +740,16 @@ EOF;
                 unset($data['user_name']);
             }
 
+            $data['mobile'] = trim($data['mobile']);
+            if (!empty($data['mobile']) && !check_mobile($data['mobile'])) {
+                $this->error("手机号码格式不正确！");
+            }
+
+            $data['email'] = trim($data['email']);
+            if (!empty($data['email']) && !check_email($data['email'])) {
+                $this->error("Email邮箱格式不正确！");
+            }
+
             $password = $data['password'];
             if (empty($password) || !trim($password)) {
                 unset($data['password']);
@@ -794,11 +841,11 @@ EOF;
 
         // 有权限查看的管理员列表
         $condition = array();
-        if (0 < intval($this->admin_info['role_id'])) {
-            $condition['a.admin_id|a.parent_id'] = $this->admin_info['admin_id'];
-        } else {
-            if (!empty($this->admin_info['parent_id'])) {
+        if (empty($this->admin_info['is_founder'])) {
+            if (0 < intval($this->admin_info['role_id'])) {
                 $condition['a.admin_id|a.parent_id'] = $this->admin_info['admin_id'];
+            } else {
+                $condition[] = Db::raw("a.admin_id = {$this->admin_info['admin_id']} OR a.parent_id > 0");
             }
         }
         $admin_list = Db::name('admin')->field('a.*')
@@ -1370,14 +1417,27 @@ EOF;
             $this->admin_info = adminLoginAfter($cur_admin_info['admin_id'], session_id());
         }
         
-        if (empty($this->admin_info['parent_id']) && -1 == $this->admin_info['role_id']) { // 创始人
-            $is_founder = 1;
-            empty($admin_id) && $admin_id = $this->admin_info['admin_id'];
-            $admin_info = Db::name('admin')->where(['admin_id'=>$admin_id])->find();
+        $admin_info = Db::name('admin')->where(['admin_id'=>$admin_id])->find();
+        if ($admin_id == $cur_admin_id) {
+            if (empty($admin_info['parent_id']) && -1 == $admin_info['role_id']) { // 创始人
+                $is_founder = 1;
+            } else {
+                $is_founder = 0;
+            }
         } else {
-            $is_founder = 0;
-            $admin_info = $this->admin_info;
-            $admin_id = $this->admin_info['admin_id'];
+            if ($cur_admin_info['role_id'] != -1) {
+                $html = <<<EOF
+                    <script type="application/javascript" src="{$this->root_dir}/public/static/common/js/jquery.min.js?v={$this->version}"></script>
+                    <script type="application/javascript" src="{$this->root_dir}/public/plugins/layer-v3.1.0/layer.js"></script>
+                    <script type="text/javascript">
+                        var _parent = parent;
+                        _parent.layer.closeAll();
+                        _parent.layer.alert("您没有操作权限，请联系超级管理员", {icon: 5, title: false});
+                    </script>
+EOF;
+                echo $html;
+                exit;
+            }
         }
 
         if (empty($admin_info)) {
@@ -1507,10 +1567,11 @@ EOF;
      */
     public function wechat_unbind_handle()
     {
-        if (empty($this->admin_info['parent_id']) && -1 == $this->admin_info['role_id']) {
-            $admin_id = input('param.admin_id/d', $this->admin_info['admin_id']);
-        } else {
-            $admin_id = intval($this->admin_info['admin_id']);
+        $admin_id = input('param.admin_id/d', 0);
+        if ($admin_id != $this->admin_info['admin_id']) {
+            if ($this->admin_info['role_id'] != -1) {
+                $this->error('您没有操作权限，请联系超级管理员');
+            }
         }
 
         if (IS_POST && !empty($admin_id)) {

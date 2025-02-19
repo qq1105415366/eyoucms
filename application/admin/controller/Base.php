@@ -79,16 +79,18 @@ class Base extends Controller {
             }
 
             if (!$isLogin) {
-                /*自动退出*/
+                // 自动退出
                 adminLog('访问后台');
                 session_unset();
                 session::clear();
                 cookie('admin-treeClicked', null); // 清除并恢复栏目列表的展开方式
                 cookie('admin-treeClicked-1649642233', null); // 清除并恢复内容管理的展开方式
-                /*--end*/
+
                 if (IS_AJAX) {
                     $this->error('登录超时！');
                 } else {
+                    // $referurl = $this->request->query();
+                    // session('m_from_url', $referurl);
                     $url = request()->baseFile().'?s=Admin/login';
                     $this->redirect($url);
                     exit;
@@ -160,6 +162,12 @@ class Base extends Controller {
         // 是否永久不再提示内容管理发布商品时的体验确认框
         $this->neverAgainPrompt = tpSetting('system.system_never_again_prompt');
         $this->assign('neverAgainPrompt', $this->neverAgainPrompt);
+
+        // 存在Ai插件系统内置业务逻辑则执行
+        if (is_file('./weapp/Ai/logic/SystemBuiltinLogic.php')) {
+            $systemBuiltinLogic = new \weapp\Ai\logic\SystemBuiltinLogic;
+            $this->assign($systemBuiltinLogic->getSystemBuiltinLogic());
+        }
     }
 
     /**
@@ -279,7 +287,14 @@ class Base extends Controller {
         $this->globalConfig['web_loginlogo'] = handle_subdir_pic($this->globalConfig['web_loginlogo']);
         $this->globalConfig['web_loginbgimg'] = handle_subdir_pic($this->globalConfig['web_loginbgimg']);
         $this->globalConfig['web_adminlogo'] = handle_subdir_pic($this->globalConfig['web_adminlogo']);
-
+        $this->globalConfig['seo_viewtitle_msg'] = "";
+        if (isset($this->globalConfig['seo_viewtitle_format']) && $this->globalConfig['seo_viewtitle_format'] == 1) {
+            $this->globalConfig['seo_viewtitle_msg'] = "内容标题";
+        } else if (!isset($this->globalConfig['seo_viewtitle_format']) || $this->globalConfig['seo_viewtitle_format'] == 2) {
+            $this->globalConfig['seo_viewtitle_msg'] = "内容标题{$this->globalConfig['seo_title_symbol']}网站名称";
+        } else if (isset($this->globalConfig['seo_viewtitle_format']) && $this->globalConfig['seo_viewtitle_format'] == 3) {
+            $this->globalConfig['seo_viewtitle_msg'] = "内容标题{$this->globalConfig['seo_title_symbol']}栏目名称{$this->globalConfig['seo_title_symbol']}网站名称";
+        }
         $security = tpSetting('security');
         empty($security) && $security = [];
         !empty($security['security_verifyfunc']) && $security['security_verifyfunc'] = json_decode($security['security_verifyfunc'], true);

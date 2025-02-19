@@ -19,13 +19,13 @@ $('#addressShowHide').click(function() {
             if (index > 3) $(item).show();
         });
         $(this).attr('data-showhide', 'show');
-        $(this).find('span').html('收起更多地址<i class="iconfont-normal"></i>');
+        $(this).find('span').html('收起更多地址<i class="iconfont-users2 icon-users2-arrow-top"></i>');
     } else {
         $('#UlHtml div.address-item').each(function(index, item) {
             if (index > 3) $(item).hide();
         });
         $(this).attr('data-showhide', 'hide');
-        $(this).find('span').html('显示更多地址<i class="iconfont-normal"></i>');
+        $(this).find('span').html('显示更多地址<i class="iconfont-users2 icon-users2-arrow-down"></i>');
     }
 });
 

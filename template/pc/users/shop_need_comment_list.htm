@@ -43,7 +43,7 @@
                                        {$search.hidden}
                                         <div class="input-with-select el-input el-input-group el-input-group--append">
                                             <input type="search" name="keywords" value="{$Request.param.keywords}" autocomplete="off" placeholder="输入订单号查询" class="search-text">
-                                            <input type="submit" value="" class="search-btn iconfont">
+                                            <button type="submit" class="search-btn"><i class="iconfont-users2 icon-users2-sousuo1"></i></button>
                                         </div>
                                     </form>
                                     {/eyou:spsearch}
@@ -56,7 +56,6 @@
                                     {empty name="$eyou.field"}
                                     <div class="el-row cell null-data tc pt100 bgfff">
                                         <p><img id="litpic_img" src="{eyou:static file='users/skin/images/null-data.png' /}"></p>
-                                        <p>当前暂无订单记录哦~</p>
                                     </div>
                                     {eyou:else /}
                                     <ul class="goods-list-ul clearfix">

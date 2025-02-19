@@ -9,6 +9,7 @@
     <link href="{eyou:global name='web_cmspath'/}/favicon.ico" rel="shortcut icon" type="image/x-icon" />
     {eyou:static file="users/skin/css/basic.css" /}
     {eyou:static file="users/skin/css/eyoucms.css" /}
+    {eyou:static file="users/skin/css/e-user.css" /}
     {eyou:include file="users/skin/css/diy_css.htm" /}
     {eyou:static file="/public/static/admin/font/css/iconfont.css"/}
     
@@ -19,7 +20,7 @@
 
 <body class="reg regi">
 <div class="register_index ey-member">
-    <div class="container">
+    <div class="container ey-container">
         <div class="form-register panel-body fv-form">
             <div class="mip-reg-logo">
                 <a href="{eyou:global name='web_cmsurl' /}" class="ey-logo"><img src="{eyou:global name='web_logo'/}" /></a>
@@ -54,7 +55,7 @@
                                 <div class="input-group input-group-icon">
                                 <div class="formText">
                                     <input type="text" name="vertify" autocomplete="off" class="form-control" placeholder="图片验证码" />
-                                    <img src="{eyou:url link='api/Ajax/vertify' vars='type=users_reg' /}" class="chicuele" id="imgVerifys" onclick="fleshVerify();" title="看不清？点击更换验证码" align="absmiddle">
+                                    <img src="{eyou:url link='api/Ajax/vertify' vars='type=users_reg' /}" class="chicuele" id="imgVerifys" onclick="fleshVerify();" title="{:foreign_lang('users27')}" align="absmiddle">
                                 </div>
                                 </div>
                             </div>
@@ -92,7 +93,7 @@
                                 <div class="formText">
                                     <input id="mobile_vertify" type="text" name="mobile_vertify" autocomplete="off" class="form-control h60"
                                         placeholder="图片验证码" />
-                                    <img src="{eyou:url link='api/Ajax/vertify' vars='type=users_mobile_reg' /}" class="chicuele" id="mobile_imgVerifys" onclick="mobile_fleshVerify();" title="看不清？点击更换验证码" align="absmiddle">
+                                    <img src="{eyou:url link='api/Ajax/vertify' vars='type=users_mobile_reg' /}" class="chicuele" id="mobile_imgVerifys" onclick="mobile_fleshVerify();" title="{:foreign_lang('users27')}" align="absmiddle">
                                 </div>
                             </div>
                         </div>
@@ -219,13 +220,13 @@
         var agreement = $('#theForm input[name=agreement]:checked').val();
 
         if(username.val() == ''){
-            layer.msg('用户名不能为空！', {time: 1500});
+            layer.msg(ey_foreign_users16, {time: 1500});
             username.focus();
             return false;
         }
 
         if(password.val() == ''){
-            layer.msg('登录密码不能为空！', {time: 1500});
+            layer.msg(ey_foreign_users35, {time: 1500});
             password.focus();
             return false;
         }

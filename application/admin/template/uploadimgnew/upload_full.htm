@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <!-- Apple devices fullscreen -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <!-- Apple devices fullscreen -->
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <title>本地图片</title>
+        <link rel="stylesheet" type="text/css" href="__PUBLIC__/plugins/uploadimgnew/layui/css/layui.css?v={$version}">
+        <link rel="stylesheet" type="text/css" href="__PUBLIC__/plugins/uploadimgnew/css/image-upload.css?v={$version}">
+        <link href="__SKIN__/font/css/font-awesome.min.css?v={$version}" rel="stylesheet" />
+        {if condition="file_exists(ROOT_PATH.'public/static/admin/css/theme_style.css')"}
+            <link href="__SKIN__/css/theme_style.css?v={$version}_{$global['web_theme_style_uptime']|default=0}" rel="stylesheet" type="text/css">
+        {elseif condition="file_exists(APP_PATH.'admin/template/public/theme_css.htm') && function_exists('hex2rgba')" /}
+            {include file="public/theme_css" /}
+        {/if}
+        <script type="text/javascript" src="__STATIC__/common/js/jquery.min.js?v={$version}"></script>
+        <script type="text/javascript" src="__PUBLIC__/plugins/layer-v3.1.0/layer.js?v={$version}"></script>
+        <script type="text/javascript" src="__PUBLIC__/plugins/uploadimgnew/layui/layui.js?v={$version}"></script>
+        <script type="text/javascript" src="__PUBLIC__/plugins/uploadimgnew/js/jquery.cookie.js?v={$version}"></script>
+        <script type="text/javascript">
+            var eyou_basefile = "{$Request.baseFile}";
+            var module_name = "{$Think.const.MODULE_NAME}";
+            var __root_dir__ = "__ROOT_DIR__";
+        </script>
+        <style type="text/css">
+            #layui-laydate1.layui-laydate{
+                right: 7px;
+                left: unset !important;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="upload-box ui-layout-center">
+            <div class="upload-body">
+                <div class="upload-main">
+                    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+                        <div class="layui-tab-content" style="height: 100%;">
+                            <div class="layui-tab-item layui-show"  id="bendi_cont">
+                                <div class="upload-con" style="overflow-y: auto;">
+                                    <div class="images-con">
+                                        <div class="image-header">
+                                            <div class="image-header-l"  id="topbar">
+                                                <button type="button" class="addfile layui-btn layui-btn-normal"><i class="layui-icon layui-icon-upload-drag"></i><span class="text addfiletext">上传图片</span></button>
+                                                {if condition="!empty($info['width']) && !empty($info['height'])"}
+                                                <div class="img-about">
+                                                    <span class="tag-left"></span>
+                                                    <span class="text">{if condition="$info['path'] == 'ico'"}ico{else /}图片{/if}建议尺寸：{$info['width']}x{$info['height']}像素</span>
+                                                </div>
+                                                {/if}
+                                            </div>
+                                        </div>
+                                        {empty name="$imglist"}
+                                            <ul class="image-list" id="file_list">
+                                                <div style="width: 100%;height: 300px;line-height: 20;text-align: center;">
+                                                    <img id='litpic_img' src="__PUBLIC__/static/common/images/null-data.png"/>
+                                                </div>
+                                            </ul>
+                                        {else /}
+                                            <ul class="image-list" id="file_list">
+                                                {volist name="$imglist" id="vo"}
+                                                    <li data-img="{$vo.url}" data-title="{$vo.name}" data-id="{$vo.id}">
+                                                        <div class="picbox">
+                                                            <img src="{$vo.url}">
+                                                            <div class="image-select-layer">
+                                                                <i class="layui-icon layui-icon-ok-circle"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="namebox" style="height: 15px;">
+                                                            <span class="eyou_imgtime">{$vo.name}</span>
+                                                            <span class="eyou_imgname">{$vo.width} x {$vo.height}</span>
+                                                        </div>
+                                                        <div class="tools layer">
+                                                            <i class="layui-icon layui-icon-close-fill close" onclick="delimg(this,'{$vo.id}')"></i>
+                                                        </div>
+                                                    </li>
+                                                {/volist}
+                                            </ul>
+                                        {/empty}
+                                        <div class="image-pages">
+                                            <div class="image-pages-l">
+                                                <label><input type="checkbox" class="checkAll" autocomplete="off" onclick="choose_all(this);">&nbsp;全选</label>
+                                                <a href="javascript:void(0);" onclick="moving(this);">移动</a>
+                                                <a href="javascript:void(0);" onclick="batch_delimg(this);">删除</a>
+                                            </div>
+                                            <div class="image-pages-r"><div id="page">{$pageStr}</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="upload-footer">
+                    <button type="button" class="layui-btn layui-btn-primary layui-btn-off">取消</button>
+                    <button type="button" class="layui-btn layui-btn-normal layui-btn-yes">确定</button>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var type_id = {$type_id|default=0};
+            var UploadUpUrl = "{$info.upload}";
+            var UploadTypeListUrl = "{:url('Uploadimgnew/get_type')}";
+            var UpdateTypeIdUrl = "{:url('Uploadimgnew/update_type_id')}";
+            var callback = "{$info.func}";
+            var num = {$info.num|default=1};
+            var upload_num = num;
+            var input = "{$info.input|default=''}";
+            var image_accept = "{$info.image_accept}";
+            var countimg = {$countimg|default=0};
+            var eytime = "{$eytime|default=''}";
+        </script>
+        <script type="text/javascript" src="__PUBLIC__/plugins/uploadimgnew/js/get_upload_list.js?v={$version}"></script>
+        <script type="text/javascript">
+        $(function(){
+            // 确定选中图片
+            $(".layui-btn-yes").click(function() {
+                var fileurl_tmp = [];
+                var filename_tmp = [];
+                if (callback != "undefined") {
+                    var arrimg = new Array();
+                    var arrimgname = new Array();
+                    var input_top_tab = $('#input_top_tab').val();
+                    var imgremoteurl = $.trim($('input[name=imgremoteurl]').val());
+                    var errmsg = '';
+                    if ('tiqu' == input_top_tab) { // 不提取图片，而直接点击确定，获取远程图片地址
+                        if (imgremoteurl == '') {
+                            errmsg = '请输入图片地址！';
+                        } else {
+                            arrimg.push(imgremoteurl);
+                            arrimgname.push("");
+                        }
+                    }
+                    else {
+                        var img_id_upload = $.cookie("img_id_upload");
+                        if (undefined != img_id_upload && img_id_upload.length > 0) {
+                            arrimg = img_id_upload.split(",");
+                            if ('uploadImgProimgCallBack' === String(callback)) {
+                                if (arrimg.length > 6) {
+                                    layer.msg('本次最多允许选择6张', {icon: 5, time: 1500});
+                                    return false;
+                                } else {
+                                    $.cookie("img_id_upload", "");
+                                }
+                            } else {
+                                $.cookie("img_id_upload", "");
+                            }
+                        }
+                        var imgname_id_upload = $.cookie("imgname_id_upload");
+                        if (undefined != imgname_id_upload && imgname_id_upload.length > 0) {
+                            arrimgname = imgname_id_upload.split(",");
+                            $.cookie("imgname_id_upload", "");
+                        }
+                        errmsg = '请至少选择一张图片！';
+                    }
+
+                    if (num > 1) {
+                        $.each(arrimg, function(index, item) {
+                            fileurl_tmp[index] = item;
+                        });
+                        $.each(arrimgname, function(index, item) {
+                            filename_tmp[index] = item;
+                        });
+                    } else {
+                        if ($.isArray(arrimg)) {
+                            fileurl_tmp = arrimg[0];
+                        } else {
+                            fileurl_tmp = arrimg;
+                        }
+                        if ($.isArray(arrimgname)) {
+                            filename_tmp = arrimgname[0];
+                        } else {
+                            filename_tmp = arrimgname;
+                        }
+                    }
+
+                    // 防止图片上传过程中用户点击确定，导致获取图片失败 by 小虎哥
+                    if (fileurl_tmp == undefined || fileurl_tmp.length == 0) {
+                        if ('tiqu' == input_top_tab) {
+                            $('input[name=imgremoteurl]').focus();
+                        }
+                        layer.msg(errmsg, {icon: 5,time: 1500});
+                        return false;
+                    }
+
+                    // 记录最近使用图片
+                    var images_array = [];
+                    if ($.isArray(arrimg)) {
+                        images_array = arrimg;
+                    } else {
+                        images_array = [arrimg];
+                    }
+                    $.ajax({
+                        type:'POST',
+                        url:eyou_basefile + "?m="+module_name+"&c=Uploadimgnew&a=update_pic",
+                        data:{images_array:images_array, _ajax:1},
+                        success: function(res) {
+                            
+                        }
+                    });
+                    // 加载解析方法
+                    var evaljs = '';
+                    evaljs += 'if (undefined != window.top.$("iframe#workspace")[0]) {'; // 一级框架内，比如：栏目管理
+                    evaljs += '  if (undefined != window.top.$("iframe#workspace")[0].contentWindow.$("iframe#content_body")[0]) {'; // 二级框架，比如：内容管理框架
+                    evaljs += '     if (undefined != window.top.$("iframe#workspace")[0].contentWindow.$("iframe#content_body")[0].contentWindow.$("iframe[name^=layui-layer-iframe]")[0]) {'; // 内容管理的下一级框架
+                    evaljs += '        console.log(1);window.top.$("iframe#workspace")[0].contentWindow.$("iframe#content_body")[0].contentWindow.$("iframe[name^=layui-layer-iframe]")[0].contentWindow.'+callback+'(fileurl_tmp,filename_tmp)';
+                    evaljs += '     } else {';
+                    evaljs += '        console.log(2);window.top.$("iframe#workspace")[0].contentWindow.$("iframe#content_body")[0].contentWindow.'+callback+'(fileurl_tmp,filename_tmp)';
+                    evaljs += '     }';
+                    evaljs += '  } else {'; // 二级的layer框架里，比如：广告管理的新增广告，是额外弹出一个 layer.open
+                    evaljs += '     if (undefined != window.top.$("iframe#workspace")[0].contentWindow.$("iframe[name^=layui-layer-iframe]")[0]) {'; // 二级框架，新增广告
+                    evaljs += '        console.log(3);window.top.$("iframe#workspace")[0].contentWindow.$("iframe[name^=layui-layer-iframe]")[0].contentWindow.'+callback+'(fileurl_tmp,filename_tmp)';
+                    evaljs += '     } else {';
+                    evaljs += '        console.log(4);window.top.$("iframe#workspace")[0].contentWindow.'+callback+'(fileurl_tmp,filename_tmp)';
+                    evaljs += '     }';
+                    evaljs += '  }';
+                    evaljs += '} else {';
+                    evaljs += '  console.log(5);window.parent.'+callback+'(fileurl_tmp,filename_tmp)';
+                    evaljs += '}';
+                    eval(evaljs);
+                    if ('uploadImgProimgCallBack' !== String(callback)) {
+                        window.parent.layer.closeAll();
+                    }
+                    // eval('window.parent.'+callback+'(fileurl_tmp,filename_tmp)');
+                    return;
+                } else {
+                    showErrorMsg('图片地址不能为空！');
+                }
+                if ('uploadImgProimgCallBack' !== String(callback)) {
+                    window.parent.layer.closeAll();
+                }
+            });
+
+            // 关闭图片选择框
+            $(".layui-btn-off").click(function(){
+                $.cookie("img_id_upload", "");
+                $.cookie("imgname_id_upload", "");
+                if ('uploadImgProimgCallBack' !== String(callback)) {
+                    window.parent.layer.closeAll();
+                }
+            });
+        });
+        </script>
+    </body>
+</html>

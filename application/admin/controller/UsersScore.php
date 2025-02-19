@@ -29,10 +29,6 @@ class UsersScore extends Base
         $functionLogic->validate_authorfile(1.5);
 
         $this->language_access(); // 多语言功能操作权限
-
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig',$this->UsersConfigData);
     }
 
     public function index()

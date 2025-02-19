@@ -67,7 +67,8 @@ class Links extends Base
             $post['target'] = !empty($post['target']) ? 1 : 0;
             $post['nofollow'] = !empty($post['nofollow']) ? 1 : 0;
             $post['url'] = trim($post['url']);
-            $post['url'] = preg_replace('/(<|>|;|\(|\)|\!)/i', '', $post['url']);
+            $post['url'] = preg_replace('/(<|>|;|\(|\)|\!)/i', '', htmlspecialchars_decode($post['url']));
+            $post['url'] = htmlspecialchars($post['url']);
             if (empty($post['url'])) {
                 $this->error('网址URL不能为空！');
             } else if (filter_var($post['url'], FILTER_VALIDATE_URL) === false) {
@@ -130,7 +131,8 @@ class Links extends Base
                 $post['target'] = !empty($post['target']) ? 1 : 0;
                 $post['nofollow'] = !empty($post['nofollow']) ? 1 : 0;
                 $post['url'] = trim($post['url']);
-                $post['url'] = preg_replace('/(<|>|;|\(|\)|\!)/i', '', $post['url']);
+                $post['url'] = preg_replace('/(<|>|;|\(|\)|\!)/i', '', htmlspecialchars_decode($post['url']));
+                $post['url'] = htmlspecialchars($post['url']);
                 if (empty($post['url'])) {
                     $this->error('网址URL不能为空！');
                 } else if (filter_var($post['url'], FILTER_VALIDATE_URL) === false) {

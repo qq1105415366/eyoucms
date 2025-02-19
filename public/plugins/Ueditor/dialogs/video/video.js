@@ -272,22 +272,25 @@
 
         conUrl = utils.unhtmlForUrl(conUrl);
 
+        var times = Math.floor(Math.random()*10000000);
+
         // 对flash和其他格式处理 by 小虎哥
         if(conUrl.indexOf(".swf") >= 0 ) {
-            $G("preview").innerHTML = '<div class="previewMsg"><span>'+lang.urlError+'</span></div>'+
+            $G("preview").innerHTML = '<div class="previewMsg" id="previewMsg_'+times+'" style="display:none;z-index:1;"><span>'+lang.urlError+'</span></div>'+
             '<embed class="previewVideo" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"' +
                 ' src="' + conUrl + '"' +
                 ' width="' + 420  + '"' +
                 ' height="' + 280  + '"' +
+                ' onerror="$G(\'previewMsg_'+times+'\').style.display=\'\';"' +
                 ' wmode="transparent" play="true" loop="false" menu="false" allowscriptaccess="never" allowfullscreen="true" >' +
             '</embed>';
         } else {
-            $G("preview").innerHTML = '<div class="previewMsg"><span>'+lang.urlError+'</span></div>'+
+            $G("preview").innerHTML = '<div class="previewMsg" id="previewMsg_'+times+'" style="display:none;z-index:1;"><span>'+lang.urlError+'</span></div>'+
             '<video controls="controls" autoplay="autoplay" '+
                 ' width="' + 420  + '"' +
                 ' height="' + 280  + '"' +
                 ' style="max-width:100%;">' +
-                ' <source src="' + conUrl + '"' + ' type="video/mp4" />' +
+                ' <source src="' + conUrl + '"' + ' type="video/mp4" onerror="$G(\'previewMsg_'+times+'\').style.display=\'\';" />' +
             '</video>';
         }
     }

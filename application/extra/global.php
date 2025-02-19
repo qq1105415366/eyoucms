@@ -112,7 +112,7 @@ return array(
         ],
         7 => [
             'name' => 'Email邮箱',
-            'value' => '/^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/'
+            'value' => '/^(.+)@([^\@]+)\.([^\.]+)$/'
         ],
     ],
     //表单类型列表
@@ -137,7 +137,7 @@ return array(
         ],
         'email' => [
             'name' => 'Email邮箱',
-            'value' => '/^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/'
+            'value' => '/^(.+)@([^\@]+)\.([^\.]+)$/'
         ],
     ],
     // 栏目自定义字段的channel_id值
@@ -145,7 +145,7 @@ return array(
     // 栏目表内置字段
     'arctype_table_fields' => array('id','channeltype','current_channel','parent_id','topid','typename','dirname','dirpath','diy_dirpath','rulelist','ruleview','englist_name','grade','typelink','litpic','templist','tempview','seo_title','seo_keywords','seo_description','sort_order','is_hidden','is_part','admin_id','is_del','del_method','status','is_release','weapp_code','lang','add_time','update_time','target','nofollow','typearcrank','empty_logic','page_limit','total_arc'),
     // 网络图片扩展名
-    'image_ext' => 'jpg,jpeg,gif,bmp,ico,png,webp,svg',
+    'image_ext' => 'jpg,jpeg,gif,bmp,ico,png,webp', // svg
     // 网络多媒体扩展名
     'media_ext' => 'ra,ram,vqf,wma,mp3,mid,cd,wave,aiff,au,mpeg-4,midi,vqf,amr,wav,mp4,swf,mov,rm,dat,mpeg,mpg,avi,wmv,rmvb,mp4,asf,3gp,mkv,flv,f4v,webm,ogg,ogv,m4a,m3u8',
     // 后台语言Cookie变量
@@ -194,6 +194,7 @@ return array(
         'baiduPay'   => '百度支付',
         'Hupijiaopay' => '虎皮椒支付',
         'PersonPay' => '支付宝',
+        'aliPay'     => '支付宝支付',
     ),
     // 缩略图默认宽高度
     'thumb' => [

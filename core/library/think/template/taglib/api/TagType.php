@@ -118,8 +118,7 @@ class TagType extends Base
      */
     public function getSelf($typeid, $addfields = '')
     {
-        $field = 'id,id as typeid,typename,current_channel,parent_id,topid,grade,litpic,seo_title,seo_keywords,seo_description';
-        $result = Db::name('arctype')->field($field)
+        $result = Db::name('arctype')->field('*')
             ->where(['id'=>$typeid])
             ->find();
         if (!empty($result)) {

@@ -56,10 +56,10 @@ class TagLanguage extends Base
         $seo_inlet = config('ey_config.seo_inlet');
         1 == intval($seo_inlet) && $inletStr = '';
         /*--end*/
-
+        $main_seoConfig = tpCache('seo', [], self::$main_lang);
         foreach ($result as $key => $val) {
             $val['target'] = ($val['target'] == 1) ? 'target="_blank"' : 'target="_self"';
-            $val['logo'] = get_default_pic("/public/static/common/images/language/{$val['mark']}.gif");
+            $val['logo'] = ROOT_DIR . "/public/static/common/images/language/{$val['mark']}.gif";
 
             /*单独域名*/
             $url = $val['url'];
@@ -74,7 +74,7 @@ class TagLanguage extends Base
                         if (!empty($inletStr)) {
                             $url .= '?';
                         } else {
-                            $url .= '/?';
+                            $url .= (2 == $main_seoConfig['seo_pseudo']) ? '/index.php?' : '/?';
                         }
                         $url .= http_build_query(['lang'=>$val['mark']]);
                     } else {

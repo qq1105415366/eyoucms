@@ -21,7 +21,6 @@ use app\admin\logic\ShopLogic;
 class Coupon extends Base
 {
     public $ShopLogic;
-    public $userConfig = [];
 
     /**
      * 构造方法

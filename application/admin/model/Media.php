@@ -41,6 +41,9 @@ class Media extends Model
         if (is_dir('./weapp/Waimao/')) {
             $waimaoLogic = new \weapp\Waimao\logic\WaimaoLogic;
             $waimaoLogic->update_htmlfilename($aid, $post, $opt);
+        } else {
+            $foreignLogic = new \app\admin\logic\ForeignLogic;
+            $foreignLogic->update_htmlfilename($aid, $post, $opt);
         }
             
         if ('add' == $opt) {
@@ -57,6 +60,8 @@ class Media extends Model
         $video_files = [];
         $post['addonFieldExt']['total_video'] = 0;
         if (!empty($post['video'])) {
+            $media_type = tpCache('basic.media_type');
+            $media_type = explode('|', $media_type);
             $post['addonFieldExt']['total_video'] = count($post['video']);
             $post['addonFieldExt']['total_duration'] = 0;
             foreach ($post['video'] as $k => $v) {
@@ -70,6 +75,9 @@ class Media extends Model
                 $is_remote = 0;
                 $file_ext  = explode('.', $v['file_url']);
                 $file_ext = preg_replace('/^(.*)\?(.*)$/i', '${1}', end($file_ext));
+                if (!in_array($file_ext, $media_type)) {
+                    $file_ext = '';
+                }
                 $uhash = md5($v['file_url'].$file_size);
                 if (is_http_url($v['file_url'])) {
                     $is_remote = 1;
@@ -117,7 +125,7 @@ class Media extends Model
 
         if ('edit' == $opt) {
             // 清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表
-            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
         } else {
             // 处理mysql缓存表数据

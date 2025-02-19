@@ -335,7 +335,7 @@ EOF;
         $result['TotalAmountId'] = " id=\"TotalAmount\" ";
         $result['BatchCartDel'] = " href=\"javascript:void(0);\" onclick=\"BatchCartDel();\" ";
         $result['selectCartDel'] = " href=\"javascript:void(0);\" onclick=\"selectCartDel();\" ";
-        if ('v2' == $this->usersTplVersion) {
+        if (in_array($this->usersTplVersion, ['v2', 'v5'])) {
             $result['SubmitOrder'] = " onclick=\"toSplitGoods('{$result['ShopOrderUrl']}');\" ";
         }
         // 购物车同时存在 仅物流配送 和 仅到店核销 则执行

@@ -255,7 +255,7 @@
                         <p class="notic"></p>
                     </dd>
                     <dt class="tit" style="text-align: center;line-height: 32px;font-size: 16px;">
-                        <label for="baidu_qrcode">扫码浏览小程序</label>
+                        <label for="weixin_qrcode">扫码浏览小程序</label>
                     </dt>
                 </dl>
             </div>
@@ -690,20 +690,20 @@
                     <a href="JavaScript:void(0);" onclick="checkFormToutiao();" class="ncap-btn-big ncap-btn-green">确认提交</a>
                 </div>
             </div>
-            <!-- <div class="" style="position: absolute;top: 53px;left: 750px;">
-                <dl class="row {empty name='$weixin_qrcodeurl'}none{/empty}" id="dl_weixin_qrcode" style="background: #fff;">
+            <div class="" style="position: absolute;top: 53px;left: 750px;">
+                <dl class="row {empty name='$toutiao_qrcodeurl'}none{/empty}" id="dl_toutiao_qrcode" style="background: #fff;">
                     <dd class="opt">
-                        <span id="weixin_span_qrcode"></span>
+                        <span id="toutiao_span_qrcode"></span>
                         <div class="ercodepic">
-                            <img id="weixin_img_qrcode" src="__STATIC__/common/images/loading.gif" width="23" height="23" />
+                            <img id="toutiao_img_qrcode" src="__STATIC__/common/images/loading.gif" width="23" height="23" />
                         </div>
                         <p class="notic"></p>
                     </dd>
                     <dt class="tit" style="text-align: center;line-height: 32px;font-size: 16px;">
-                        <label for="baidu_qrcode">扫码浏览小程序</label>
+                        <label for="toutiao_qrcode">扫码浏览小程序</label>
                     </dt>
                 </dl>
-            </div> -->
+            </div>
         </form>
     </div>
     <script type="text/javascript">
@@ -720,44 +720,44 @@
                 }
             });
     
-            // function ajax_get_weixin_qrcode() {
-            //     var weixin_appid = $.trim($('#weixin_appid').val());
-            //     var weixin_appsecret = $.trim($('#weixin_appsecret').val());
-            //     if (weixin_appid != '' && weixin_appsecret != '') {
-            //         $('#dl_weixin_qrcode').show();
+            function ajax_get_toutiao_qrcode() {
+                var toutiao_appid = $.trim($('#toutiao_appid').val());
+                var toutiao_appsecret = $.trim($('#toutiao_appsecret').val());
+                if (toutiao_appid != '' && toutiao_appsecret != '') {
+                    $('#dl_toutiao_qrcode').show();
     
-            //         var weixin_qrcodeurl = "{$weixin_qrcodeurl}";
-            //         if (weixin_qrcodeurl != '') {
-            //             $('#weixin_img_qrcode').attr('src', weixin_qrcodeurl);
-            //             setTimeout(function(){
-            //                 $('#weixin_img_qrcode').attr('width', 122).attr('height', 122);
-            //             },100);
-            //         }
-            //     }
-            //     $.ajax({
-            //         url: "{:url('Canal/ajax_get_weixin_qrcode', ['_ajax'=>1])}",
-            //         type: 'GET',
-            //         dataType: 'JSON',
-            //         data: {},
-            //         success: function (res) {
-            //             if (1 == res.code) {
-            //                 $('#weixin_span_qrcode').hide();
-            //                 $('#weixin_img_qrcode').attr('src', '');
-            //                 $('#weixin_img_qrcode').attr('src', res.data.qrcodeurl).attr('width', 122).attr('height', 122).show();
-            //             } else {
-            //                 $('#weixin_span_qrcode').html(res.msg);
-            //                 $('#weixin_img_qrcode').hide();
-            //                 return false;
-            //             }
-            //         },
-            //         error: function (e) {
-            //             $('#weixin_span_qrcode').html(e.responseText);
-            //             $('#weixin_img_qrcode').hide();
-            //             return false;
-            //         }
-            //     });
-            // }
-            // ajax_get_weixin_qrcode();
+                    var toutiao_qrcodeurl = "{$toutiao_qrcodeurl}";
+                    if (toutiao_qrcodeurl != '') {
+                        $('#toutiao_img_qrcode').attr('src', toutiao_qrcodeurl);
+                        setTimeout(function(){
+                            $('#toutiao_img_qrcode').attr('width', 122).attr('height', 122);
+                        },100);
+                    }
+                }
+                $.ajax({
+                    url: "{:url('Canal/ajax_get_toutiao_qrcode', ['_ajax'=>1])}",
+                    type: 'GET',
+                    dataType: 'JSON',
+                    data: {},
+                    success: function (res) {
+                        if (1 == res.code) {
+                            $('#toutiao_span_qrcode').hide();
+                            $('#toutiao_img_qrcode').attr('src', '');
+                            $('#toutiao_img_qrcode').attr('src', res.data.qrcodeurl).attr('width', 122).attr('height', 122).show();
+                        } else {
+                            $('#toutiao_span_qrcode').html(res.msg);
+                            $('#toutiao_img_qrcode').hide();
+                            return false;
+                        }
+                    },
+                    error: function (e) {
+                        $('#toutiao_span_qrcode').html(e.responseText);
+                        $('#toutiao_img_qrcode').hide();
+                        return false;
+                    }
+                });
+            }
+            ajax_get_toutiao_qrcode();
         });
 
         // 判断输入框是否为空

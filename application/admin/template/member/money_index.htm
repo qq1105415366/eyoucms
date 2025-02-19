@@ -12,15 +12,16 @@
                     <div class="content">
                         <form id="postForm" action="{:url('Member/money_index')}" method="get" onsubmit="layer_loading('正在处理');" style="display: unset;">
                             {$searchform.hidden|default=''}
-                            <div class="ey-form-item"><label class="users-form-item-label">充值状态：</label>
+                            <div class="ey-form-item"><label class="users-form-item-label">来源/用途：</label>
                                 <div class="users-form-item-content">
                                     <div class="users-select">
                                         <div tabindex="0" class="users-select-selection">
                                             <div class="">
-                                                <select name="status" id="status">
-                                                    <option value="2" {eq name="$Request.param.status" value="2"}selected{/eq}>已充值</option>
-                                                    <option value="1" {eq name="$Request.param.status" value="1"}selected{/eq}>未付款</option>
-                                                    <option value="" {if condition="!$Request.param.status"}selected{/if}>全部</option>
+                                                <select name="cause_type_str" id="cause_type_str">
+                                                    <option value="" {if condition="!$Request.param.cause_type_str"}selected{/if}>全部</option>
+                                                    <option value="0_2_3" {eq name="$Request.param.cause_type_str" value="0_2_3"}selected{/eq}>订单消费</option>
+                                                    <option value="1" {eq name="$Request.param.cause_type_str" value="1"}selected{/eq}>会员储值</option>
+                                                    <option value="4_5" {eq name="$Request.param.cause_type_str" value="4_5"}selected{/if}>账户调整</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -118,20 +119,26 @@
                             <th abbr="ac_id" axis="col4" class="w200">
                                 <div class="">订单号</div>
                             </th>
-                            <th abbr="ac_id" axis="col4" class="">
-                                <div class="">充值金额</div>
-                            </th>
-                            <th abbr="article_title" axis="col3" class="w160">
+                            <th abbr="article_title" axis="col3" class="">
                                 <div class="">用户</div>
+                            </th>
+                            <th abbr="" axis="col4" class="w200">
+                                <div class="">变动金额</div>
+                            </th>
+                            <th abbr="" axis="col4" class="w200">
+                                <div class="">剩余金额</div>
+                            </th>
+                            <th abbr="" axis="col4" class="w200">
+                                <div class="">来源/用途</div>
                             </th>
                             <th abbr="article_title" axis="col3" class="w160">
                                 <div class="">会员级别</div>
                             </th>
                             <th abbr="ac_id" axis="col4" class="w160">
-                                <div class="tc">充值时间</div>
+                                <div class="tc">发生时间</div>
                             </th>
                             <th abbr="ac_id" axis="col4" class="w100">
-                                <div class="tc">充值状态</div>
+                                <div class="tc">订单状态</div>
                             </th>
                             <th abbr="ac_id" axis="col4" class="w100">
                                 <div class="tc">操作</div>
@@ -163,22 +170,40 @@
                                     {$vo.order_number}
                                 </div>
                             </td>
-
-                            <td> <div class="green"> ￥{$vo.money} </div> </td>
-
                             <td class="sort">
                                 <div class="d-flex" style=" padding-left: 10px;">
                                     <img id="img_head_pic" style="margin-right: 5px;float: unset;border: 1px solid #e9edef;width: 24px;height: 24px;border-radius: 50%;" src="{$vo.head_pic|get_head_pic=###,false,$vo['sex']}" />
                                     <a href="javascript:void(0);" data-href="{:url('Member/users_edit', ['id'=>$vo.users_id,'from'=>'money_index','iframe'=>1])}" onclick="openFullframe(this, '会员资料','100%','100%');" class="l-height-24">{$vo.username}</a>
                                 </div>
                             </td>
-
+                            <td> 
+                                {if condition="in_array($vo['cause_type'], [1,2,4])"}
+                                <div class="green"> ￥+{$vo.money} </div>
+                                {else/}
+                                <div class="red"> ￥-{$vo.money} </div>
+                                {/if}
+                            </td>
+                            <td>
+                                <div class=""> ￥{$vo.users_money} </div> 
+                            </td>
+                            <td> 
+                                {if condition="in_array($vo['cause_type'], [0,2,3])"}
+                                <div class=""> 订单消费 </div> 
+                                {elseif condition="1 == $vo['cause_type']" /}
+                                <div class=""> 会员储值 </div>
+                                {elseif condition="in_array($vo['cause_type'], [4,5])" /}
+                                <div class=""> 账户调整 </div>
+                                {else/}
+                                <div class=""> —— </div>
+                                {/if}
+                            </td>
                             <td class="sort"> <div class=""> {$usersLevel[$vo.level]['level_name']} </div> </td>
                             
                             <td> <div class="tc"> {$vo.add_time|date='Y-m-d H:i:s',###} </div> </td>
                             
                             <td class="">
                                 <div class="tc">
+                                    <!-- 已完成 -->
                                     {$pay_status_arr[$vo['status']]}
                                     {if condition="in_array($vo.status,[2,3]) && !empty($vo['wx_shipping_info'])"}
                                     {eq name="$vo['wx_shipping_info']['errcode']" value="0"}
@@ -192,15 +217,11 @@
 
                             <td class="">
                                 <div class="tc">
+                                    <!-- 判断如果是充值订单，且未完成时显示充值 -->
                                     {if condition='$vo.status == 1'}
                                         <a class="btn blue"  href="javascript:void(0);" data-url="{:url('Member/money_mark_order')}" data-moneyid="{$vo.moneyid}" data-title="手工充值" data-status="{$vo.status}" data-username="{$vo.username}" data-money="{$vo.money}" onClick="handle(this);">充值</a>
-										<i></i>
-                                    {elseif condition='$vo.status == 3' /}
-                                        <a class="btn blue"  href="javascript:void(0);" data-url="{:url('Member/money_mark_order')}" data-moneyid="{$vo.moneyid}" data-title="撤销充值" data-status="{$vo.status}" data-username="{$vo.username}" data-money="{$vo.money}" onClick="handle(this);">撤销</a>
-										<i></i>
 									{else /}
-										<a class="btn grey"  href="javascript:void(0);" data-moneyid="{$vo.moneyid}" data-title="撤销充值" data-status="{$vo.status}" data-username="{$vo.username}" data-money="{$vo.money}">撤销</a>
-                                        <i></i>
+										<a class="btn grey" href="javascript:void(0);"> - </a>
 									{/if}
                                 </div>
                             </td>

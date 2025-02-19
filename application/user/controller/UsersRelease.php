@@ -510,7 +510,7 @@ EOF;
 
             // 模板版本号处理
             $usersTpl2xVersion = getUsersTpl2xVersion();
-            if ($usersTpl2xVersion == 'v2.x') {
+            if ($usersTpl2xVersion == 'v2.x' || in_array($this->usersTplVersion, ['v5'])) {
                 $web_users_tpl_theme = tpCache('web.web_users_tpl_theme') ? tpCache('web.web_users_tpl_theme') : 'users';
                 if (isMobile()) {
                     if (is_dir('./template/mobile/')) {
@@ -618,10 +618,27 @@ EOF;
             $addonFieldExtList = model('UsersRelease')->GetUsersReleaseData($channel_id);
         }
 
+        $controller_name = '';
+        if (!empty($channel_id)) {
+            $channeltypeInfo = Db::name('channeltype')->where(['id'=>$channel_id])->find();
+            if (!empty($channeltypeInfo['ifsystem'])) {
+                $controller_name = $channeltypeInfo['ctl_name'];
+            } else {
+                $controller_name = 'Custom';
+            }
+        }
+
         // 匹配显示的自定义字段
         $htmltextField = []; // 富文本的字段名
+        $first_html = '';
         foreach ($addonFieldExtList as $key => $val) {
             if ($val['dtype'] == 'htmltext') {
+                if (empty($first_html) && $val['name'] != 'content_ey_m'){
+                    if ('content' == $val['name'] || 'Custom' == $controller_name) {
+                        $addonFieldExtList[$key]['first'] = 1;
+                        $first_html = 1;
+                    }
+                }
                 array_push($htmltextField, $val['name']);
             }
         }
@@ -697,7 +714,7 @@ EOF;
 
         // SEO描述
         if ('add' == $type && !empty($content)) {
-            $post['seo_description']= @msubstr(checkStrHtml($content), 0, config('global.arc_seo_description_length'), false);
+            $post['seo_description']= @msubstr(checkStrHtml($content), 0, get_seo_description_length(), false);
         }
 
         $post['addonFieldExt']['content'] = htmlspecialchars(strip_sql($content));

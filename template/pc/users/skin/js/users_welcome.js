@@ -19,7 +19,11 @@ function userSignin(obj) {
         success: function (res) {
             layer.closeAll();
             if (res.code == 1) {
-                layer.msg(res.msg, {time: 1500});
+                layer.msg(res.msg + " +" +res.data.score + res.data.score_name, {
+                    time: 1500
+                }, function(){
+                    window.location.reload();
+                });
                 $('#usersScores').html(res.data.scores);
                 $(obj).removeAttr('onclick').html('已签到').css('color', '#b0b0b0');
             } else {

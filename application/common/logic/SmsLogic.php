@@ -36,6 +36,7 @@ class SmsLogic extends Model
     public function sendSms($source = null, $sender = null, $params = [], $unique_id = 0)
     {
         $sms_config = $this->config;
+        if (empty($sms_config['sms_nation_code'])) $sms_config['sms_nation_code'] = 86;
         $sms_type = isset($sms_config['sms_type']) ? $sms_config['sms_type'] : 1;
         $smsTemp = Db::name('sms_template')->where(["send_scene"=>$source,"sms_type"=>$sms_type,'lang'=>get_admin_lang()])->find();
         if (empty($smsTemp) || empty($smsTemp['sms_sign']) || empty($smsTemp['sms_tpl_code']) || empty($smsTemp['tpl_content'])){
@@ -46,6 +47,11 @@ class SmsLogic extends Model
         $code = !empty($params['code']) ? $params['code'] : $content;
         $express_time = !empty($params['express_time']) ? date('Y-m-d H:i:s', $params['express_time']) : false;
         $product_name = !empty($params['product_name']) ? msubstr(trim($params['product_name']), 0, 15).'...' : false;
+        if (empty($params['nation_code'])){
+            $nationCode = $sms_config['sms_nation_code'];
+        }else{
+            $nationCode = $params['nation_code'];
+        }
 
         if(empty($unique_id)){
             $session_id = session_id();
@@ -72,6 +78,7 @@ class SmsLogic extends Model
                     5 => "{\"code\":\"$code\"}",
                     6 => "{\"code\":\"$code\"}",
                     7 => "{\"code\":\"$code\"}",
+                    30 => "{\"code\":\"$code\"}",
                 );
             } else if (strpos($smsTemp['tpl_content'], 'content') !== false) {
                 $smsParams = array(
@@ -83,6 +90,7 @@ class SmsLogic extends Model
                     5 => "{\"content\":\"$content\"}",
                     6 => "{\"content\":\"$content\"}",
                     7 => "{\"content\":\"$content\"}",
+                    30 => "{\"content\":\"$content\"}",
                 );
             } else if (strpos($smsTemp['tpl_content'], 'name') !== false) {
                 $smsParams = array(
@@ -94,9 +102,10 @@ class SmsLogic extends Model
                     5 => "{\"name\":\"$name\"}",
                     6 => "{\"name\":\"$name\"}",
                     7 => "{\"name\":\"$name\"}",
+                    30 => "{\"name\":\"$name\"}",
                 );
-            } else if (20 === intval($source)) {
-                $smsParams[20] = "{\"content\":\"$content\"}";
+            } else if (in_array($source, [20,30])) {
+                $smsParams[$source] = "{\"content\":\"$content\"}";
             } else {
                 $smsParams[6] = "{\"goods_title\":\"$product_name\",\"express_time\":\"$express_time\"}";
             }
@@ -108,12 +117,16 @@ class SmsLogic extends Model
                 $msg = str_replace('${' . $k . '}', $v, $msg);
             }
         } else {
-            $params_arr = $smsParam = array_values($params);
-            //提取发送短信内容
-            $msg = $smsTemp['tpl_content'];
-            foreach ($params_arr as $k => $v) {
-                $index = $k+1;
-                $msg = str_replace('{' . $index . '}', $v, $msg);
+            if (!in_array($source,[11,20])){
+                $params_arr = $smsParam = array_values($params);
+                //提取发送短信内容
+                $msg = $smsTemp['tpl_content'];
+                foreach ($params_arr as $k => $v) {
+                    $index = $k+1;
+                    $msg = str_replace('{' . $index . '}', $v, $msg);
+                }
+            }else{
+                $smsParam = [];
             }
         }
         //发送记录存储数据库
@@ -122,7 +135,12 @@ class SmsLogic extends Model
         $sender_arr = explode(',', $sender);
         foreach ($sender_arr as $key => $val) {
             $val = trim($val);
-            if (empty($val) || !check_mobile($val)) {
+            if (empty($val)) {
+                unset($sender_arr[$key]);
+                continue;
+            }
+            //如果是中国的手机号 那就验证手机号格式
+            if (86 == $nationCode && !check_mobile($val)){
                 unset($sender_arr[$key]);
                 continue;
             }
@@ -130,7 +148,7 @@ class SmsLogic extends Model
             $smsData[] = [
                 'source'    => $source,
                 'sms_type'  => $sms_type,
-                'mobile'    => $val,
+                'mobile'    => 86 == $nationCode ? $val : $nationCode . $val,
                 'code'      => $code,
                 'add_time'  => $time,
                 'status'    => 0,
@@ -140,26 +158,51 @@ class SmsLogic extends Model
                 'ip'        => clientIP(),
                 'update_time' => $time,
             ];
+
+            //阿里云发送短信直接拼区号,腾讯云不拼,单独传区号
+            if (86 != $nationCode && 1 == $sms_type){
+                $sender_arr[$key] = $nationCode.$val;
+            }
         }
         $sender = implode(',', $sender_arr);
-        try{
-            Db::name('sms_log')->insertAll($smsData);
-        }catch (\Exception $e){
-        }
 
         if (!empty($sender)) {
             // 如果是正常的手机号码才发送
             try {
-                $resp = $this->realSendSms($sender, $smsTemp['sms_sign'], $smsParam, $smsTemp['sms_tpl_code'], $msg);
+                $resp = $this->realSendSms($sender, $smsTemp['sms_sign'], $smsParam, $smsTemp['sms_tpl_code'],$nationCode, $msg);
             } catch (\Exception $e) {
                 $resp = ['status' => -1, 'msg' => $e->getMessage()];
             }
             if (!empty($resp['status']) && $resp['status'] == 1) {
+                try{
+                    !empty($smsData) && Db::name('sms_log')->insertAll($smsData);
+                }catch (\Exception $e){
+                }
                 // 修改发送状态为成功
                 Db::name('sms_log')->where(['mobile'=>['IN', $sender_arr], 'update_time'=>$time])->save(['status'=>1, 'update_time'=>getTime()]);
+                // 只保留最近1小时没使用的短信日志
+                try {
+                    $mtime = strtotime("-1 day");
+                    Db::name('sms_log')->where([
+                        'update_time'  => ['lt', $mtime],
+                        'status' => 1,
+                        ])->delete();
+                } catch (\Exception $e) {}
             } else {
+                try{
+                    !empty($smsData) && Db::name('sms_log')->insertAll($smsData);
+                }catch (\Exception $e){
+                }
                 // 发送失败, 将发送失败信息保存数据库
                 Db::name('sms_log')->where(['mobile'=>['IN', $sender_arr], 'update_time'=>$time])->update(['error_msg'=>$resp['msg'], 'update_time'=>getTime()]);
+                // 删除发送失败的记录
+                try {
+                    $mtime = strtotime("-2 minute");
+                    Db::name('sms_log')->where([
+                        'update_time'  => ['lt', $mtime],
+                        'status' => 0,
+                        ])->delete();
+                } catch (\Exception $e) {}
             }
             return $resp;
         } else {
@@ -168,7 +211,7 @@ class SmsLogic extends Model
         
     }
 
-    private function realSendSms($mobile, $smsSign, $smsParam, $templateCode, $msg = '')
+    private function realSendSms($mobile, $smsSign, $smsParam, $templateCode, $nationCode,$msg = '')
     {
         if (config('sms_debug') == true) {
             return array('status' => 1, 'msg' => '专用于越过短信发送');
@@ -185,7 +228,7 @@ class SmsLogic extends Model
                 $result = $this->sendSmsByAliyun($mobile, $smsSign, $smsParam, $templateCode);
                 break;
             case 2:
-                $result = $this->sendSmsByTencentCloud($mobile, $smsSign, $smsParam, $templateCode);
+                $result = $this->sendSmsByTencentCloud($mobile, $smsSign, $smsParam, $templateCode,$nationCode);
                 break;
             default:
                 $result = ['status' => -1, 'msg' => '不支持的短信平台'];
@@ -260,7 +303,7 @@ class SmsLogic extends Model
      * @param $code    验证码
      * @return bool    短信发送成功返回true失败返回false
      */
-    private function sendSmsByTencentCloud($mobile, $smsSign, $smsParam, $templateCode)
+    private function sendSmsByTencentCloud($mobile, $smsSign, $smsParam, $templateCode,$nationCode = "86")
     {
         // 短信应用SDK AppID   1400开头
         $appid     = $this->config['sms_appid_tx'];
@@ -285,7 +328,7 @@ class SmsLogic extends Model
         Vendor('tencentsms.SmsSingleSender');
         $ssender = new \SmsSingleSender($appid, $appkey);
         $params = $smsParam;//数组具体的元素个数和模板中变量个数必须一致，例如事例中 templateId:5678对应一个变量，参数数组中元素个数也必须是一个
-        $result = $ssender->sendWithParam("86", $phoneNumbers, $templateId,
+        $result = $ssender->sendWithParam($nationCode, $phoneNumbers, $templateId,
             $params, $smsSign, "", "");  // 签名参数未提供或者为空时，会使用默认签名发送短信
         $resp = json_decode($result,TRUE);
 

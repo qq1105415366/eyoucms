@@ -32,7 +32,7 @@
         </style>
     </head>
 
-    <body>
+    <body style="overflow-y:unset">
         <form name='theForm' id="theForm" method="post" onsubmit="return false;">
             <div class="ey-dialog__wrapper address-modal" style="width: 660px;">
                 <div aria-modal="true" class="ey-dialog">
@@ -44,13 +44,11 @@
                                         <label for="name" class="input-label">姓名</label>
                                         <input type="text" name="consignee" id="consignee" autocomplete="off" class="input-text">
                                         <p class="msg msg-error" style="display: none;"></p>
-                                        <span class="iconfont-circle-close icon-error" style="display: none;"></span>
                                     </div>
                                     <div class="col ey-input ">
                                         <label for="telephone" class="input-label">手机号</label> 
                                         <input type="text" name="mobile" id="mobile" maxlength="11" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" onpaste="this.value=this.value.replace(/[^\d]/g,'');" autocomplete="off" class="input-text">
                                         <p class="msg msg-error" style="display: none;"></p>
-                                        <span class="iconfont-circle-close icon-error" style="display: none;"></span>
                                     </div>
                                 </div>
                                 <div class="item address-info-box">
@@ -61,7 +59,6 @@
                                         <label for="address" class="input-label"></label>
                                         <input type="text" id="address-title" onclick="showAddressWindow();" placeholder="选择省 / 市 / 区 / 街道" readonly="readonly" autocomplete="off" class="input-text show-placeholder">
                                         <p class="msg msg-error" style="display: none;"></p>
-                                        <span class="iconfont-circle-close icon-error" style="display: none;"></span>
                                     </div>
                                     <i class="iconfont iconfont-arrow-down-small"></i>
                                     <div class="address-select-box" style="display: none;">

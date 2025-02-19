@@ -64,7 +64,7 @@ class TagPrenext extends Base
                 ->order('a.aid asc')
                 ->find();
             if (!empty($result)) {
-                if (1 == $result['is_jump']) {
+                if (!empty($result['is_jump']) && 1 == $result['is_jump']) {
                     $result['arcurl'] = $result['jumplinks'];
                 } else {
                     $result['arcurl'] = arcurl('home/'.$controller_name.'/view', $result);
@@ -94,7 +94,7 @@ class TagPrenext extends Base
                 ->order('a.aid desc')
                 ->find();
             if (!empty($result)) {
-                if (1 == $result['is_jump']) {
+                if (!empty($result['is_jump']) && 1 == $result['is_jump']) {
                     $result['arcurl'] = $result['jumplinks'];
                 } else {
                     $result['arcurl'] = arcurl('home/'.$controller_name.'/view', $result);

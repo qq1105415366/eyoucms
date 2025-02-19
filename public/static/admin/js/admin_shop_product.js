@@ -513,8 +513,8 @@ function BulkSetPrice(obj) {
         closeBtn: 0,
         success: function(layero, index){
             $("#BulkSetPrice").find('input').attr('placeholder', '批量设置价格');
-            $("#BulkSetPrice").find('input').attr('onkeyup', "this.value=this.value.replace(/[^\\d.]/g,'')");
-            $("#BulkSetPrice").find('input').attr('onpaste', "this.value=this.value.replace(/[^\\d.]/g,'')");
+            $("#BulkSetPrice").find('input').attr('onkeyup', "this.value=this.value.replace(/^\\D*([0-9]\\d*\.\?\\d{0,2})?.*$/, '$1');");
+            $("#BulkSetPrice").find('input').attr('onpaste', "this.value=this.value.replace(/^\\D*([0-9]\\d*\\.?\\d{0,2})?.*$/, '$1');");
         }
     }, function(price, index){
         layer.close(index);
@@ -539,8 +539,8 @@ function BulkSetCrossedPrice() {
         closeBtn: 0,
         success: function(layero, index){
             $("#BulkSetCrossedPrice").find('input').attr('placeholder', '批量设置划线价');
-            $("#BulkSetCrossedPrice").find('input').attr('onkeyup', "this.value=this.value.replace(/[^\\d.]/g,'')");
-            $("#BulkSetCrossedPrice").find('input').attr('onpaste', "this.value=this.value.replace(/[^\\d.]/g,'')");
+            $("#BulkSetCrossedPrice").find('input').attr('onkeyup', "this.value=this.value.replace(/^\\D*([0-9]\\d*\.\?\\d{0,2})?.*$/, '$1');");
+            $("#BulkSetCrossedPrice").find('input').attr('onpaste', "this.value=this.value.replace(/^\\D*([0-9]\\d*\\.?\\d{0,2})?.*$/, '$1');");
         }
     }, function(price, index){
         layer.close(index);
@@ -600,8 +600,8 @@ function BulkSetStock(obj) {
         closeBtn: 0,
         success: function(layero, index){
             $("#BulkSetStock").find('input').attr('placeholder', '批量设置库存');
-            $("#BulkSetStock").find('input').attr('onkeyup', "this.value=this.value.replace(/[^\\d.]/g,'')");
-            $("#BulkSetStock").find('input').attr('onpaste', "this.value=this.value.replace(/[^\\d.]/g,'')");
+            $("#BulkSetStock").find('input').attr('onkeyup', "this.value=this.value.replace(/[^\\d]/g,'')");
+            $("#BulkSetStock").find('input').attr('onpaste', "this.value=this.value.replace(/[^\\d]/g,'')");
         }
     }, function(stock, index){
         layer.close(index);
@@ -614,7 +614,58 @@ function BulkSetStock(obj) {
         $('#stock_count').attr('readonly','readonly');
     });
 }
-
+// 批量虚拟销量
+function BulkSetSales(obj) {
+    layer.prompt({
+        formType: 3,
+        shade: layer_shade,
+        id: 'BulkSetSales',
+        title: '批量虚拟销量',
+        btn: ['确定', '关闭'],
+        btnAlign:'r',
+        closeBtn: 3,
+        success: function(layero, index){
+            $("#BulkSetSales").find('input').attr('placeholder', '批量虚拟销量');
+            $("#BulkSetSales").find('input').attr('onkeyup', "this.value=this.value.replace(/[^\\d.]/g,'')");
+            $("#BulkSetSales").find('input').attr('onpaste', "this.value=this.value.replace(/[^\\d.]/g,'')");
+        }
+    }, function(stock, index) {
+        layer.close(index);
+        // 单个库存
+        $('.spec_sales_num').val(stock);
+        $('.spec_sales_num').attr('data-old_stock',stock);
+        stock_count = Number($('.spec_sales_num').length) * Number(stock);
+        $('#spec_sales_num').val(stock_count);
+        // 禁用库存框
+        $('#spec_sales_num').attr('readonly', 'readonly');
+    });
+}
+// 批量商品编码
+function BulkSetCode(obj) {
+    layer.prompt({
+        formType: 3,
+        shade: layer_shade,
+        id: 'BulkSetCode',
+        title: '批量商品编码',
+        btn: ['确定', '关闭'],
+        btnAlign:'r',
+        closeBtn: 3,
+        success: function(layero, index){
+            $("#BulkSetCode").find('input').attr('placeholder', '批量商品编码');
+            $("#BulkSetCode").find('input').attr('onkeyup', "this.value=this.value.replace(/[^\\d.]/g,'')");
+            $("#BulkSetCode").find('input').attr('onpaste', "this.value=this.value.replace(/[^\\d.]/g,'')");
+        }
+    }, function(stock, index) {
+        layer.close(index);
+        // 单个库存
+        $('.stock_code').val(stock);
+        $('.stock_code').attr('data-old_stock',stock);
+        stock_count = Number($('.stock_code').length) * Number(stock);
+        $('#stock_code').val(stock_count);
+        // 禁用库存框
+        $('#stock_code').attr('readonly', 'readonly');
+    });
+}
 // 更新库存量
 function UpStock(obj) {
     var stock_count = $('#stock_count').val();

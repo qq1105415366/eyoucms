@@ -12,5 +12,5 @@
  */
 
 return array(
-    'app\index\command\Test',
+    'app\plugins\controller\im\library\GatewayWorker\start'
 );

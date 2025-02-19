@@ -22,8 +22,8 @@ function showMbErrorMsg(msg){
 }
 function showMbErrorAlert(msg){
     layer.open({
-        content: '<font color="red">提示：'+msg+'</font>'
-        ,btn: '确定'
+        content: '<font color="red">'+ey_foreign_system4+'：'+msg+'</font>'
+        ,btn: ey_foreign_system2
     });
 }
 
@@ -179,7 +179,12 @@ function upload_head_pic(e){
 
 // 提示动画
 function LoaDing(msg){
-    if (!msg) msg = '正在处理';
+    if (!msg || '正在处理' == msg) {
+        if (typeof ey_foreign_system8 === 'undefined') {
+            ey_foreign_system8 = "正在处理";
+        }
+        msg = ey_foreign_system8;
+    }
     var loading = layer.open({
         type:2,
         content: msg,
@@ -190,8 +195,17 @@ function LoaDing(msg){
 
 // 加载层
 function layer_loading(msg){
+    if (!msg || '正在处理' == msg) {
+        if (typeof ey_foreign_system8 === 'undefined') {
+            ey_foreign_system8 = "正在处理";
+        }
+        msg = ey_foreign_system8;
+    }
+    if (typeof ey_foreign_system9 === 'undefined') {
+        ey_foreign_system9 = "请勿刷新页面";
+    }
     var loading = layer.msg(
-    msg+'...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;请勿刷新页面', 
+    msg+'...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+ey_foreign_system9, 
     {
         icon: 1,
         time: 3600000, //1小时后后自动关闭

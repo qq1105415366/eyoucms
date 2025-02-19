@@ -58,7 +58,7 @@ class UsersRelease extends Model
         
         if ('edit' == $opt) {
             // 清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表
-            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
         } else {
             // 处理mysql缓存表数据
@@ -81,7 +81,7 @@ class UsersRelease extends Model
         if (!is_array($aid)) {
             $aid = array($aid);
         }
-        $result = Db::name('ImagesUpload')->where(array('aid'=>array('IN', $aid)))->delete();
+        $result = Db::name('images_upload')->where(array('aid'=>array('IN', $aid)))->delete();
 
         return $result;
     }
@@ -139,7 +139,7 @@ class UsersRelease extends Model
                 );
             }
             if (!empty($data)) {
-                Db::name('ImagesUpload')->insertAll($data);
+                Db::name('images_upload')->insertAll($data);
 
                 // 没有封面图时，取第一张图作为封面图
                 $litpic = isset($post['litpic']) ? $post['litpic'] : '';
@@ -194,7 +194,7 @@ class UsersRelease extends Model
      */
     public function getImgUpload($aid, $field = '*')
     {
-        $result = Db::name('ImagesUpload')->field($field)
+        $result = Db::name('images_upload')->field($field)
             ->where('aid', $aid)
             ->order('sort_order asc')
             ->select();
@@ -224,6 +224,7 @@ class UsersRelease extends Model
                 switch ($dtype) {
 
                     case 'checkbox':
+                    case 'checkboxs':
                     {
                         $val = implode(',', $val);
                         break;
@@ -349,17 +350,32 @@ class UsersRelease extends Model
                 }
                 $nowDataExt[$key] = $val;
             }
+            
+            /*if (isset($nowDataExt['content']) && empty($nowDataExt['content'])) {
+                $nowDataExt['content'] = '';
+            }
+            if (isset($nowDataExt['content_ey_m']) && empty($nowDataExt['content_ey_m'])) {
+                $nowDataExt['content_ey_m'] = '';
+            }*/
 
             $nowData = array(
                 'aid'   => $data['aid'],
-                'add_time'   => getTime(),
                 'update_time'   => getTime(),
             );
             $nowDataExt = array_merge($nowDataExt, $nowData);
             $tableExt = M('channeltype')->where('id', $channel_id)->getField('table');
             $tableExt .= '_content';
-            $count = M($tableExt)->where('aid', $data['aid'])->count();
+            $count = M($tableExt)->where('aid', $data['aid'])->count();                        
+            if (is_dir('./weapp/CompressContent/')){                
+                try {
+                   $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                                                       
+                   $compressLogic->copydata(1,$channel_id,$count,$tableExt, $nowDataExt);                    
+                   $nowData = $compressLogic->encrypt_base64_encode($channel_id,$nowDataExt);                
+                } catch (Exception $e){
+                }                
+            }    
             if (empty($count)) {
+                $nowDataExt['add_time'] = getTime();
                 M($tableExt)->insert($nowDataExt);
             } else {
                 M($tableExt)->where('aid', $data['aid'])->save($nowDataExt);

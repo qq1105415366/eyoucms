@@ -18,8 +18,10 @@
             <input type="hidden" name="details_id" value="{$Service.details_id}">
             <input type="hidden" name="service_id" value="{$Service.service_id}">
             <input type="hidden" name="product_id" value="{$Service.product_id}">
+            <input type="hidden" name="product_name" value="{$Service.product_name}">
             <input type="hidden" name="service_type" value="{$Service.service_type}">
             <input type="hidden" name="order_status" value="{$Order.order_status}">
+            <input type="hidden" name="refund_code" value="{$Service.refund_code}">
             <div class="ncap-form-default">
                 <dl class="row">
                     <dt class="tit">
@@ -63,11 +65,15 @@
                     <dt class="tit"> <label>退款方式</label> </dt>
                     <dd class="opt" style="line-height: 30px;">
                         <label>
-                            <input type="radio" name="refund_way" id="refund_way" value="1" {eq name="$Service.refund_way" value="1"}checked="checked"{/eq}>退款到余额{notempty name="$Order.points_shop_order"}(积分){/notempty}
+                            <input type="radio" name="refund_way" id="refund_way" value="1" {eq name="$Service.refund_way" value="1"} checked="true" {/eq}>退款到余额{notempty name="$Order.points_shop_order"}(积分){/notempty}
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label>
-                            <input type="radio" name="refund_way" id="refund_way" value="2" {eq name="$Service.refund_way" value="2"}checked="checked"{/eq}>线下退款
+                            <input type="radio" name="refund_way" id="refund_way" value="2" {eq name="$Service.refund_way" value="2"} checked="true" {/eq}>线下退款
+                        </label>
+                        &nbsp;&nbsp;&nbsp;
+                        <label title="用户使用微信支付下单才可以选择">
+                            <input type="radio" name="refund_way" id="refund_way" value="3" {eq name="$Service.refund_way" value="3"} checked="true" {/eq} {if condition="'wechat' != $Order.pay_name || empty($usersConfig.pay_original_refund)"} disabled="true" {/if}>原路退回(微信)
                         </label>
                     </dd>
                 </dl>
@@ -84,7 +90,7 @@
 
             <div class="ncap-form-default">
                 <div class="bot" style="padding-bottom: 0px;">
-                    <a href="JavaScript:void(0);" onclick="checkForm();" class="ncap-btn-big ncap-btn-green">确认退款</a>
+                    <a href="JavaScript:void(0);" onclick="submitServiceRefund();" class="ncap-btn-big ncap-btn-green">确认退款</a>
                     <a href="JavaScript:void(0);" onclick="closeIframes();" style="height: 20px; padding: 7px 19px;">取消</a>
                 </div>
             </div>
@@ -128,7 +134,7 @@
     }
 
     // 表单提交
-    function checkForm() {
+    function submitServiceRefund() {
         if (!$('#refund_way:checked').val()) {
             showErrorMsg('请选择退款方式');
             return false;

@@ -53,6 +53,9 @@ class Download extends Model
         if (is_dir('./weapp/Waimao/')) {
             $waimaoLogic = new \weapp\Waimao\logic\WaimaoLogic;
             $waimaoLogic->update_htmlfilename($aid, $post, $opt);
+        } else {
+            $foreignLogic = new \app\admin\logic\ForeignLogic;
+            $foreignLogic->update_htmlfilename($aid, $post, $opt);
         }
 
         // ---------多文件
@@ -64,7 +67,7 @@ class Download extends Model
 
         if ('edit' == $opt) {
             // 清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表
-            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
         } else {
             // 处理mysql缓存表数据

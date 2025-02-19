@@ -52,12 +52,18 @@ class Backup{
                 $this->config['compress'] ? @gzclose($this->fp) : @fclose($this->fp);
                 $this->fp = null;
                 $this->file['part']++;
-                session('backup_file', $this->file);
+                if ('install' != $this->file['name']) {
+                    session('backup_file', $this->file);
+                }
                 $this->create();
             }
         } else {
             $backuppath = $this->config['path'];
-            $filename   = "{$backuppath}{$this->file['name']}-{$this->file['part']}-{$this->file['version']}.sql";
+            if ('install' == $this->file['name']) {
+                $filename   = "{$backuppath}eyoucms.sql";
+            } else {
+                $filename   = "{$backuppath}{$this->file['name']}-{$this->file['part']}-{$this->file['version']}.sql";
+            }
             if($this->config['compress']){
                 $filename = "{$filename}.gz";
                 $this->fp = @gzopen($filename, "a{$this->config['level']}");
@@ -114,15 +120,28 @@ class Backup{
      * @return boolean        false - 备份失败
      */
     public function backup($table, $start){
+        $des_table = $table;
+        if ('install' == $this->file['name']) {
+            $ey_prefix = config('database.prefix');
+            if ('ey_' != $ey_prefix) {
+                $des_table = preg_replace("/^{$ey_prefix}/", "ey_", $des_table);
+            }
+        }
         //备份表结构
         if(0 == $start){
             $result = Db::query("SHOW CREATE TABLE `{$table}`");
             $sql  = "\n";
             $sql .= "-- -----------------------------\n";
-            $sql .= "-- Table structure for `{$table}`\n";
+            $sql .= "-- Table structure for `{$des_table}`\n";
             $sql .= "-- -----------------------------\n";
-            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
-            $sql .= trim($result[0]['Create Table']) . ";\n\n";
+            $sql .= "DROP TABLE IF EXISTS `{$des_table}`;\n";
+            $create_table = trim($result[0]['Create Table']);
+            if ('install' == $this->file['name']) {
+                if ('ey_' != $ey_prefix) {
+                    $create_table = str_replace("`{$ey_prefix}", "`ey_", $create_table);
+                }
+            }
+            $sql .= $create_table . ";\n\n";
             if(false === $this->write($sql)){
                 return false;
             }
@@ -137,7 +156,7 @@ class Backup{
             //写入数据注释
             if(0 == $start){
                 $sql  = "-- -----------------------------\n";
-                $sql .= "-- Records of `{$table}`\n";
+                $sql .= "-- Records of `{$des_table}`\n";
                 $sql .= "-- -----------------------------\n";
                 $this->write($sql);
             }
@@ -146,7 +165,7 @@ class Backup{
             $result = Db::query("SELECT * FROM `{$table}` LIMIT {$start}, 1000");
             foreach ($result as $row) {
                 $row = array_map('addslashes', $row);
-                $sql = "INSERT INTO `{$table}` VALUES ('" . str_replace(array("\r","\n"),array('\r','\n'),implode("', '", $row)) . "');\n";
+                $sql = "INSERT INTO `{$des_table}` VALUES ('" . str_replace(array("\r","\n"),array('\r','\n'),implode("', '", $row)) . "');\n";
                 if(false === $this->write($sql)){
                     return false;
                 }

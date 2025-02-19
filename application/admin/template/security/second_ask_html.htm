@@ -1,3 +1,9 @@
+<style type="text/css">
+    #layerid_1645756024 textarea
+    {
+        height: 220px;
+    }
+</style>
 <dl class="row">
     <dt class="tit">
         <label for="security_ask_open">密保状态</label>
@@ -7,7 +13,7 @@
         &nbsp;
         <label class="curpoin"><input id="security_ask_open0" name="security_ask_open" value="0" type="radio" onclick="security_verify_open(this);" {if condition="empty($security.security_ask_open)"} checked="checked"{/if}>关闭</label>
         <span class="err"></span>
-        <p class="notic">开启后，部分功能使用前，将进行二次问答验证</p>
+        <p class="notic2">开启后，部分功能使用前，将进行二次问答验证</p>
     </dd>
 </dl>
 <div id="div_security_verify" class="{if condition='empty($security.security_ask_open)'}none{/if}">
@@ -60,7 +66,7 @@
             <dd class="opt" style="width: auto;">
                 <input type="text" name="security_answer_old" value="" id="security_answer_old" placeholder="" class="w200" autocomplete="off">
                 <span class="err"></span>
-                <p class="notic">不重新设置无需填写问题答案</p>
+                <p class="notic2">不重新设置无需填写问题答案</p>
             </dd>
         </dl>
         <dl class="row edit_colse">
@@ -86,7 +92,7 @@
             <dd class="opt" style="width: auto;">
                 <input type="text" name="security_answer" value="" id="security_answer" class="w200" autocomplete="off">
                 <span class="err"></span>
-                <p class="notic">为空默认不修改</p>
+                <p class="notic2">为空默认不修改</p>
             </dd>
         </dl>
         <script type="text/javascript">
@@ -127,11 +133,10 @@
             <label for="security_verifyfunc">应用范围</label>
         </dt>
         <dd class="opt">
-            <!-- <label title="强制勾选"><input type="checkbox" name="security_verifyfunc[]" value="Security@*" checked="checked" disabled="true">安全中心</label>&nbsp;&nbsp; -->
-            <label title="强制勾选"><input type="checkbox" name="security_verifyfunc[]" value="Filemanager@*" checked="checked" disabled="true">模板管理</label>&nbsp;&nbsp;
+            <label title="强制勾选" class="none"><input type="checkbox" name="security_verifyfunc[]" value="Filemanager@*" checked="checked" disabled="true">模板管理</label>
             <label class="curpoin"><input type="checkbox" name="security_verifyfunc[]" value="Weapp@*" {if condition="!empty($security['security_verifyfunc']) && in_array('Weapp@*', $security['security_verifyfunc'])"}checked="checked"{/if}>插件应用</label>&nbsp;&nbsp;
             <label class="curpoin" title="修改管理员、会员密码都要密保验证"><input type="checkbox" name="security_verifyfunc[]" value="edit_pwd" {if condition="!empty($security['security_verifyfunc']) && in_array('edit_pwd', $security['security_verifyfunc'])"}checked="checked"{/if}>修改密码</label>
-            <p class="notic">建议勾选，避免存在被注入木马的安全漏洞隐患</p>&nbsp;&nbsp;
+            <p class="notic2">建议勾选，避免存在被注入木马的安全漏洞隐患</p>&nbsp;&nbsp;
         </dd>
     </dl>
     <dl class="row edit_colse">
@@ -143,7 +148,7 @@
             &nbsp;
             <label class="curpoin"><input id="security_ask_ip_open0" name="security_ask_ip_open" value="0" type="radio" {if condition="isset($security.security_ask_ip_open) && $security.security_ask_ip_open == 0"} checked="checked"{/if}>关闭</label>
             <span class="err"></span>
-            <p class="notic">如果开启该功能，在相同IP下登录后，任意一个管理员二次验证成功，其他人不再弹出验证</p>
+            <p class="notic2">如果开启该功能，在相同IP下登录后，任意一个管理员二次验证成功，其他人不再弹出验证</p>
         </dd>
     </dl>
 </div>

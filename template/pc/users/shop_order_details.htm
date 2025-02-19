@@ -28,7 +28,7 @@
                     <div class="ey-con fr">
                         <div class="mi-uc-box main-bg">
                             <div class="box-hd">
-                                <h1 class="title">订单详情<small>请谨防钓鱼链接或诈骗电话</small></h1>
+                                <h1 class="title">订单详情</h1>
                             </div>
                             <div class="box-hd mt20">
                                 <div class="more clearfix">
@@ -59,10 +59,12 @@
                             </div>
                             
                             <div class="box-bd">
-                                <div class="order-detail uc-order-item-pay">
+                                <div class="order-detail {eyou:eq name='$field.order_status' value='0'}uc-order-item-pay{/eyou:eq} {eyou:eq name='$field.order_status' value='1'}uc-order-item-shipping{/eyou:eq} {eyou:eq name='$field.order_status' value='2'}uc-order-item-shipping{/eyou:eq} {eyou:eq name='$field.order_status' value='3'}uc-order-item-finish{/eyou:eq} {eyou:eq name='$field.order_status' value='-1'}uc-order-item-finish{/eyou:eq}">
                                     <div class="order-summary">
                                         <div class="order-status">
+                                            
                                             <div style="display: inline-block;">{$field.order_status_name}</div>
+                                            
                                         </div>
                                         {eyou:if condition="-1 != $field.order_status && 4 != $field.order_status"}
                                         <div class="order-progress">

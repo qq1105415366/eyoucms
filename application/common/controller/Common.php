@@ -27,6 +27,7 @@ class Common extends Controller {
     public $users = array();
     public $usersConfig = [];
     public $usersTplVersion = '';
+    public $currency_sign = '￥';
 
     /**
      * 析构函数
@@ -92,10 +93,13 @@ class Common extends Controller {
                 }
             } else if ($global['web_status_mode'] == 2) {
                 $web_status_tpl = !empty($global['web_status_tpl']) ? $global['web_status_tpl'] : 'public/close.html';
-                $web_status_tpl = preg_replace('/^(([^\:\.]+):)?(\/\/)?([^\/\:]*)(\:\d+)?(.*)$/i', '${6}', $web_status_tpl);
+                if (is_http_url($web_status_tpl)) {
+                    $web_status_tpl = preg_replace('/^(([^\:\.]+):)?(\/\/)?([^\/\:]*)(\:\d+)?(.*)$/i', '${6}', $web_status_tpl);
+                }
                 if (!empty($this->root_dir)) {
                     $web_status_tpl = preg_replace('/^'.str_replace('/', '\/', $this->root_dir).'\//i', '', $web_status_tpl);
                 }
+                $web_status_tpl = ltrim($web_status_tpl, '/');
                 $filesize = @filesize($web_status_tpl);
                 if (file_exists($web_status_tpl) && !empty($filesize)) {
                     $fp      = fopen($web_status_tpl, 'r');
@@ -113,6 +117,9 @@ class Common extends Controller {
         if (!empty($global['web_users_switch'])) {
             $this->usersConfig = getUsersConfigData('all');
             $this->usersTplVersion = getUsersTplVersion();
+            if ($this->usersTplVersion == 'v5') {
+                $this->currency_sign = '$';
+            }
 
             $times = getTime();
             /*会员登录有效期逻辑*/
@@ -142,6 +149,7 @@ class Common extends Controller {
         }
         $this->assign('usersConfig', $this->usersConfig);
         $this->assign('usersTplVersion',$this->usersTplVersion);
+        $this->assign('currency_sign',$this->currency_sign);
 
         /*强制微信模式，仅允许微信端访问*/
         $shop_force_use_wechat = getUsersConfigData('shop.shop_force_use_wechat');

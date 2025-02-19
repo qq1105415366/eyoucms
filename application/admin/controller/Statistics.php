@@ -20,15 +20,10 @@ use app\admin\logic\ShopLogic;
 class Statistics extends Base {
 
     public $ShopLogic;
-    public $UsersConfigData = [];
 
     public function _initialize() {
         parent::_initialize();
         $this->language_access(); // 多语言功能操作权限
-
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig',$this->UsersConfigData);
         
         $this->ShopLogic = new ShopLogic;
     }

@@ -134,9 +134,14 @@ class Users extends Base
         if (IS_AJAX) {
             // 是否安装使用快递100查询插件
             $is_querykd = 0;
+            $is_Logisticswx = 0;
             if (is_dir('./weapp/Querykd/')) {
                 $count = Db::name('weapp')->where(['code'=>'Querykd', 'status'=>1])->count();
                 $is_querykd = empty($count) ? $is_querykd : 1;
+            }
+            if (is_dir('./weapp/Logisticswx/')) {
+                $count = Db::name('weapp')->where(['code'=>'Logisticswx', 'status'=>1])->count();
+                $is_Logisticswx = empty($count) ? $is_Logisticswx : 1;
             }
             // 订单详情
             $detail = model('v1.Shop')->getOrderDetail($order_id, $this->users_id);
@@ -358,6 +363,10 @@ class Users extends Base
             // 百度支付
             else if (10 === intval($post['curPayType'])) {
                 model('BaiduPay')->baiDuAppletsPayDealWith($post);
+            }
+             // 支付宝支付
+            else if (12 === intval($post['curPayType'])) {
+                model('AliPay')->aliPayAppletsPayDealWith($post);
             }
             // 微信支付
             else {

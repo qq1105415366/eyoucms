@@ -14,10 +14,15 @@
 namespace app\admin\controller;
 
 use think\Db;
+use think\Cache;
+use think\Page;
+use app\admin\logic\DdosLogic;
 
 class Security extends Base
 {
     public $admin_info = array();
+    public $admin_id = 0;
+    public $ddosLogic;
 
     /**
      * 初始化操作
@@ -25,10 +30,26 @@ class Security extends Base
     public function _initialize() {
         parent::_initialize();
         $this->admin_info = session('admin_info');
+        $this->admin_id = empty($this->admin_info) ? 0 : $this->admin_info['admin_id'];
+        $this->ddosLogic = new DdosLogic;
     }
 
     public function index()
     {
+        // 重置扫描范围
+        $setdata = [
+            'ddos_scan_range_files' => 1,
+            'ddos_scan_range_attachment' => 0,
+            'ddos_scan_range_uploads' => 0,
+            'ddos_scan_is_finish' => 0,
+            'ddos_scan_allscantotal' => 0,
+        ];
+        tpSetting('ddos', $setdata, 'cn');
+        // 重置ddos_log表
+        $this->ddosLogic->ddos_log_reset();
+        $this->redirect(url('Security/ddos_kill', [], true, true));
+        exit;
+
         // if (IS_POST) {
         //     $this->handleSave();
         // }
@@ -75,131 +96,6 @@ class Security extends Base
     }
 
     /**
-     * 保存  -  全部（v1.6.2以下版本作废）
-     * @return [type] [description]
-     */
-    // private function handleSave()
-    // {
-    //     // if (!empty($this->admin_info['parent_id']) || -1 != $this->admin_info['role_id']) {
-    //     //     $this->error('该功能仅限于创始人操作！');
-    //     // }
-
-    //     $post = input('post.');
-    //     $settingData = [];
-
-    //     /*-------------------后台安全配置 start-------------------*/
-    //     $param = [
-    //         'web_login_expiretime' => $post['web_login_expiretime'],
-    //         'login_expiretime_old' => $post['login_expiretime_old'],
-    //         'web_login_lockopen'    => !empty($post['web_login_lockopen']) ? 1 : 0,
-    //         'web_sqldatapath' => $post['web_sqldatapath'],
-    //     ];
-    //     // 开启锁定才修改相应的配置值
-    //     if (!empty($param['web_login_lockopen'])) {
-    //         $param['web_login_errtotal'] = $post['web_login_errtotal'];
-    //         $param['web_login_errexpire'] = $post['web_login_errexpire'];
-    //     }
-
-    //     // 自定义后台路径名
-    //     $adminbasefile = preg_replace('/([^\w\_\-])/i', '', trim($post['adminbasefile'])).'.php'; // 新的文件名
-    //     $param['web_adminbasefile'] = $this->root_dir.'/'.$adminbasefile; // 支持子目录
-    //     $adminbasefile_old = preg_replace('/^(.*)\/([^\/]+)$/i', '${2}', tpCache('web.web_adminbasefile')); // 旧的文件名
-    //     if ('index.php' == $adminbasefile) {
-    //         $this->error("后台路径禁止使用index", null, '', 1);
-    //     }
-
-    //     // 数据库备份目录
-    //     $web_sqldatapath_old = tpCache('global.web_sqldatapath');
-    //     $param['web_sqldatapath'] = '/'.trim($param['web_sqldatapath'], '/');
-
-    //     // 后台登录超时
-    //     $web_login_expiretime = $param['web_login_expiretime'];
-    //     $login_expiretime_old = $param['login_expiretime_old'];
-    //     unset($param['login_expiretime_old']);
-    //     if ($login_expiretime_old != $web_login_expiretime) {
-    //         $web_login_expiretime = preg_replace('/^(\d{0,})(.*)$/i', '${1}', $web_login_expiretime);
-    //         empty($web_login_expiretime) && $web_login_expiretime = config('login_expire');
-    //         if ($web_login_expiretime > 2592000) {
-    //             $web_login_expiretime = 2592000; // 最多一个月
-    //         }
-    //         $param['web_login_expiretime'] = $web_login_expiretime;
-    //         //前台登录超时时间
-    //         $users_login_expiretime = getUsersConfigData('users.users_login_expiretime');
-    //         //前台和后台谁设置的时间大就用谁的做session过期时间
-    //         $max_login_expiretime = $web_login_expiretime;
-    //         if ($web_login_expiretime < $users_login_expiretime){
-    //             $max_login_expiretime = $users_login_expiretime;
-    //         }
-    //     }
-    //     // 编辑器防注入
-    //     $param['web_xss_filter'] = intval($post['web_xss_filter']);
-    //     /*-------------------后台安全配置 end-------------------*/
-
-    //     /*-------------------二次安全验证 start-------------------*/
-    //     $this->handleAskData($settingData, $post);
-    //     /*-------------------二次安全验证 end-------------------*/
-
-    //     /*多语言*/
-    //     if (is_language()) {
-    //         $langRow = \think\Db::name('language')->order('id asc')
-    //             ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-    //             ->select();
-    //         foreach ($langRow as $key => $val) {
-    //             tpCache('web', $param, $val['mark']);
-    //             tpSetting('security', $settingData, $val['mark']);
-    //         }
-    //     } else {
-    //         tpCache('web', $param);
-    //         tpSetting('security', $settingData);
-    //     }
-    //     /*--end*/
-
-    //     $refresh = false;
-
-    //     /*-------------------后台安全配置 start-------------------*/
-    //     // 更改session会员设置 - session有效期（后台登录超时）
-    //     if ($login_expiretime_old != $web_login_expiretime) {
-    //         $session_conf = [];
-    //         $session_file = APP_PATH.'admin/conf/session_conf.php';
-    //         if (file_exists($session_file)) {
-    //             require_once($session_file);
-    //             $session_conf_tmp = EY_SESSION_CONF;
-    //             if (!empty($session_conf_tmp)) {
-    //                 $session_conf_tmp = json_decode($session_conf_tmp, true);
-    //                 if (!empty($session_conf_tmp) && is_array($session_conf_tmp)) {
-    //                     $session_conf = $session_conf_tmp;
-    //                 }
-    //             }
-    //         }
-    //         $session_conf['expire'] = $max_login_expiretime;
-    //         $str_session_conf = '<?php'.PHP_EOL.'$session_1600593464 = json_encode('.var_export($session_conf,true).');'.PHP_EOL.'define(\'EY_SESSION_CONF\', $session_1600593464);';
-    //         @file_put_contents(APP_PATH . 'admin/conf/session_conf.php', $str_session_conf);
-    //     }
-
-    //     // 更改自定义后台路径名 - 刷新整个后台
-    //     $gourl = request()->domain().$this->root_dir.'/'.$adminbasefile; // 支持子目录
-    //     if ($adminbasefile_old != $adminbasefile && eyPreventShell($adminbasefile_old)) {
-    //         if (file_exists($adminbasefile_old)) {
-    //             if(rename($adminbasefile_old, $adminbasefile)) {
-    //                 $refresh = true;
-    //             }
-    //         } else {
-    //             $this->error("根目录{$adminbasefile_old}文件不存在！", null, '', 2);
-    //         }
-    //     }
-    //     if ($web_sqldatapath_old != $param['web_sqldatapath'] && preg_match('/^\/data\/sqldata([^\/]*)$/i', $param['web_sqldatapath'])) {
-    //         @rename(ROOT_PATH.ltrim($web_sqldatapath_old, '/'), ROOT_PATH.ltrim($param['web_sqldatapath'], '/'));
-    //     }
-    //     /*-------------------后台安全配置 end-------------------*/
-
-    //     if ($refresh) {
-    //         $this->success('操作成功', $gourl, '', 1, [], '_parent');
-    //     }
-
-    //     $this->success('操作成功', url('Security/index'));
-    // }
-
-    /**
      * 保存 - 后台安全中心
      * @return [type] [description]
      */
@@ -207,14 +103,13 @@ class Security extends Base
     {
         if (IS_POST) {
             $post = input('post.');
-            $settingData = [];
 
             /*-------------------后台安全配置 start-------------------*/
             $param = [
                 'web_login_expiretime' => $post['web_login_expiretime'],
                 'login_expiretime_old' => $post['login_expiretime_old'],
                 'web_login_lockopen'    => !empty($post['web_login_lockopen']) ? 1 : 0,
-                'web_sqldatapath' => $post['web_sqldatapath'],
+                // 'web_sqldatapath' => $post['web_sqldatapath'],
             ];
             // 开启锁定才修改相应的配置值
             if (!empty($param['web_login_lockopen'])) {
@@ -232,8 +127,8 @@ class Security extends Base
             }
 
             // 数据库备份目录
-            $web_sqldatapath_old = tpCache('global.web_sqldatapath');
-            $param['web_sqldatapath'] = '/'.trim($param['web_sqldatapath'], '/');
+            /*$web_sqldatapath_old = tpCache('global.web_sqldatapath');
+            $param['web_sqldatapath'] = '/'.trim($param['web_sqldatapath'], '/');*/
 
             // 后台登录超时
             $web_login_expiretime = $param['web_login_expiretime'];
@@ -256,9 +151,10 @@ class Security extends Base
             }
             // 编辑器防注入
             $param['web_xss_filter'] = intval($post['web_xss_filter']);
-            $this->setWebXssFilter($param['web_xss_filter']);
             // 网站防止被刷
             $param['web_anti_brushing'] = intval($post['web_anti_brushing']);
+            // 存储文件
+            $this->setWebXssFilter(['web_xss_filter'=>$param['web_xss_filter'], 'web_anti_brushing'=>$param['web_anti_brushing']]);
             /*-------------------后台安全配置 end-------------------*/
 
             /*多语言*/
@@ -307,9 +203,9 @@ class Security extends Base
                     $this->error("根目录{$adminbasefile_old}文件不存在！", null, '', 2);
                 }
             }
-            if ($web_sqldatapath_old != $param['web_sqldatapath'] && preg_match('/^\/data\/sqldata([^\/]*)$/i', $param['web_sqldatapath'])) {
+            /*if ($web_sqldatapath_old != $param['web_sqldatapath'] && preg_match('/^\/data\/sqldata([^\/]*)$/i', $param['web_sqldatapath'])) {
                 @rename(ROOT_PATH.ltrim($web_sqldatapath_old, '/'), ROOT_PATH.ltrim($param['web_sqldatapath'], '/'));
-            }
+            }*/
             /*-------------------后台安全配置 end-------------------*/
 
             if ($refresh) {
@@ -324,15 +220,16 @@ class Security extends Base
     /**
      * 编辑器防注入是否开启与关闭
      */
-    private function setWebXssFilter($web_xss_filter = 0)
+    private function setWebXssFilter($data = [])
     {
-        $tfile = DATA_PATH.'conf'.DS.'web_xss_filter.txt';
+        $content = json_encode($data);
+        $tfile = webXssKeyFile();
         $fp = @fopen($tfile,'w');
         if(!$fp) {
-            @file_put_contents($tfile, $web_xss_filter);
+            @file_put_contents($tfile, $content);
         }
         else {
-            fwrite($fp, $web_xss_filter);
+            fwrite($fp, $content);
             fclose($fp);
         }
     }
@@ -419,7 +316,7 @@ class Security extends Base
             }
             $encrypt_answer = func_encrypt($security_answer, true, pwd_encry_type('bcrypt'));
             $row = Db::name('admin')->where([
-                    'admin_id'  => $this->admin_info['admin_id'],
+                    'admin_id'  => $this->admin_id,
                     'password'  => $encrypt_answer,
                 ])->count();
             if (!empty($row)) {
@@ -446,7 +343,7 @@ class Security extends Base
 
                 $encrypt_answer = func_encrypt($security_answer, true, pwd_encry_type('bcrypt'));
                 $row = Db::name('admin')->where([
-                        'admin_id'  => $this->admin_info['admin_id'],
+                        'admin_id'  => $this->admin_id,
                         'password'  => $encrypt_answer,
                     ])->count();
                 if (!empty($row)) {
@@ -475,7 +372,7 @@ class Security extends Base
         $security_answerverify_ip = !empty($securityOld['security_answerverify_ip']) ? $securityOld['security_answerverify_ip'] : '-1';
         // 1、问答要已设置；2、目前是开启；3、当前要关闭；
         if (!empty($securityOld['security_ask_open']) && empty($post['security_ask_open']) && !empty($securityOld['security_ask'])) {
-            $admin_info = Db::name('admin')->field('*')->where(['admin_id'=>$this->admin_info['admin_id']])->find();
+            $admin_info = Db::name('admin')->field('*')->where(['admin_id'=>$this->admin_id])->find();
             // if (!empty($admin_info['parent_id']) || -1 != $admin_info['role_id']) {
             //     $this->error('创始人才能关闭安全验证功能！');
             // }
@@ -485,9 +382,9 @@ class Security extends Base
         }
         $settingData['security_ask_open'] = intval($post['security_ask_open']);
         if (!empty($settingData['security_ask_open'])) {
-            $post['security_verifyfunc'][] = 'Filemanager@*';
-            $post['security_verifyfunc'][] = 'Arctype@ajax_newtpl';
-            $post['security_verifyfunc'][] = 'Archives@ajax_newtpl';
+            empty($post['security_verifyfunc']) && $post['security_verifyfunc'] = [];
+            $ctl_act_arr = ['Filemanager@*','Arctype@ajax_newtpl','Archives@ajax_newtpl','Index@ajax_theme_tplfile_add','Index@ajax_theme_tplfile_edit'];
+            $post['security_verifyfunc'] = array_merge($post['security_verifyfunc'], $ctl_act_arr);
             // $post['security_verifyfunc'][] = 'Security@*';
             $post['security_verifyfunc'] = array_unique($post['security_verifyfunc']);
             $settingData['security_verifyfunc'] = json_encode($post['security_verifyfunc']);
@@ -536,7 +433,7 @@ class Security extends Base
 
             $encrypt_answer = func_encrypt($answer, true, pwd_encry_type('bcrypt'));
             $row = Db::name('admin')->where([
-                    'admin_id'  => $this->admin_info['admin_id'],
+                    'admin_id'  => $this->admin_id,
                     'password'  => $encrypt_answer,
                 ])->count();
             if (!empty($row)) {
@@ -610,7 +507,7 @@ class Security extends Base
             if (0 <= $ask) {
                 $encrypt_answer = func_encrypt($answer, true, pwd_encry_type('bcrypt'));
                 $row = Db::name('admin')->where([
-                        'admin_id'  => $this->admin_info['admin_id'],
+                        'admin_id'  => $this->admin_id,
                         'password'  => $encrypt_answer,
                     ])->count();
                 if (!empty($row)) {
@@ -697,7 +594,7 @@ class Security extends Base
         /*--end*/
 
         // 解决个别用户安装后，登录后台没记录最后登录IP地址，导致一直弹出验证答案
-        $admin_info = Db::name('admin')->field('admin_id,last_ip')->where(['admin_id'=>$this->admin_info['admin_id']])->find();
+        $admin_info = Db::name('admin')->field('admin_id,last_ip')->where(['admin_id'=>$this->admin_id])->find();
         Db::name('admin')->where(['admin_id'=>$admin_info['admin_id']])->save(['last_ip'=>$ip, 'update_time'=>getTime()]);
     }
 
@@ -710,7 +607,7 @@ class Security extends Base
         if (IS_POST) {
             $security = tpSetting('security');
             $security_answerverify_ip = !empty($security['security_answerverify_ip']) ? $security['security_answerverify_ip'] : '-1';
-            $admin_info = Db::name('admin')->field('admin_id,last_ip')->where(['admin_id'=>$this->admin_info['admin_id']])->find();
+            $admin_info = Db::name('admin')->field('admin_id,last_ip')->where(['admin_id'=>$this->admin_id])->find();
             if ($admin_info['last_ip'] == $security_answerverify_ip) {
                 $this->success('已验证');
             }
@@ -868,299 +765,1131 @@ class Security extends Base
     public function ddos_kill()
     {
         $Prefix = config('database.prefix');
-        $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'ddos_log\'');
-        if (empty($isTable)) {
-            $tableSql = <<<EOF
-CREATE TABLE `{$Prefix}ddos_log` (
+        $syn_admin_logic_1726216198 = tpSetting('syn.syn_admin_logic_1726216198', [], 'cn');
+        if (empty($syn_admin_logic_1726216198)) {
+            try {
+                @Db::execute("DROP TABLE IF EXISTS `{$Prefix}ddos_log`");
+                tpSetting('syn', ['syn_admin_logic_1726216198' => 1], 'cn');
+            } catch (\Exception $e) {}
+        }
+
+        $tableSql = <<<EOF
+CREATE TABLE IF NOT EXISTS `{$Prefix}ddos_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `md5key` varchar(50) DEFAULT '' COMMENT 'md5值',
-  `file_name` varchar(500) DEFAULT '' COMMENT '文件名',
+  `file_name` text COMMENT '文件名',
   `file_num` int(10) DEFAULT '0' COMMENT '已扫描数',
   `file_total` int(10) DEFAULT '0' COMMENT '总文件数',
-  `file_num_ky` int(10) DEFAULT '0' COMMENT '可疑恶意文件数',
-  `is_suspicious` tinyint(1) DEFAULT '0' COMMENT '是否可疑',
-  `html` text,
+  `file_doubt_total` int(10) DEFAULT '0' COMMENT '可疑恶意文件数',
+  `file_excess` int(5) DEFAULT '0' COMMENT '大于0表示多余，2表示官方目录的多余自行修复',
+  `file_grade` int(10) DEFAULT '0' COMMENT '文件级别，0=正常，100=异常文件，200=疑似木马，970=低危，980=中危，990=高危',
+  `html` longtext,
+  `admin_id` int(11) DEFAULT '0',
   `add_time` int(11) DEFAULT '0' COMMENT '新增时间',
   `update_time` int(11) DEFAULT '0' COMMENT '更新时间',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='ddos查杀进度记录表';
 EOF;
-            $r = @Db::execute($tableSql);
-            if ($r !== false) {
-                schemaTable('ddos_log');
+        $r = @Db::execute($tableSql);
+        if ($r !== false) {
+            schemaTable('ddos_log');
+        }
+
+        $tableSql = <<<EOF
+CREATE TABLE IF NOT EXISTS `{$Prefix}ddos_setting` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT '' COMMENT '配置的key键名',
+  `value` longtext,
+  `inc_type` varchar(50) DEFAULT 'ddos',
+  `admin_id` int(11) DEFAULT '0',
+  `add_time` int(11) DEFAULT '0' COMMENT '新增时间',
+  `update_time` int(11) DEFAULT '0' COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='ddos业务存储表';
+EOF;
+        $r = @Db::execute($tableSql);
+        if ($r !== false) {
+            schemaTable('ddos_setting');
+        }
+
+        $tableSql = <<<EOF
+CREATE TABLE IF NOT EXISTS `{$Prefix}ddos_whitelist` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `md5key` varchar(50) DEFAULT '' COMMENT 'md5值',
+  `file_name` text COMMENT '文件名',
+  `admin_id` int(11) DEFAULT '0',
+  `add_time` int(11) DEFAULT '0' COMMENT '新增时间',
+  `update_time` int(11) DEFAULT '0' COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='ddos扫描白名单列表';
+EOF;
+        $r = @Db::execute($tableSql);
+        if ($r !== false) {
+            schemaTable('ddos_whitelist');
+        }
+
+        // 病毒特征库
+        $url = 'ht'.'tp'.':/'.'/'.'up'.'da'.'te'.'.e'.'yo'.'u.5'.'f'.'a.'.'c'.'n/other/ddos_feature_library.txt';
+        $response = @httpRequest2($url, 'GET', [], [], 3);
+        if (!strstr($response, '100001')) {
+            $context = stream_context_set_default(array('http' => array('timeout' => 3,'method'=>'GET')));
+            $response = @file_get_contents($url, false, $context);
+        }
+        if (strstr($response, '100001')) {
+            $path = DATA_PATH.'conf/ddos_feature_library.txt';
+            if (!file_exists($path) || is_writeable($path)) {
+                try {
+                    $fp = fopen($path, "w+");
+                    if (!empty($fp) && fwrite($fp, $response)) {
+                        fclose($fp);
+                    }
+                } catch (\Exception $e) {}
+            }
+            $this->ddosLogic->ddos_setting('sys.feature_library', $response);
+        } else {
+            $response = getVersion('ddos_feature_library', '');
+            if (empty($response)) {
+                $response = $this->ddosLogic->ddos_setting('sys.feature_library');
             }
         }
 
-        $assign = [
-            'root_path' => ROOT_PATH,
+        if (empty($response)) {
+            $this->error('文件 data/conf/ddos_feature_library.txt 没有读写权限', null, '', 20);
+        }
+        $response = preg_replace("#[\r\n]{1,}#", "\n", $response);
+        $feature_librarys = explode("\n", $response);
+        $feature_librarys = array_filter($feature_librarys);
+
+        $feature_pattern = [];
+        $feature_imgpattern = [];
+        $feature_msg = [];
+        $feature_msg_grade = [];
+        $feature_other = [];
+        foreach ($feature_librarys as $key => $val) {
+            if (!preg_match('/^#/i', $val)) {
+                if (preg_match('/^pattern\|/i', $val)) {
+                    $_k = preg_replace('/^pattern\|(\d+)\|(.*)$/i', '${1}', $val);
+                    $feature_pattern[$_k]['value'] = preg_replace('/^(.*)\|value\|(.*)$/i', '${2}', $val);
+                }
+                else if (preg_match('/^imgpattern\|/i', $val)) {
+                    $_k = preg_replace('/^imgpattern\|(\d+)\|(.*)$/i', '${1}', $val);
+                    $feature_imgpattern[$_k]['value'] = preg_replace('/^(.*)\|value\|(.*)$/i', '${2}', $val);
+                }
+                else if (preg_match('/^msg\|/i', $val)) {
+                    $_k = preg_replace('/^msg\|(\d+)\|(.*)$/i', '${1}', $val);
+                    $feature_msg[$_k]['value'] = preg_replace('/^(.*)\|value\|([^\|]+)\|(.*)$/i', '${2}', $val);
+                    $_k2 = preg_replace('/^(\d{3,3})(.*)$/i', '${1}', $_k);
+                    $feature_msg_grade[$_k2]['grade'] = $_k2;
+                    $feature_msg_grade[$_k2]['value'] = preg_replace('/^msg\|(\d+)\|([^\|]+)\|(.*)$/i', '${2}', $val);
+                    $opt = preg_replace('/^(.*)\|opt_([\w\-]*)\|(.*)$/i', '${2}', $val);
+                    $feature_msg[$_k]['opt']['event'] = $opt;
+                    $feature_msg[$_k]['opt']['value'] = preg_replace('/^(.*)\|opt_([\w\-]*)\|([^\|]+)\|(.*)$/i', '${3}', $val);
+                }
+                else if (preg_match('/^other\|/i', $val)) {
+                    $_k = preg_replace('/^other\|(\d+)\|(.*)$/i', '${1}', $val);
+                    $feature_other[$_k]['value'] = preg_replace('/^(.*)\|value\|(.*)$/i', '${2}', $val);
+                }
+            }
+        }
+        $setData = [
+            'ddos_feature_pattern' => base64_encode(json_encode($feature_pattern)),
+            'ddos_feature_imgpattern' => base64_encode(json_encode($feature_imgpattern)),
+            'ddos_feature_msg' => base64_encode(json_encode($feature_msg)),
+            'ddos_feature_msg_grade' => base64_encode(json_encode($feature_msg_grade)),
+            'ddos_feature_other' => base64_encode(json_encode($feature_other)),
         ];
-        $this->assign($assign);
+        tpSetting('ddos', $setData, 'cn');
+
+        $assign_data['ddosSetting'] = tpSetting('ddos', [], 'cn');
+        $assign_data['root_path'] = ROOT_PATH;
+        $assign_data['doubtdata'] = $this->ddosLogic->ddos_doubtdata();
+        // 后台入口文件
+        $assign_data['adminbasefile'] = $this->ddosLogic->getAdminbasefile(false);
+        // 图片木马检测的开关
+        $assign_data['check_illegal_open'] = tpCache('weapp.weapp_check_illegal_open');
+
+        $this->assign($assign_data);
 
         return $this->fetch();
     }
 
     /**
-     * 扫描
+     * 整理文件列表
      * @return [type] [description]
      */
-    public function ddos_scan()
+    public function ddos_arrange_files()
     {
         //防止超时/内存溢出
         function_exists('set_time_limit') && set_time_limit(0);
         @ini_set('memory_limit','-1');
-        \think\Session::pause(); // 暂停session，防止session阻塞机制
         if (IS_POST) {
-            Db::name('ddos_log')->where(['id'=>['gt',0]])->delete();
-            $start=getTime();
-            $list = [];
-            $html = '';
-            $dir = ROOT_PATH;
+            // 清理缓存
+            Cache::clear();
+            delFile(RUNTIME_PATH, false, ['.htaccess']);
+            delFile(DATA_PATH.'schema/', false, ['.htaccess']);
+            delFile(DATA_PATH.'backup/', false, ['.htaccess']);
+            // 重新生成数据表结构
+            if (function_exists('schemaAllTable')) schemaAllTable();
+            // 清除session过期文件
+            if (function_exists('clear_session_file')) clear_session_file();
+            // 生成语言包文件
+            if (file_exists('application/common/model/ForeignPack.php')) model('ForeignPack')->updateLangFile();
+            // 第一个先执行的范围，重置一些数据
+            $init_runtype = input('param.init_runtype/s');
+            if ('files' == $init_runtype) {
+                // 重置ddos_log表
+                $this->ddosLogic->ddos_log_reset();
+            }
+
+            // Win 环境
+            if (IS_WIN) {
+                $dir = APP_PATH.'../';
+            }
+            // 非 Win 环境
+            else {
+                $dir = ROOT_PATH;
+            }
             if (!is_readable($dir)) {
                 $dir = str_replace('\\', '/', $dir);
                 $dir = rtrim($dir, '/').'/';
             }
-            $total = $num_ky = $scanned = 0;
-            $auth_code = tpCache('system.system_auth_code');
-            $this->ddos_getDirFile($dir, '', $list, $total);
-            foreach ($list as $key => $value) {
-                $md5key = md5($value.$auth_code);
-                $fd = realpath($value);
-                $fp = fopen($fd, "r");        
-                $scanned +=1;
-                $i = 0;
-                $is_suspicious = 0;
-                while ($buffer = fgets($fp, 4096)) {
-                    $i++;
-                    if ($this->ddos_checkCodeFeatures($buffer)) {
-                        $num_ky += 1;
-                        $j = $num_ky % 2 + 1;
-                        $buffer = htmlspecialchars($this->ddos_cut_str($buffer,120,0));
-                        $is_suspicious = 1;
-                        $html .= <<<EOF
-<tr class='alt{$j}' onmouseover='this.className="focus";' onmouseout='this.className="alt{$j}";'>
-    <td align="center">{$num_ky}</td>
-    <td>{$fd}</td>
-    <td>第 {$i} 行</td>
-    <td>{$buffer}</td>
-    <td><a href="javascript:void(0);" data-md5key="{$md5key}" onclick="delfile(this);">删除</a></td>
-</tr>
-EOF;
+
+            // 递归读取文件夹
+            $list[] = '/';
+            $this->ddosLogic->ddos_getDir($dir, '', $list, ['uploads','public/upload', 'upload']);
+            // 存储读取后的文件夹列表
+            $this->ddosLogic->ddos_setting('web.source_dirlist', json_encode($list));
+
+            // 获取官方对应版本的文件列表
+            $this->ddosLogic->ddos_eyou_source_files();
+
+            $this->success("读取文件完成");
+        }
+    }
+
+    /**
+     * 整理附件列表
+     * @return [type] [description]
+     */
+    public function ddos_arrange_attachment()
+    {
+        //防止超时/内存溢出
+        function_exists('set_time_limit') && set_time_limit(0);
+        @ini_set('memory_limit','-1');
+        if (IS_POST) {
+            // 第一个先执行的范围，重置一些数据
+            $init_runtype = input('param.init_runtype/s');
+            if ('attachment' == $init_runtype) {
+                // 重置ddos_log表
+                $this->ddosLogic->ddos_log_reset();
+            }
+            
+            $list = [];
+            // 递归读取包括子站点的上传图片文件夹
+            $dirs = [];
+            foreach (['uploads','public/upload', 'upload'] as $key => $val) {
+                $xing_str = '';
+                for ($i=0; $i < 5; $i++) { 
+                    $dir_arr = glob("{$xing_str}{$val}", GLOB_ONLYDIR);
+                    if (!empty($dir_arr)) {
+                        $dirs = array_merge($dirs, $dir_arr);
                     }
-                } 
-                fclose($fp);
-
-                Db::name('ddos_log')->insert([
-                    'md5key'    => $md5key,
-                    'file_name'   => base64_encode($value),
-                    'file_num'    => $scanned,
-                    'file_total'  => $total,
-                    'file_num_ky'    => $num_ky,
-                    'is_suspicious'=>$is_suspicious,
-                    'html'        => empty($html) ? '' : htmlspecialchars($html),
-                    'add_time'      => getTime(),
-                ]);
-            }
-            $end = getTime();
-            $spent = ($end - $start);
-            $spent_str = '';
-            $hours = intval($spent/3600);
-            if (!empty($hours)) {
-                $spent_str .= $hours."小时";
-            }
-            if ($spent >= 60) {
-                $spent_str .= gmdate('i分', $spent);
-            }
-            $spent_str .= gmdate('s秒', $spent);
-
-            if (empty($num_ky)) {
-$html = <<<EOF
-<tr>
-    <td class="no-data" style="width: auto !important;" align="center" axis="col0" colspan="5">
-        <i class="fa fa-exclamation-circle"></i>没有发现可疑文件
-    </td>
-</tr>
-EOF;
-            }
-
-            $data = [
-                'scanned'  => $scanned,
-                'num_ky'  => $num_ky,
-                'spent'  => $spent_str,
-                'html'  => $html,
-            ];
-            $this->success("扫描完成，请自己排查处理", null, $data);
-        }
-    }
-
-    /**
-     * 是否是可疑恶意文件
-     * @param  string $buffer [description]
-     * @return [type]         [description]
-     */
-    private function ddos_checkCodeFeatures($buffer = '')
-    {
-        $bool = false;
-        if (!empty($buffer)) {
-            if (
-                preg_match('/(pfsoc'.'kopen|fsoc'.'kopen)\("(udp|tcp)/i', $buffer) || 
-                preg_match('/Php(\s+)(\d+)(\s+)Termi'.'nator/i', $buffer) || 
-                preg_match('/[\$_G'.'ET|\$_REQU'.'EST]\[\'rat\']/i', $buffer) || 
-                preg_match('/Tcp3(\s+)CC\.center/i', $buffer) || 
-                preg_match('/xdos\.s/i', $buffer) || 
-                preg_match('/儏摓煁'.'晜泟/i', $buffer) || 
-                preg_match('/((FilemanagerModel\.php)|(\$qaz(\s*)=(\s*)\$qwe)|(include(\s*)\((\s*)([\"\']+)\/tmp\/)|(\$content'.'_mb(\s*)=(\s*))|(file_get_contents(\s*)\((\s*)\$auth_role_admin(\s*)\)))/i', $buffer) ||
-                preg_match('/function(\s+)httpGetlai\(/i', $buffer)
-            ) {
-                $bool = true;
-            }
-        }
-
-        return $bool;
-    }
-
-    private function ddos_cut_str($string, $sublen, $start = 0, $code = 'UTF-8') {
-        if ($code == 'UTF-8') {
-            $pa = "/[\x01-\x7f]|[\xc2-\xdf][\x80-\xbf]|\xe0[\xa0-\xbf][\x80-\xbf]|[\xe1-\xef][\x80-\xbf][\x80-\xbf]|\xf0[\x90-\xbf][\x80-\xbf][\x80-\xbf]|[\xf1-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf]/";
-            preg_match_all($pa, $string, $t_string);
-            if (count($t_string[0]) - $start > $sublen) {
-                return join('', array_slice($t_string[0], $start, $sublen)) . "...";
-            }
-            return join('', array_slice($t_string[0], $start, $sublen));
-        } else {
-            $start = $start * 2;
-            $sublen = $sublen * 2;
-            $strlen = strlen($string);
-            $tmpstr = '';
-            for($i = 0; $i < $strlen; $i++) {
-                if ($i >= $start && $i < ($start + $sublen)) {
-                    if (ord(substr($string, $i, 1)) > 129) {
-                        $tmpstr .= substr($string, $i, 2);
-                    } else {
-                        $tmpstr .= substr($string, $i, 1);
-                    } 
-                } 
-                if (ord(substr($string, $i, 1)) > 129) {
-                    $i++;
+                    $xing_str .= '*/';
                 }
-            } 
-            if (strlen($tmpstr) < $strlen) {
-                $tmpstr .= "...";
+                $dirs = array_unique($dirs);
             }
+            // 递归读取文件夹文件
+            $this->ddosLogic->get_dir_list($dirs, $list);
+            // 存储读取后的文件列表
+            $this->ddosLogic->ddos_setting('web.uploads_dirlist', json_encode($list));
 
-            return $tmpstr;
-        } 
+            $this->success("读取目录完成");
+        }
     }
 
-    /**
-     * 递归读取文件夹文件
-     */
-    private function ddos_getDirFile($directory, $dir_name = '', &$arr_file = array(), &$total = 0)
+    public function ddos_scan_file()
     {
-        $self = '';//'Security.php';
-        $mydir = dir($directory);
-        while ($file = $mydir->read()) {
-            if ((is_dir("$directory/$file")) && !in_array($file, ['.','..','uploads'])) {
-                if ($dir_name) {
-                    $this->ddos_getDirFile("$directory/$file", "$dir_name/$file", $arr_file, $total);
+        @ini_set('memory_limit', '-1');
+        function_exists('set_time_limit') && set_time_limit(0);
+
+        if (IS_POST) {
+            $achievepage = input("param.achieve/d", 0); // 已扫描文件/目录数
+            $doubtotal = input("param.doubtotal/d", 0); // 已扫描出的异常文件数
+            $achievefile = input("param.achievefile/d", 0); // 已扫描文件数
+            $allscantotal = input("param.allscantotal/d", 0); // 已扫描所有范围的文件数
+            $scan_range = input("param.scan_range/s", 'files');
+            if ('files' == $scan_range) {
+                $data = $this->ddosLogic->ddosHandelScanFiles($doubtotal, $achievepage, $achievefile, $allscantotal, true, 50);
+            } else if ('attachment' == $scan_range) {
+                $data = $this->ddosLogic->ddosHandelScanAttachment($doubtotal, $achievepage, $achievefile, $allscantotal, true, 50);
+            }
+            if (!empty($data[1])) {
+                if ($data[1]['achievepage'] >= $data[1]['allpagetotal']) {
+                    $setdata = [
+                        'ddos_scan_is_finish' => 2, // 扫描完成
+                        'ddos_scan_allscantotal' => $data[1]['allscantotal'],
+                    ];
+                    tpSetting('ddos', $setdata, 'cn');
                 } else {
-                    $this->ddos_getDirFile("$directory/$file", "$file", $arr_file, $total);
+                    $setdata = [
+                        'ddos_scan_is_finish' => 1, // 扫描中
+                    ];
+                    tpSetting('ddos', $setdata, 'cn');
                 }
-            } else {
-                if($file != $self){
-                    if (!in_array($file, ['.','..','uploads']) && preg_match("/\.(php|htm|asp|jsp)$/i", $file)) {
-                        $total +=1;
-                        if ($dir_name) {
-                            $arr_file[] = "$dir_name/$file";
-                        } else {
-                            $arr_file[] = "$file";
-                        }
-                    } 
-                }
-            } 
+            }
+            $this->success($data[0], null, $data[1]);
         }
-        $mydir->close();
 
-        return $arr_file;
+        $range_files      = input("param.range_files/d", 0);
+        $range_attachment      = input("param.range_attachment/d", 0);
+        $range_uploads      = input("param.range_uploads/d", 0);
+        $setdata = [
+            'ddos_scan_range_files' => $range_files,
+            'ddos_scan_range_attachment' => $range_attachment,
+            'ddos_scan_range_uploads' => $range_uploads,
+            'ddos_scan_last_time' => getTime(),
+        ];
+        tpSetting('ddos', $setdata, 'cn');
+
+        $this->assign($setdata);
+        return $this->fetch();
     }
 
     /**
-     * 扫描进度
+     * 一键修复
+     */
+    public function ddos_one_click_repair()
+    {
+        $result = Db::name('ddos_log')->field('html', true)->where(['admin_id'=>$this->admin_id, 'file_grade'=>['gt', 0]])->order('file_grade desc')->select();
+        if (empty($result)) {
+            $this->success('操作成功', null, ['file_doubt_total'=>0]);
+        }
+        $list = [];
+        foreach ($result as $key => $val) {
+            if (1 == $val['file_excess'] || preg_match('/^install([\w\-]*)$/i', $val['file_name'])) {
+                $list['del'][] = $val;
+            } else if (0 == $val['file_excess']) {
+                $list['replace'][] = $val;
+            }
+        }
+        $msg = '';
+        $errnum = 0;
+        $md5keys = [];
+        // 删除
+        if (!empty($list['del'])) {
+            $data = $this->ddosLogic->ddos_delfile_handle($list['del']);
+            if (!empty($data['msg'])) {
+                $msg = $data['msg'];
+            }
+            if (!empty($data['errnum'])) {
+                $errnum += $data['errnum'];
+            }
+            if (!empty($data['md5keys'])) {
+                $md5keys = array_merge($md5keys, $data['md5keys']);
+            }
+        }
+        // 修复
+        if (!empty($list['replace'])) {
+            $data = $this->ddosLogic->ddos_replacefile_handle($list['replace']);
+            if (!empty($data['msg'])) {
+                $msg = $data['msg'];
+            }
+            if (!empty($data['errnum'])) {
+                $errnum += $data['errnum'];
+            }
+            if (!empty($data['md5keys'])) {
+                $md5keys = array_merge($md5keys, $data['md5keys']);
+            }
+        }
+
+        if (!empty($md5keys)) {
+            $redata = $this->ddosLogic->ddos_update_doubt_total();
+            if ($data['code'] !== false) {
+                $this->success('操作成功', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
+            } else {
+                if (!empty($errnum)) {
+                    $this->error('部分操作失败', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
+                }
+            }
+        }
+        empty($msg) && $msg = '操作失败';
+        $this->error($msg);
+    }
+
+    /**
+     * 删除扫描后的文件
      * @return [type] [description]
      */
-    public function ddos_progressd()
+    public function ddos_delfile($md5keys = [])
     {
-        \think\Session::pause(); // 暂停session，防止session阻塞机制
-        if (IS_AJAX) {
-            $progress = 0;
-            $result = [];
-            $init = input('param.init/d');
-            if (empty($init)) {
-                Db::name('ddos_log')->where(['id'=>['gt',0]])->delete();
-            } else {
-                $result = Db::name('ddos_log')->field('id, file_num, file_total, file_num_ky, html')->order('id desc')->find();
-            }
-            if (!empty($result)) {
-                $progress = $result['file_num'] / $result['file_total'];
-                $progress = floor($progress*100)/100;
-                if ($progress >= 1) {
-                    Db::name('ddos_log')->where(['id'=>['gt',0], 'is_suspicious'=>0])->delete();
-                }
-                $progress = strval($progress * 100);
-                if (empty($result['file_num_ky'])) {
-                    $html = <<<EOF
-<tr>
-    <td class="no-data" style="width: auto !important;" align="center" axis="col0" colspan="5">
-        <i class="fa fa-exclamation-circle"></i>正在扫描中
-    </td>
-</tr>
-EOF;
-                } else {
-                    $html = htmlspecialchars_decode($result['html']);
-                }
-                $this->success('请求成功', null, ['progress'=>$progress,'file_num'=>$result['file_num'],'file_num_ky'=>$result['file_num_ky'],'html'=>$html]);
-            } else {
-                $this->success('请求成功', null, ['progress'=>$progress]);
-            }
+        $msg = '';
+        $errnum = 0;
+        $md5keys = input('md5keys/a', $md5keys);
+        foreach ($md5keys as $key => $val) {
+            $md5keys[$key] = preg_replace('/([^a-z0-9]+)/i', '', $val);
         }
-    }
-
-    /**
-     * 删除可疑恶意文件
-     * @return [type] [description]
-     */
-    public function ddos_delfile()
-    {
-        if (IS_AJAX) {
-            $md5key = input('param.md5key/s');
-            $result = Db::name('ddos_log')->where(['md5key'=>$md5key, 'is_suspicious'=>1])->find();
+        if (!empty($md5keys)) {
+            $result = Db::name('ddos_log')->field('html', true)->where(['md5key'=>['IN', $md5keys], 'file_grade'=>['gt', 0], 'admin_id'=>$this->admin_id])->select();
             if (empty($result)) {
-                $this->success('操作成功');
+                $this->success('操作成功', null, ['file_doubt_total'=>0]);
             }
 
-            $filename = !empty($result['file_name']) ? trim($result['file_name'], '/') : '';
-            if (!empty($filename) && is_file($filename)) {
-                $filetype = pathinfo($filename, PATHINFO_EXTENSION);
-                $phpfile = strtolower(stristr($filename,'.php'));
-                if ($phpfile || in_array($filetype, ['php','js','png','gif','jpg','jpeg','ico','bmp','webp','htm','asp','jsp'])) {
-                    $fd = realpath($filename);
-                    $fp = fopen($fd, "r");
-                    $num_ky = 0;
-                    while ($buffer = fgets($fp, 4096)) {
-                        if ($this->ddos_checkCodeFeatures($buffer)) {
-                            $num_ky = 1;
-                            break;
-                        }
-                    } 
-                    fclose($fp);
+            $data = $this->ddosLogic->ddos_delfile_handle($result);
+            $msg = $data['msg'];
+            $errnum = $data['errnum'];
+            $md5keys = $data['md5keys'];
 
-                    if (!empty($num_ky)) {
-                        @unlink('./'.$filename);
-                        $this->success('操作成功');
-                    }
+            $redata = $this->ddosLogic->ddos_update_doubt_total();
+            if ($data['code'] !== false) {
+                $this->success('操作成功', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
+            } else {
+                if (!empty($errnum)) {
+                    $this->error('部分操作失败', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
                 }
+            }
+        }
+        empty($msg) && $msg = '操作失败';
+        $this->error($msg);
+    }
+
+    /**
+     * 管理白名单
+     * @return [type] [description]
+     */
+    public function ddos_whitelist_list()
+    {
+        $list = array();
+        $param = input('param.');
+        $keywords = input('keywords/s');
+        $keywords = trim($keywords);
+        $condition = [];
+        // 应用搜索条件
+        foreach (['keywords'] as $key) {
+            if (isset($param[$key]) && $param[$key] !== '') {
+                if ($key == 'keywords') {
+                    $condition['a.file_name'] = array('LIKE', "%{$keywords}%");
+                } else {
+                    $condition['a.'.$key] = array('eq', trim($param[$key]));
+                }
+            }
+        }
+
+        $condition['a.admin_id'] = array('eq', $this->admin_id);
+
+        $count = Db::name('ddos_whitelist')->alias("a")->where($condition)->count('a.id');// 查询满足要求的总记录数
+        $Page = $pager = new Page($count, 50);// 实例化分页类 传入总记录数和每页显示的记录数
+        $list = Db::name('ddos_whitelist')->alias("a")->field('a.*')->where($condition)->order('a.id desc')->limit($Page->firstRow.','.$Page->listRows)->select();
+        foreach ($list as $key => $val) {
+            $file_all_name = !empty($val['file_name']) ? trim($val['file_name'], '/') : '';
+            if (!file_exists($file_all_name)) {
+                unset($list[$key]);
+                continue;
+            }
+            $file_alias_name = preg_replace('/^(.*)(\/|\\\)([^\/\\\]+)$/i', '${3}', $file_all_name);
+            $val['file_alias_name'] = $file_alias_name;
+            $list[$key] = $val;
+        }
+
+        $show = $Page->show();// 分页显示输出
+        $this->assign('page',$show);// 赋值分页输出
+        $this->assign('list',$list);// 赋值数据集
+        $this->assign('pager',$pager);// 赋值分页对象
+
+        return $this->fetch();
+    }
+
+    /**
+     * 加入白名单
+     * @return [type] [description]
+     */
+    public function ddos_whitelist_add($md5keys = [])
+    {
+        $md5keys = input('md5keys/a', $md5keys);
+        foreach ($md5keys as $key => $val) {
+            $md5keys[$key] = preg_replace('/([^a-z0-9]+)/i', '', $val);
+        }
+        if (!empty($md5keys)) {
+            $result = Db::name('ddos_log')->field('html', true)->where(['md5key'=>['IN', $md5keys], 'admin_id'=>$this->admin_id])->select();
+            if (empty($result)) {
+                $this->success('操作成功', null, ['file_doubt_total'=>0]);
+            }
+
+            $data = $this->ddosLogic->ddos_whitelist_add_handle($result);
+            $md5keys = $data['md5keys'];
+
+            $redata = $this->ddosLogic->ddos_update_doubt_total();
+            if ($data['code'] !== false) {
+                $this->success('操作成功', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
             }
         }
         $this->error('操作失败');
     }
+
+    /**
+     * 移出白名单
+     * @return [type] [description]
+     */
+    public function ddos_whitelist_del()
+    {
+        if (IS_POST) {
+            $id_arr = input('del_id/a');
+            $id_arr = eyIntval($id_arr);
+            if(!empty($id_arr)){
+                $r = Db::name('ddos_whitelist')->where([
+                        'id'    => ['IN', $id_arr],
+                        'admin_id'  => $this->admin_id,
+                    ])->delete();
+                if($r !== false){
+                    $this->success('移出成功');
+                }
+            }
+        }
+        $this->error('移出失败');
+    }
+
+    public function ddos_download_file()
+    {
+        $source = input('param.source/s');
+        $md5key = input('param.md5key/s');
+        $md5key = preg_replace('/([^\w]+)/i', '', $md5key);
+        if ('whitelist' == $source) {
+            $result = Db::name('ddos_whitelist')->field('html', true)->where(['md5key'=>$md5key, 'admin_id'=>$this->admin_id])->find();
+        } else {
+            $result = Db::name('ddos_log')->field('html', true)->where(['md5key'=>$md5key, 'file_grade'=>['gt', 0], 'admin_id'=>$this->admin_id])->find();
+        }
+        if (!empty($result)) {
+            $file_all_name = !empty($result['file_name']) ? trim($result['file_name'], '/') : '';
+            if (!empty($file_all_name)) {
+                if (is_dir($file_all_name)) {
+                    $this->error('不支持下载目录');
+                }
+                else if (is_file($file_all_name)) {
+                    $filetype = preg_replace("/^(.*)\.([a-z]+)$/i", '${2}', $file_all_name); // pathinfo($file_all_name, PATHINFO_EXTENSION);
+                    $file_alias_name = preg_replace('/^(.*)(\/|\\\)([^\/\\\]+)$/i', '${3}', $file_all_name);
+                    if (in_array($filetype, ['zip','rar','gz'])) {
+                        $url = request()->domain().ROOT_DIR.'/'.$file_all_name;
+                        $this->redirect($url);
+                    } else {
+                        download_file('/'.$file_all_name, '', $file_alias_name);
+                    }
+                    exit; 
+                }
+            }
+        }
+        $this->error('下载失败');
+    }
+
+    /**
+     * 修复文件
+     * @return [type] [description]
+     */
+    public function ddos_replacefile($md5keys = [])
+    {
+        $msg = '';
+        $md5keys = input('md5keys/a', $md5keys);
+        foreach ($md5keys as $key => $val) {
+            $md5keys[$key] = preg_replace('/([^a-z0-9]+)/i', '', $val);
+        }
+        if (!empty($md5keys)) {
+            $result = Db::name('ddos_log')->field('html', true)->where(['md5key'=>['IN', $md5keys], 'file_grade'=>['gt', 0], 'admin_id'=>$this->admin_id])->select();
+            foreach ($result as $key => $val) {
+                if (preg_match('/^(template)\/(.*)$/i', $val['file_name']) && !preg_match('/^(template)\/(.*)\.js$/i', $val['file_name'])) {
+                    unset($result[$key]);
+                }
+            }
+            if (empty($result)) {
+                $this->success('操作成功', null, ['file_doubt_total'=>0]);
+            }
+
+            $data = $this->ddosLogic->ddos_replacefile_handle($result);
+            $msg = $data['msg'];
+            $errnum = $data['errnum'];
+            $md5keys = $data['md5keys'];
+
+            $redata = $this->ddosLogic->ddos_update_doubt_total();
+            if ($data['code'] !== false) {
+                $this->success('操作成功', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
+            } else {
+                if (!empty($errnum)) {
+                    $this->error('部分操作失败', null, ['file_doubt_total'=>$redata['file_doubt_total'], 'md5keys'=>$md5keys]);
+                }
+            }
+        }
+        empty($msg) && $msg = '操作失败';
+        $this->error($msg);
+    }
+
     /*-----------------------ddos攻击脚本查杀 end-----------------------*/
+
+    /**
+     * 后台登录路径
+     * @return [type] [description]
+     */
+    public function popup_adminbasefile()
+    {
+        if (IS_POST) {
+            $post = input('post.');
+            /*-------------------后台安全配置 start-------------------*/
+            $param = [];
+            // 自定义后台路径名
+            $adminbasefile = preg_replace('/([^\w\_\-])/i', '', trim($post['adminbasefile'])).'.php'; // 新的文件名
+            $param['web_adminbasefile'] = $this->root_dir.'/'.$adminbasefile; // 支持子目录
+            $baseFile = explode('/', $this->request->baseFile());
+            $adminbasefile_old = end($baseFile); // 旧的文件名
+            if ('index.php' == $adminbasefile) {
+                $this->error("后台路径禁止使用index", null, '', 1);
+            }
+            /*-------------------后台安全配置 end-------------------*/
+
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpCache('web', $param, $val['mark']);
+                }
+            } else {
+                tpCache('web', $param);
+            }
+            /*--end*/
+
+            $refresh = false;
+
+            /*-------------------后台安全配置 start-------------------*/
+            // 更改自定义后台路径名 - 刷新整个后台
+            $gourl = request()->domain().$this->root_dir.'/'.$adminbasefile; // 支持子目录
+            if ($adminbasefile_old != $adminbasefile && eyPreventShell($adminbasefile_old)) {
+                if (file_exists($adminbasefile_old)) {
+                    if(rename($adminbasefile_old, $adminbasefile)) {
+                        $refresh = true;
+                    }
+                } else {
+                    $this->error("根目录{$adminbasefile_old}文件不存在！", null, '', 2);
+                }
+            }
+            /*-------------------后台安全配置 end-------------------*/
+
+            if ($refresh) {
+                $this->success('操作成功', $gourl, '', 1, [], '_parent');
+            }
+
+            $this->success('操作成功', url('Security/ddos_kill'));
+        }
+
+        // 后台入口文件
+        $adminbasefile = $this->ddosLogic->getAdminbasefile(false);
+        $adminbasefile = preg_replace('/^(.*)\.([^\.]+)$/i', '$1', $adminbasefile);
+        $this->assign('adminbasefile', $adminbasefile);
+
+        return $this->fetch();
+    }
+
+    /**
+     * 登录超时
+     * @return [type] [description]
+     */
+    public function popup_login_expiretime()
+    {
+        if (IS_POST) {
+            $post = input('post.');
+
+            /*-------------------后台安全配置 start-------------------*/
+            $param = [
+                'web_login_expiretime' => $post['web_login_expiretime'],
+                'login_expiretime_old' => $post['login_expiretime_old'],
+            ];
+            // 后台登录超时
+            $web_login_expiretime = $param['web_login_expiretime'];
+            $login_expiretime_old = $param['login_expiretime_old'];
+            unset($param['login_expiretime_old']);
+            if ($login_expiretime_old != $web_login_expiretime) {
+                $web_login_expiretime = preg_replace('/^(\d{0,})(.*)$/i', '${1}', $web_login_expiretime);
+                empty($web_login_expiretime) && $web_login_expiretime = config('login_expire');
+                if ($web_login_expiretime > 2592000) {
+                    $web_login_expiretime = 2592000; // 最多一个月
+                }
+                $param['web_login_expiretime'] = $web_login_expiretime;
+                //前台登录超时时间
+                $users_login_expiretime = getUsersConfigData('users.users_login_expiretime');
+                //前台和后台谁设置的时间大就用谁的做session过期时间
+                $max_login_expiretime = $web_login_expiretime;
+                if ($web_login_expiretime < $users_login_expiretime){
+                    $max_login_expiretime = $users_login_expiretime;
+                }
+            }
+            /*-------------------后台安全配置 end-------------------*/
+
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpCache('web', $param, $val['mark']);
+                }
+            } else {
+                tpCache('web', $param);
+            }
+            /*--end*/
+
+            /*-------------------后台安全配置 start-------------------*/
+            // 更改session会员设置 - session有效期（后台登录超时）
+            if ($login_expiretime_old != $web_login_expiretime) {
+                $session_conf = [];
+                $session_file = APP_PATH.'admin/conf/session_conf.php';
+                if (file_exists($session_file)) {
+                    require_once($session_file);
+                    $session_conf_tmp = EY_SESSION_CONF;
+                    if (!empty($session_conf_tmp)) {
+                        $session_conf_tmp = json_decode($session_conf_tmp, true);
+                        if (!empty($session_conf_tmp) && is_array($session_conf_tmp)) {
+                            $session_conf = $session_conf_tmp;
+                        }
+                    }
+                }
+                $session_conf['expire'] = $max_login_expiretime;
+                $str_session_conf = '<?php'.PHP_EOL.'$session_1600593464 = json_encode('.var_export($session_conf,true).');'.PHP_EOL.'define(\'EY_SESSION_CONF\', $session_1600593464);';
+                @file_put_contents(APP_PATH . 'admin/conf/session_conf.php', $str_session_conf);
+            }
+            /*-------------------后台安全配置 end-------------------*/
+
+            $this->success('操作成功', url('Security/ddos_kill'));
+        }
+
+        return $this->fetch();
+    }
+
+    /**
+     * 登录防爆设置
+     * @return [type] [description]
+     */
+    public function popup_flameproof()
+    {
+        if (IS_POST) {
+            $post = input('post.');
+
+            /*-------------------后台安全配置 start-------------------*/
+            $param = [
+                'web_login_lockopen'    => !empty($post['web_login_lockopen']) ? 1 : 0,
+            ];
+            // 开启锁定才修改相应的配置值
+            if (!empty($param['web_login_lockopen'])) {
+                $param['web_login_errtotal'] = $post['web_login_errtotal'];
+                $param['web_login_errexpire'] = $post['web_login_errexpire'];
+            }
+            /*-------------------后台安全配置 end-------------------*/
+
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpCache('web', $param, $val['mark']);
+                }
+            } else {
+                tpCache('web', $param);
+            }
+            /*--end*/
+
+            $this->success('操作成功', url('Security/ddos_kill'));
+        }
+
+        // 后台防火墙设置
+        $currentIp = clientIP();
+        $ipStart = preg_replace('/\.\d{1,3}\.\d{1,3}$/i', '.0.1', $currentIp);
+        $ipEnd = preg_replace('/\.\d{1,3}\.\d{1,3}$/i', '.255.255', $currentIp);
+        $this->assign('ipSegment', "{$ipStart}-{$ipEnd}");
+        $this->assign('currentIp', $currentIp);
+
+        $firewallData = tpSetting('firewall');
+        $firewallData['firewall_login_week'] = json_decode($firewallData['firewall_login_week'], true);
+        $firewallData['firewall_login_hour'] = json_decode($firewallData['firewall_login_hour'], true);
+        $firewallData['firewall_open_func'] = json_decode($firewallData['firewall_open_func'], true);
+        $this->assign('firewallData', $firewallData);
+
+        // 双因子设置
+        $twofactorData = tpSetting('twofactor');
+        $this->assign('twofactorData', $twofactorData);
+
+        return $this->fetch();
+    }
+    
+    /**
+     * 跨站脚本攻击
+     * @return [type] [description]
+     */
+    public function popup_antinjection()
+    {
+        if (IS_POST) {
+            $post = input('post.', '', null);
+            /*-------------------后台安全配置 start-------------------*/
+            $param = [];
+            // 编辑器防注入
+            $param['web_xss_filter'] = intval($post['web_xss_filter']);
+            $web_xss_words = htmlspecialchars_decode($post['web_xss_words']);
+            $web_xss_words = explode(PHP_EOL, $web_xss_words);
+            foreach ($web_xss_words as $key => $val) {
+                $val = trim($val);
+                if (!empty($val)) {
+                    $web_xss_words[$key] = $val;
+                } else {
+                    unset($web_xss_words[$key]);
+                }
+            }
+            $web_xss_words = implode(PHP_EOL, $web_xss_words);
+            $param['web_xss_words'] = $web_xss_words;
+            
+            // 网站防止被刷
+            $param['web_anti_brushing'] = intval($post['web_anti_brushing']);
+            $web_anti_words = htmlspecialchars_decode($post['web_anti_words']);
+            $web_anti_words = explode(PHP_EOL, $web_anti_words);
+            foreach ($web_anti_words as $key => $val) {
+                $val = trim($val);
+                if (!empty($val)) {
+                    $web_anti_words[$key] = $val;
+                } else {
+                    unset($web_anti_words[$key]);
+                }
+            }
+            $web_anti_words = implode(PHP_EOL, $web_anti_words);
+            $param['web_anti_words'] = $web_anti_words;
+            /*-------------------后台安全配置 end-------------------*/
+
+            $langRow = \think\Db::name('language')->order('id asc')->select();
+            foreach ($langRow as $key => $val) {
+                tpCache('web', $param, $val['mark']);
+            }
+
+            // 存储文件
+            $this->setWebXssFilter($param);
+
+            $this->success('操作成功', url('Security/ddos_kill'));
+        }
+
+        return $this->fetch();
+    }
+
+    /**
+     * 后台防火墙设置
+     * @return [type] [description]
+     */
+    public function popup_firewall()
+    {
+        if (IS_POST) {
+            $param = input('post.');
+            if (empty($param['firewall_open_func'])) {
+                $param['firewall_open'] = 0;
+            } else {
+                $param['firewall_open'] = 1;
+            }
+            if (empty($param['firewall_open'])) {
+                $param = [
+                    'firewall_open'=>$param['firewall_open'],
+                    'firewall_open_func' => json_encode([]),
+                ];
+            } else {
+                $param['firewall_ip_whitelist'] = empty($param['firewall_ip_whitelist']) ? '' : $param['firewall_ip_whitelist'];
+                $param['firewall_login_week'] = empty($param['firewall_login_week']) ? json_encode([]) : json_encode($param['firewall_login_week']);
+                $param['firewall_login_hour'] = empty($param['firewall_login_hour']) ? json_encode([]) : json_encode($param['firewall_login_hour']);
+                if (!in_array(1, $param['firewall_open_func'])) {
+                    unset($param['firewall_ip_whitelist']);
+                }
+                if (!in_array(2, $param['firewall_open_func'])) {
+                    unset($param['firewall_login_week']);
+                    unset($param['firewall_login_hour']);
+                }
+                $param['firewall_open_func'] = empty($param['firewall_open_func']) ? json_encode([]) : json_encode($param['firewall_open_func']);
+
+                $currentIp = clientIP();
+                $rdata = $this->ddosLogic->firewall_blockip_check($currentIp, $param['firewall_ip_whitelist'], false);
+                if (empty($rdata['blockip_check'])) {
+                    $ipStart = preg_replace('/\.\d{1,3}\.\d{1,3}$/i', '.0.1', $currentIp);
+                    $ipEnd = preg_replace('/\.\d{1,3}\.\d{1,3}$/i', '.255.255', $currentIp);
+                    $this->error("当前IP（{$currentIp}）没在IP段白名单内，<br/>可添加固定单个IP，或可变的IP段范围，<br/>以下仅供参考（按需调整IP范围）:<br/>{$ipStart}-{$ipEnd}");
+                }
+            }
+
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpSetting('firewall', $param, $val['mark']);
+                }
+            } else {
+                tpSetting('firewall', $param);
+            }
+            /*--end*/
+
+            if (file_exists(DATA_PATH.'conf'.DS.'uneyousafe.txt')) {
+                @unlink(DATA_PATH.'conf'.DS.'uneyousafe.txt');
+            }
+            $this->success('操作成功', url('Security/ddos_kill'));
+        }
+    }
+
+    /**
+     * 后台双因子设置
+     * @return [type] [description]
+     */
+    public function popup_twofactor()
+    {
+        if (IS_POST) {
+            $param = input('post.');
+            if (-1 == $param['twofactor_check_type']) {
+                $param['twofactor_open'] = 0;
+                $param['twofactor_check_type'] = $param['twofactor_check_type_old'];
+            } else {
+                $param['twofactor_open'] = 1;
+            }
+
+            if (empty($param['twofactor_open'])) {
+                $param = ['twofactor_open'=>$param['twofactor_open']];
+            } else {
+                $param['twofactor_check_type'] = empty($param['twofactor_check_type']) ? 0 : $param['twofactor_check_type'];
+                if (1 == $param['twofactor_check_type']) {
+                    $sms_config = tpCache('sms');
+                    $sms_type = isset($sms_config['sms_type']) ? $sms_config['sms_type'] : 1;
+                    // 是否填写手机短信配置
+                    $is_conf = 1;
+                    if (empty($sms_config['sms_test_mobile'])) {
+                        $is_conf = 0;
+                    } else {
+                        $sms_arr = [];
+                        foreach ($sms_config as $key => $val) {
+                            $sms_arr[$key] = $val;
+                        }
+                        if (2 == $sms_type) {
+                            foreach (['sms_appkey_tx','sms_appid_tx'] as $key => $val) {
+                                if (isset($sms_arr[$val]) && empty($sms_arr[$val])) {
+                                    $is_conf = 0;
+                                }
+                            }
+                        } else {
+                            foreach (['sms_appkey','sms_secretkey'] as $key => $val) {
+                                if (isset($sms_arr[$val]) && empty($sms_arr[$val])) {
+                                    $is_conf = 0;
+                                }
+                            }
+                        }
+                    }
+
+                    $smsTemp = Db::name('sms_template')->where(["send_scene"=>30,"sms_type"=>$sms_type,'lang'=>get_admin_lang()])->find();
+                    if (empty($is_conf) || empty($smsTemp['sms_sign']) || empty($smsTemp['sms_tpl_code']) || empty($smsTemp['tpl_content'])){
+                        $this->error("未配置云短信接口或短信模板，请确认配置好再操作");
+                    }
+                    Db::name('sms_template')->where(["send_scene"=>$smsTemp['send_scene']])->update(['is_open'=>1]);
+                }
+                else if (2 == $param['twofactor_check_type']) {
+                    $security_ask_open = tpSetting('security.security_ask_open');
+                    if (empty($security_ask_open)) {
+                        $this->error('未配置密保问题，请确认配置好再操作');
+                    }
+                }
+                else {
+                    $smtp_config = tpCache('smtp');
+                    $smtpTemp = Db::name('smtp_tpl')->where(["send_scene"=>30,'lang'=>get_admin_lang()])->find();
+                    if (empty($smtp_config['smtp_user']) || empty($smtp_config['smtp_from_eamil']) || empty($smtpTemp['tpl_title']) || empty($smtpTemp['tpl_content'])){
+                        $this->error("未配置邮箱接口，请确认配置好再操作");
+                    }
+                    Db::name('smtp_tpl')->where(["send_scene"=>$smtpTemp['send_scene']])->update(['is_open'=>1]);
+                }
+            }
+
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpSetting('twofactor', $param, $val['mark']);
+                }
+            } else {
+                tpSetting('twofactor', $param);
+            }
+            /*--end*/
+
+            if (empty($param['twofactor_open'])) {
+                if (file_exists(DATA_PATH.'conf'.DS.'twofactor_login_open.txt')) {
+                    @unlink(DATA_PATH.'conf'.DS.'twofactor_login_open.txt');
+                }
+            }
+            $this->success('操作成功', url('Security/ddos_kill'));
+        }
+    }
+
+    /**
+     * 登录双因子的验证方式检测情况
+     * @return [type] [description]
+     */
+    public function popup_twofactor_checkopen()
+    {
+        $twofactor_check_type = input('param.twofactor_check_type/d');
+        if (1 == $twofactor_check_type) {
+            $sms_config = tpCache('sms');
+            $sms_type = isset($sms_config['sms_type']) ? $sms_config['sms_type'] : 1;
+            // 是否填写手机短信配置
+            $is_conf = 1;
+            if (empty($sms_config['sms_test_mobile'])) {
+                $is_conf = 0;
+            } else {
+                $sms_arr = [];
+                foreach ($sms_config as $key => $val) {
+                    $sms_arr[$key] = $val;
+                }
+                if (2 == $sms_type) {
+                    foreach (['sms_appkey_tx','sms_appid_tx'] as $key => $val) {
+                        if (isset($sms_arr[$val]) && empty($sms_arr[$val])) {
+                            $is_conf = 0;
+                        }
+                    }
+                } else {
+                    foreach (['sms_appkey','sms_secretkey'] as $key => $val) {
+                        if (isset($sms_arr[$val]) && empty($sms_arr[$val])) {
+                            $is_conf = 0;
+                        }
+                    }
+                }
+            }
+
+            $smsTemp = Db::name('sms_template')->where(["send_scene"=>30,"sms_type"=>$sms_type,'lang'=>get_admin_lang()])->find();
+            if (empty($is_conf) || empty($smsTemp['sms_sign']) || empty($smsTemp['sms_tpl_code']) || empty($smsTemp['tpl_content'])){
+                $this->error("未配置云短信接口或短信模板，请确认配置好再操作", url('System/sms'));
+            } else {
+                Db::name('sms_template')->where(["send_scene"=>$smsTemp['send_scene']])->update(['is_open'=>1]);
+                $sms_test_mobile = $this->ddosLogic->get_first_test_mobile();
+                $admin_mobile = trim($this->admin_info['mobile']);
+                if (!check_mobile($admin_mobile)) {
+                    $admin_mobile = '';
+                }
+                if (!empty($admin_mobile)) {
+                    $sms_test_mobile = $admin_mobile;
+                }
+                // 测试发送短信
+                $res = sendSms($smsTemp['send_scene'], $sms_test_mobile, array('content'=>mt_rand(100000, 999999)), 0, $sms_config);
+                if (isset($res['status']) && ($res['status'] == 1 || preg_match('/(BUSINESS_LIMIT_CONTROL)/i', $res['msg']))) {
+                    Db::name('sms_log')->where(['source'=>$smsTemp['send_scene'], 'mobile'=>$sms_test_mobile])->delete();
+                    if (!empty($admin_mobile)) {
+                        $this->success("二次验证短信将发送至管理员设置好的手机号");
+                    } else {
+                        $this->success("登录后台二次验证短信将发送至手机号：{$sms_test_mobile}<br/>如果每个管理员需要单独接收，请填写账号里的手机号");
+                    }
+                } else {
+                    if (!empty($res['msg']) && preg_match('/(MOBILE_NUMBER_ILLEGAL)/i', $res['msg'])) {
+                        $this->error("短信配置里的管理员手机号无效", url('System/sms'));
+                    } else {
+                        $this->error("未配置云短信接口或短信模板，请确认配置好再操作", url('System/sms'));
+                    }
+                }
+            }
+        }
+        else if (2 == $twofactor_check_type) {
+            $security_ask_open = tpSetting('security.security_ask_open');
+            if (empty($security_ask_open)) {
+                $this->error("未配置密保问题，请确认配置好再操作", url('Security/popup_second'));
+            }
+        }
+        else {
+            $smtp_config = tpCache('smtp');
+            $smtpTemp = Db::name('smtp_tpl')->where(["send_scene"=>30,'lang'=>get_admin_lang()])->find();
+            if (empty($smtp_config['smtp_user']) || empty($smtp_config['smtp_from_eamil']) || empty($smtpTemp['tpl_title']) || empty($smtpTemp['tpl_content'])){
+                $this->error("未配置邮箱接口，请确认配置好再操作", url('System/smtp'));
+            } else {
+                Db::name('smtp_tpl')->where(["send_scene"=>$smtpTemp['send_scene']])->update(['is_open'=>1]);
+                $smtp_from_eamil = $this->ddosLogic->get_first_test_email();
+                $admin_email = trim($this->admin_info['email']);
+                if (!check_email($admin_email)) {
+                    $admin_email = '';
+                }
+                if (!empty($admin_email)) {
+                    $smtp_from_eamil = $admin_email;
+                }
+                // 测试发送邮箱
+                $title = '登录双因子-测试发送邮箱';
+                $content = '测试发送成功，可以启用登录双因子功能';
+                $res = send_email($smtp_from_eamil, $title, $content, 0, $smtp_config);
+                if (isset($res['code']) && $res['code'] == 1) {
+                    if (!empty($admin_email)) {
+                        $this->success("二次验证邮件将发送至管理员设置好的邮箱");
+                    } else {
+                        $this->success("登录后台二次验证邮件将发送至邮箱：{$smtp_from_eamil}<br/>如果每个管理员需要单独接收，请填写账号里的邮箱地址");
+                    }
+                } else {
+                    if (!empty($res['msg']) && preg_match('/(non-existent(\s+)account)/i', $res['msg'])) {
+                        $this->error("邮箱配置里的管理员邮箱无效", url('System/smtp'));
+                    } else {
+                        $this->error("未配置邮箱接口，请确认配置好再操作", url('System/smtp'));
+                    }
+                }
+            }
+        }
+        $this->success("检测通过");
+    }
+
+    /**
+     * 密保问题设置
+     * @return [type] [description]
+     */
+    public function popup_second()
+    {
+        $is_founder = 0;
+        if (-1 == $this->admin_info['role_id'] && empty($this->admin_info['parent_id'])) {
+            $is_founder = 1;
+        }
+        $this->admin_info['is_founder'] = $is_founder;
+        $this->assign('admin_info', $this->admin_info);
+
+        // 安全验证配置
+        $security = tpSetting('security');
+        if (isset($security['security_verifyfunc'])) {
+            $security['security_verifyfunc'] = json_decode($security['security_verifyfunc'], true);
+        }
+        $security_askanswer_content = '';
+        if (!empty($security['security_askanswer_list'])) {
+            $security_askanswer_list = json_decode($security['security_askanswer_list'], true);
+            $security['security_askanswer_list'] = $security_askanswer_list;
+        }
+        if (empty($security_askanswer_list)) {
+            $security_askanswer_list = config('global.security_askanswer_list');
+        }
+        $security_askanswer_content = implode(PHP_EOL, $security_askanswer_list);
+        $this->assign('security', $security);
+        $this->assign('security_askanswer_content', $security_askanswer_content);
+
+        if (!empty($security['security_ask'])) {
+            $security_ask = $security['security_ask'];
+            if (!in_array($security_ask, $security_askanswer_list)) {
+                $security_askanswer_list[] = $security_ask;
+            }
+        }
+        $this->assign('security_askanswer_list', $security_askanswer_list);
+
+        return $this->fetch();
+    }
+
+    // 图片木马的开关设置
+    public function illegal_check_open()
+    {
+        $msg = "";
+        $value = input('post.value/d');
+        if (empty($value)) {
+            $msg = "开启成功";
+        } else {
+            $msg = "关闭成功";
+        }
+        /*多语言*/
+        if (is_language()) {
+            $langRow = \think\Db::name('language')->order('id asc')->select();
+            foreach ($langRow as $key => $val) {
+                tpCache('weapp', ['weapp_check_illegal_open' => $value], $val['mark']);
+            }
+        } else { // 单语言
+            tpCache('weapp', ['weapp_check_illegal_open' => $value]);
+        }
+        /*--end*/
+        $this->success($msg);
+    }
 }

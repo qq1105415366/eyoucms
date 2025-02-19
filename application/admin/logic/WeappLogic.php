@@ -37,7 +37,7 @@ class WeappLogic extends Model
         // $this->curent_version = getWeappVersion($this->code);
         $this->cms_version = getCmsVersion();
         $upgradeLogic = new \app\admin\logic\UpgradeLogic;
-        $this->service_ey = $upgradeLogic->getServiceUrl(true);
+        $this->service_ey = $upgradeLogic->getServiceUrl(true, 'weapp');
         $this->root_path = ROOT_PATH; // 
         $this->weapp_path = WEAPP_DIR_NAME.DS; // 
         $this->data_path = DATA_PATH; // 
@@ -256,9 +256,12 @@ class WeappLogic extends Model
     {
         $result = array();
         if (is_array($upgradeArr) && !empty($upgradeArr)) {
+            $langRow = \think\Db::name('language')->order('id asc')->select();
             foreach ($upgradeArr as $key => $upgrade) {
                 if ($key == 'Sample') {
-                    tpCache('system', ['system_usecodelist'=>$upgradeArr['Sample']]);
+                    foreach ($langRow as $_k => $_v) {
+                        tpCache('system', ['system_usecodelist'=>$upgradeArr['Sample']], $_v['mark']);
+                    }
                 } else {
                     $result[$key] = $this->checkVersion($key, $upgrade);
                 }
@@ -642,13 +645,10 @@ class WeappLogic extends Model
                 if (empty($auth_code)) {
                     $auth_code = \think\Config::get('AUTH_CODE');
                     /*多语言*/
-                    if (is_language()) {
-                        $langRow = \think\Db::name('language')->order('id asc')->select();
-                        foreach ($langRow as $key => $val) {
-                            tpCache('system', ['system_auth_code'=>$auth_code], $val['mark']);
-                        }
-                    } else { // 单语言
-                        tpCache('system', ['system_auth_code'=>$auth_code]);
+                    static $langRow = null;
+                    null === $langRow && $langRow = \think\Db::name('language')->order('id asc')->select();
+                    foreach ($langRow as $key => $val) {
+                        tpCache('system', ['system_auth_code'=>$auth_code], $val['mark']);
                     }
                     /*--end*/
                 }

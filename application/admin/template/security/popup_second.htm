@@ -1,0 +1,163 @@
+{include file="public/layout"/}
+<body class="bodystyle" style="min-width:auto;">
+<div id="toolTipLayer" style="position: absolute; z-index: 9999; display: none; visibility: visible; left: 95px; top: 573px;"></div>
+<div id="append_parent"></div>
+<div id="ajaxwaitid"></div>
+<div class="page min-hg-c-10" style="min-width:auto; ">
+    <div class="flexigrid htitx">
+        <form class="form-horizontal" id="handlepost2" method="post" action="{:url('Security/handleSave2')}">
+            <div class="ncap-form-default">
+                {include file="security/second_ask_html" /}
+                <dl class="row">
+                    <div class="bot" style="padding-bottom:0px;">
+                        <a href="JavaScript:void(0);" onclick="checkForm2();" class="ncap-btn-big ncap-btn-green">保存</a>
+                    </div>
+                </dl>
+            </div>
+        </form>
+        
+    </div>
+</div>
+
+<script type="text/javascript">
+    function checkForm2(){
+        var is_founder = {$admin_info['is_founder']|default=0};
+        if ($('input[name=security_ask_open]:checked').val() == 1) {
+            var security_ask = $('select[name=security_ask]').val();
+            var security_answer = $.trim($('input[name=security_answer]').val());
+            if ('add' == $('#is_ask_add_edit').val()) {
+                if (0 > security_ask) {
+                    showErrorMsg('请选择密保问题！');
+                    return false;
+                }
+                if (security_answer === '') {
+                    showErrorMsg('请设置密保答案！');
+                    $('input[name=security_answer]').focus();
+                    return false;
+                }
+            } else {
+                if (security_answer !== '' || 0 <= security_ask) {
+                    var security_answer_old = $.trim($('input[name=security_answer_old]').val());
+                    if (security_answer_old === '') {
+                        showErrorMsg('密保答案不能为空！');
+                        $('input[name=security_answer_old]').focus();
+                        return false;
+                    } else {
+                        if (0 <= security_ask) {
+                            if (security_answer === '') {
+                                showErrorMsg('请重置密保答案！');
+                                $('input[name=security_answer]').focus();
+                                return false;
+                            } else if (security_answer === security_answer_old) {
+                                showErrorMsg('重置密保答案不能与原来的一致！');
+                                $('input[name=security_answer]').focus();
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            var security_ask_open = {$security['security_ask_open']|default=0};
+            if (0 == is_founder && 1 == security_ask_open) {
+                showErrorAlert('创始人才能关闭安全验证功能！');
+                return false;
+            }
+            if ('edit' == $('#is_ask_add_edit').val()) {
+                var security_answer_old = $.trim($('input[name=security_answer_old]').val());
+                if (security_answer_old === '') {
+                    showErrorMsg('密保答案不能为空！');
+                    $('input[name=security_answer_old]').focus();
+                    return false;
+                }
+            }
+        }
+
+        var falg = security_answer_submit();
+        if (true !== falg) {
+            showErrorMsg(falg);
+            $('input[name=security_answer_old]').focus();
+            // autoload_security();
+            return false;
+        }
+
+        layer_loading('正在处理');
+        setTimeout(function (){
+            $.ajax({
+                type : 'post',
+                url : "{:url('Security/handleSave2', ['_ajax'=>1])}",
+                data : $('#handlepost2').serialize(),
+                dataType : 'json',
+                success : function(res){
+                    layer.closeAll();
+                    if(res.code == 1){
+                        if (0 == res.data.security_ask_open || 0 == res.data.is_show_answer) {
+                            showSuccessMsg(res.msg, 500, function(){
+                                window.location.reload();
+                            });
+                        } else {
+                            layer.alert(res.msg, {
+                                shade: layer_shade,
+                                area: ['480px', '190px'],
+                                move: false,
+                                title: '提示',
+                                btnAlign:'r',
+                                closeBtn: 3,
+                                btn: ['记住了'] ,//按钮
+                                success: function () {
+                                    $(".layui-layer-content").css('text-align', 'left');
+                                }
+                            }, function (index) {
+                                window.location.reload();
+                            });
+                        }
+                    }else{
+                        showErrorMsg(res.msg);
+                    }
+                },
+                error: function(e){
+                    layer.closeAll();
+                    showErrorAlert(e.responseText);
+                }
+            });
+        }, 1);
+    }
+
+    function security_answer_submit()
+    {
+        var flag = false;
+        var ask_open_old = 0;
+        if (typeof __security_ask_open__ !== 'undefined' && __security_ask_open__ > 0) {
+            ask_open_old = __security_ask_open__;
+        }
+        var ask_open = $('input[name=security_ask_open]:checked').val();
+        if (1 == ask_open_old && ask_open_old != ask_open) { // 关闭验证密保答案
+            
+        } else { // 开启不做验证
+            return true;
+        }
+
+        var answer = $.trim($('input[name=security_answer_old]').val());
+        $.ajax({
+            type : 'post',
+            url : eyou_basefile + "?m="+module_name+"&c=Security&a=ajax_answer_verify&_ajax=1&lang=" + __lang__,
+            data : {answer:answer},
+            dataType : 'json',
+            async: false,
+            success : function(res){
+                if(res.code == 1){
+                    flag = true;
+                } else {
+                    flag = res.msg;
+                }
+            },
+            error: function(e) {
+                showErrorAlert(e.responseText);
+            }
+        });
+
+        return flag;
+    }
+</script>
+
+{include file="public/footer" /}

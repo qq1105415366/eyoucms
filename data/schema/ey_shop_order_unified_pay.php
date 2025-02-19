@@ -21,7 +21,7 @@ return array (
   'unified_amount' => 
   array (
     'name' => 'unified_amount',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,

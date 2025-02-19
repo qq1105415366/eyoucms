@@ -1,5 +1,5 @@
 {include file="public/layout"/}
-<body style="background-color: rgb(255, 255, 255); overflow: auto; cursor: default; -moz-user-select: inherit;min-width: auto;">
+<body class="bodystyle">
 <style>
     body{margin:0px;}
     body,th,td{font: 13px Arial,Tahoma;line-height: 16px;}
@@ -11,190 +11,249 @@
 </style>
 <div id="append_parent"></div>
 <div id="ajaxwaitid"></div>
-<div class="page">
-    <div class="flexigrid">
-        <!-- 操作说明 -->
-        <div id="" class="explanation" style="color: rgb(44, 188, 163); background-color: rgb(237, 251, 248);  margin-bottom: 10px;">
-            <div id="" class="title"><i class="fa fa-lightbulb-o"></i>
-                <h4 title="提示相关设置操作时应注意的要点">操作提示</h4>
-            </div>
-            <ul>
-                <li>扫描网站是否存在DOS攻击脚本php文件、可疑恶意木马文件等</li>
-                <li>默认不扫描图片目录，可安装【易优系统助手】插件单独扫码图片</li>
-            </ul>
-        </div>
-        <div style="margin:0px auto;border: 1px solid #ccc;">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tbody>
-                    <tr class="head">
-                        <th>安全扫描</th>
-                    </tr>
-                </tbody>
-            </table>
-            <br>
-            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                <tbody>
-                    <tr>
-                        <th style="vertical-align:middle; padding-left:5px;">网站存放路径：
-                            {$root_path}
-                            <input type="hidden" name="path" id="path" value="{$root_path}">
-                            &nbsp;&nbsp;
-                            <a href="javascript:void(0);" class="ncap-btn ncap-btn-green" onclick="scan();">开始扫描</a>
-                        </th>
-                    </tr>
-                </tbody>
-            </table>
-            <br>
-            <div id="div_scanlist" style="display: ;">
-                <div style="padding:10px; background-color:#F4F4F4">扫描：<span id="span_scanned">0</span>&nbsp;文件&nbsp;&nbsp;|&nbsp;&nbsp;发现：<span id="span_count">0</span>&nbsp;行可疑恶意代码&nbsp;&nbsp;|&nbsp;&nbsp;耗时：<span id="span_spent">0</span>&nbsp;&nbsp;|&nbsp;&nbsp;请管理员手动处理以下可疑恶意文件</div>
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <thead>
-                        <tr class="head">
-                            <th width="30" style="text-align: center;">No.</th>
-                            <th>可疑恶意文件</th>
-                            <th width="100">所在行号</th>
-                            <th width="500">详细代码片段</th>
-                            <th width="30">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tr_scan_html">
-                        <tr>
-                            <td class="no-data" style="width: auto !important;" align="center" axis="col0" colspan="5">
-                                <i class="fa fa-exclamation-circle"></i>请点击<a href="javascript:void(0);" onclick="scan();">开始扫描</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <center>
-                    <div style="margin: 20px 0px;">
-                        病毒库持续更新，扫描结果仅供排查
-                    </div>
-                </center>
+<div class="page pb0">
+    <div class="fixed-bar pb0">
+        <div class="item-title mb0">
+            <a class="back_xin" href="javascript:history.back();" title="返回"><i class="iconfont e-fanhui"></i></a>
+            <div class="subject">
+                <h3>安全中心</h3>
+                <h5></h5>
             </div>
         </div>
     </div>
 </div>
-<script>
-    // scan();
+<div class="page nobg">
+    <div class="flexigrid">
+        <!-- 安全扫描 -->
+        <div class="security-scan">
+            <div class="security-scan-l">
+                <div class="wlaq_pic" id="scan_wlaq_pic">
+                    {if condition="empty($ddosSetting['ddos_scan_is_finish'])"}
+                        <!-- 未检测 -->
+                        <img src="__SKIN__/images/security-unknown.png">
+                    {else /}
+                        {empty name="$doubtdata['html']"}
+                            <!-- 检测后没有问题 -->
+                            <img src="__SKIN__/images/security-yes.png">
+                        {else /}
+                            <!-- 检测后有问题 -->
+                            <img src="__SKIN__/images/security-no.png">
+                        {/empty}
+                    {/if}
+                </div>
+                <div class="wlaq-name">
+                    <div class="wlaq-name-t">定期检查，确保程序安全</div>
+                    <span class="wlaq-name-c">请选择扫描的范围，如果图片及附件目录过多，扫描会用时长些，建议分开扫描</span>
+                    <div class="wlaq-name-b">
+                        扫描范围：
+                        <label class="curpoin mr10"><input id="range_files" name="range_files" value="1" type="checkbox" {notempty name="$ddosSetting['ddos_scan_range_files']"} checked="checked" {/notempty}>系统文件</label>
+                        <label class="curpoin mr10"><input id="range_attachment" name="range_attachment" value="1" type="checkbox" {notempty name="$ddosSetting['ddos_scan_range_attachment']"} checked="checked" {/notempty}>附件目录</label>
+                        <!-- <label class="curpoin mr10"><input id="range_uploads" name="range_uploads" value="1" type="checkbox" {notempty name="$ddosSetting['ddos_scan_range_uploads']"} checked="checked" {/notempty}>图片目录</label> -->
+                    </div>
+                </div>
+            </div>
+            <div class="security-scan-r">
+                <a class="scan-btn" onclick="scan();" href="javascript:void(0);">立即扫描</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page">
+    <div class="flexigrid">
+        <!-- 扫描结果 -->
+        <div class="result">
+            <div id="div_scanlist" {if condition="empty($ddosSetting['ddos_scan_is_finish'])"} style="display: none;" {/if}>
+                <div class="result-tip">
+                    <div id="scan_no_problem" {notempty name="$doubtdata['html']"} style="display: none;" {/notempty}>
+                        <i class="iconfont e-yanzhengmaguanli green"></i>共检查了<em class="scan_allpagetotal">{$ddosSetting['ddos_scan_allscantotal']}</em>个文件，没有发现问题。
+                    </div>
+                    <div id="scan_yes_problem" class="scan-problem" {empty name="$doubtdata['html']"} style="display: none;" {/empty}>
+                        <div>
+                            <i class="iconfont e-gantanhao-quan red"></i>共检查了<em class="scan_allpagetotal">{$ddosSetting['ddos_scan_allscantotal']}</em>个文件，以下<em id="scan_doubtotal">{$doubtdata['file_doubt_total']}</em>个文件有问题，需要修复：
+                        </div>
+                        <div>
+                            <a class="scan-problem-btn" onclick="one_click_repair(this);" href="javascript:void(0);">一键处理</a>
+                        </div>
+                        
+                    </div>
+                </div>
+                <ul class="result-problem" id="scan_problem_list" {empty name="$doubtdata['html']"} style="display: none;" {/empty}>
+                    {$doubtdata['html']}
+                </ul> 
+                <div style="height: 30px;"></div>
+            </div>
+            <div class="result-tip"><i class="iconfont e-anquanshezhi green"></i>以下事项优化可提升网站安全性，具体建议如下：</div>
+            <ul class="result-advise">
+                <li>
+                    <span class="label">账号密码</span>
+                    {if condition="$Think.session.admin_login_pwdlevel <= 3"}
+                        <!-- 一般及一般以下  -->
+                        <div class="name">后台登录密码强度：<span class="red">{$Think.session.admin_login_pwdlevel|getPasswordLevelTitle=###}</span>，容易被暴力破解，请及时修改密码，提高安全性。</div>
+                    {else /}
+                        <!-- 一般以上不包含一般  -->
+                        <div class="name">后台登录密码强度：<span class="green">{$Think.session.admin_login_pwdlevel|getPasswordLevelTitle=###}</span>，请记好密码，如有忘记可以使用改密小工具</div>
+                    {/if}
+                    <div class="operation">
+                        <a href="javascript:void(0);" data-href="{:url('Admin/admin_edit', ['id'=>$Think.session.admin_info.admin_id,'iframe'=>1])}" onclick="openFullframe(this, '管理员-修改密码');">修改</a>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">登录路径</span>
+                    <div class="name">
+                        建议修改后台登录路径，以提高网站安全性
+                        {if condition="!empty($adminbasefile) && $adminbasefile != 'login.php'"}
+                            &nbsp;(<span class="green">已修改</span>)
+                        {/if}
+                    </div>
+                    <div class="operation">
+                        <a href="javascript:void(0);" data-href="{:url('Security/popup_adminbasefile')}" onclick="openFullframe(this, '后台登录路径设置', '680px', '285px');">设置</a>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">登录超时</span>
+                    <div class="name">
+                        后台登录后，超出设置时长时，将会自动退出登录
+                        &nbsp;(<span class="green">已设置为{$global.web_login_expiretime|default=config('login_expire')}秒</span>)
+                    </div>
+                    <div class="operation">
+                        <a href="javascript:void(0);" data-href="{:url('Security/popup_login_expiretime')}" onclick="openFullframe(this, '后台登录超时设置', '680px', '285px');">设置</a>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">登录防爆</span>
+                    <div class="name">
+                        包含登录失败锁定，防火墙规则设置，双因子验证
+                    </div>
+                    <div class="operation">
+                        <a href="javascript:void(0);" data-href="{:url('Security/popup_flameproof')}" data-cancel_callback="win_reload" onclick="openFullframe(this, '后台登录防爆设置', '100%', '100%');">设置</a>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">密保问题</span>
+                    <div class="name">
+                        建议开启密保问题，以提高网站安全性 
+                        {if condition="!empty($global['security_ask_open'])"}
+                            &nbsp;(<span class="green">已开启</span>)
+                        {/if}
+                     </div>
+                    <div class="operation">
+                        <a href="javascript:void(0);" data-href="{:url('Security/popup_second')}" data-cancel_callback="win_reload" onclick="openFullframe(this, '密保问题设置', '860px', '70%');">设置</a>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">图片木马</span>
+                    <div class="name">
+                        建议开启，所有上传图片的功能将进行木马检测 
+                        {if condition='empty($check_illegal_open)'}
+                            &nbsp;(<span class="green">已开启</span>)
+                        {/if}
+                    </div>
+                    <div class="operation">
+                        {if condition='!empty($check_illegal_open)'}
+                            <a href="javascript:void(0);" onclick="check_illegal_open_submit(0)">开启</a>
+                        {else /}
+                            <a href="javascript:void(0);" onclick="check_illegal_open_submit(1)">关闭</a>
+                        {/if}
+                    </div>
+                </li>
+                <li>
+                    <span class="label">白&nbsp;名&nbsp;单</span>
+                    <div class="name">
+                        管理扫描的白名单列表
+                     </div>
+                    <div class="operation">
+                        <a href="javascript:void(0);" data-href="{:url('Security/ddos_whitelist_list')}" data-cancel_callback="win_reload" onclick="openFullframe(this, '扫描白名单管理', '80%', '80%');">查看</a>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">目录权限</span>
+                    <div class="name">按教程设置，可提高网站安全性，系统升级时需要把权限恢复，否则会有升级失败的情况</div>
+                    <div class="operation">
+                        <a href="JavaScript:void(0);" data-href="https://www.eyoucms.com/plus/view.php?aid=28298&origin_eycms=1" onclick="openFullframe(this,'易优CMS目录权限设置教程，仅供参考');">查看</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
     function scan()
     {
-        var timer = '';
-        var loading = layer.msg(
-'<span id="progress_speed">准备扫描</span>...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;请勿刷新页面', 
-        {
-            time: 3600000, //1小时后后自动关闭
-            shade: [0.2] //0.1透明度的白色背景
-        });
-        //loading层
-        var index = layer.load(2, {
-            shade: [0.1,'#fff'] //0.1透明度的白色背景
-        });
-        $.ajax({
-            type: "POST",
-            url: "{:url('Security/ddos_scan')}",
-            data: {_ajax:1},
-            dataType: 'json',
-            beforeSend: function(xhr) {
-                var html = '';
-                html += '<tr>';
-                html += '    <td class="no-data" style="width: auto !important;" align="center" axis="col0" colspan="5">';
-                html += '        <i class="fa fa-exclamation-circle"></i>正在扫描中';
-                html += '    </td>';
-                html += '</tr>';
-                $('#tr_scan_html').html(html);
-                $('#div_scanlist').show();
-                progressd(0);
-            },
-            success: function (res) {
-                if(res.code == 1){
-                    $('#progress_speed').html('已扫描<font id="progress_num">100</font>%');
-                    setTimeout(function(){
-                        layer.closeAll();
-                        $('#span_scanned').html(res.data.scanned);
-                        $('#span_count').html(res.data.num_ky);
-                        $('#span_spent').html(res.data.spent);
-                        $('#tr_scan_html').html(res.data.html);
-                        showErrorAlert(res.msg, 6);
-                    },1000);
-                }else{
-                    layer.closeAll();
-                    showErrorAlert(res.msg);
-                }
-            },
-            error:function(e){
-                layer.closeAll();
-                showErrorAlert(e.responseText);
-            }
-        });
+        var range_files = $('#range_files:checked').val();
+        var range_attachment = $('#range_attachment:checked').val();
+        var range_uploads = $('#range_uploads:checked').val();
+        if (1 != range_files && 1 != range_attachment && 1 != range_uploads) {
+            layer.msg('请勾选要扫描范围', {icon: 2, time: 1200});
+            return false;
+        }
+
+        var url = eyou_basefile+"?m=admin&c=Security&a=ddos_scan_file&range_files="+range_files+"&range_attachment="+range_attachment+"&range_uploads="+range_uploads+"&lang="+__lang__;
+        var index = layer.open({type: 2,title: '智能扫描',area: ['500px', '218px'],fix: false, maxmin: false,content: url});
     }
 
-    function progressd(init)
+    /**
+     * 加入白名单
+     * @param  {[type]} obj [description]
+     * @param  {[type]} opt [description]
+     * @return {[type]}     [description]
+     */
+    function whitelist_add(obj, opt)
     {
-        $.ajax({
-            type: "POST",
-            url: "{:url('Security/ddos_progressd')}",
-            data: {init:init, _ajax:1},
-            dataType: 'json',
-            success: function (res) {
-                if(res.code == 1){
-                    if (res.data.progress > 0) {
-                        $('#span_scanned').html(res.data.file_num);
-                        $('#span_count').html(res.data.file_num_ky);
-                        $('#span_spent').html('计时中');
-                        $('#tr_scan_html').html(res.data.html);
-                        $('#div_scanlist').show();
-                        var progress_num = $('#progress_num').val();
-                        if (res.data.progress > progress_num || progress_num == undefined) {
-                            $('#progress_speed').html('已扫描<font id="progress_num">' + res.data.progress + '</font>%');
-                        }
-                    }
-                    if (100 > res.data.progress) {
-                        progressd(1);
-                    }
+        var md5keys = [];
+        if ('batch' == opt) {
+            $('input[name^=md5keys]').each(function(i,o){
+                if($(o).is(':checked')){
+                    md5keys.push($(o).val());
                 }
+            })
+            if(md5keys.length == 0){
+                layer.alert('请至少选择一项', {
+                    shade: layer_shade,
+                    area: ['480px', '190px'],
+                    move: false,
+                    title: '提示',
+                    btnAlign:'r',
+                    closeBtn: 3,
+                    success: function () {
+                        $(".layui-layer-content").css('text-align', 'left');
+                    }
+                });
+                return;
             }
-        });
-    }
+        } else {
+            md5keys.push($(obj).attr('data-md5key'));
+        }
 
-    function delfile(obj)
-    {
-        title = '确认删除？';
-        btn = ['确定', '取消']; //按钮
+        var title = '将此项加入白名单列表，下次扫描将智能跳过';
         layer.confirm(title, {
-            shade: layer_shade,
-            area: ['480px', '190px'],
-            move: false,
-            title: '提示',
-            btnAlign:'r',
-            closeBtn: 3,
-            btn: btn, //按钮
-            success: function () {
-                  $(".layui-layer-content").css('text-align', 'left');
-              }
-            }, function(){
-                // 确定
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '加入白名单',
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['确定', '取消'], //按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            }, function(index){
                 layer_loading('正在处理');
-                var md5key = $(obj).attr('data-md5key');
                 $.ajax({
                     type : 'POST',
-                    url : "{:url('Security/ddos_delfile')}",
-                    data : {md5key:md5key, _ajax:1},
+                    url : "{:url('Security/ddos_whitelist_add')}",
+                    data : {md5keys:md5keys, _ajax:1},
                     dataType : 'json',
                     success : function(res){
                         layer.closeAll();
-                        if(res.code == 1){
-                            $('#tr_scan_html').find('a[data-md5key='+md5key+']').each(function(index, item){
-                                $(item).parent().parent().remove();
+                        if (res.data && res.data.md5keys) {
+                            $.each(res.data.md5keys, function(index, item){
+                                $('#div_scanlist').find('a[data-md5key='+item+']').parent().parent().remove();
                             });
-                            if ($('#tr_scan_html tr').length == 0) {
-                                var html = '';
-                                html += '<tr>';
-                                html += '    <td class="no-data" style="width: auto !important;" align="center" axis="col0" colspan="5">';
-                                html += '        <i class="fa fa-exclamation-circle"></i>没有发现可疑文件';
-                                html += '    </td>';
-                                html += '</tr>';
-                                $('#tr_scan_html').html(html);
-                            }
+                        }
+                        
+                        if(res.code == 1){
+                            $('#scan_doubtotal').text(res.data.file_doubt_total);
                             layer.msg(res.msg, {icon: 1, time: 500});
                         }else{
                             showErrorAlert(res.msg);
@@ -210,6 +269,246 @@
                 return false;// 取消
             }
         );
+    }
+
+    /**
+     * 一键处理
+     * @param  {[type]} obj [description]
+     * @return {[type]}     [description]
+     */
+    function one_click_repair(obj)
+    {
+        var title = '将批量处理扫描出来的文件修复及删除操作，操作后不可恢复，请确认';
+        layer.confirm(title, {
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '一键处理',
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['执行', '取消'], //按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            }, function(index){
+                // 执行
+                layer_loading('正在处理');
+                $.ajax({
+                    type : 'POST',
+                    url : "{:url('Security/ddos_one_click_repair')}",
+                    data : {_ajax:1},
+                    dataType : 'json',
+                    success : function(res){
+                        layer.closeAll();
+                        if (res.data && res.data.md5keys) {
+                            $.each(res.data.md5keys, function(index, item){
+                                $('#div_scanlist').find('a[data-md5key='+item+']').parent().parent().remove();
+                            });
+                        }
+                        
+                        if(res.code == 1){
+                            $('#scan_doubtotal').text(res.data.file_doubt_total);
+                            layer.msg(res.msg, {icon: 1, time: 500});
+                        }else{
+                            showErrorAlert(res.msg);
+                        }
+                    },
+                    error:function(e){
+                        layer.closeAll();
+                        showErrorAlert(e.responseText);
+                    }
+                })
+            }, function(index){
+                layer.close(index);
+                return false;// 取消
+            }
+        );
+    }
+
+    /**
+     * 修复
+     * @param  {[type]} obj [description]
+     * @param  {[type]} opt [description]
+     * @return {[type]}     [description]
+     */
+    function replacefile(obj, opt)
+    {
+        var md5keys = [];
+        if ('batch' == opt) {
+            $('input[name^=md5keys]').each(function(i,o){
+                if($(o).is(':checked')){
+                    md5keys.push($(o).val());
+                }
+            })
+            if(md5keys.length == 0){
+                layer.alert('请至少选择一项', {
+                    shade: layer_shade,
+                    area: ['480px', '190px'],
+                    move: false,
+                    title: '提示',
+                    btnAlign:'r',
+                    closeBtn: 3,
+                    success: function () {
+                        $(".layui-layer-content").css('text-align', 'left');
+                    }
+                });
+                return;
+            }
+        } else {
+            md5keys.push($(obj).attr('data-md5key'));
+        }
+        var title = $(obj).data('title');
+        layer.confirm(title, {
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '提示',
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['确定', '取消'], //按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            }, function(){
+                // 确定
+                layer_loading('正在处理');
+                $.ajax({
+                    type : 'POST',
+                    url : "{:url('Security/ddos_replacefile')}",
+                    data : {md5keys:md5keys, _ajax:1},
+                    dataType : 'json',
+                    success : function(res){
+                        layer.closeAll();
+                        if (res.data && res.data.md5keys) {
+                            $.each(res.data.md5keys, function(index, item){
+                                $('#div_scanlist').find('a[data-md5key='+item+']').parent().parent().remove();
+                            });
+                        }
+                        
+                        if(res.code == 1){
+                            $('#scan_doubtotal').text(res.data.file_doubt_total);
+                            layer.msg(res.msg, {icon: 1, time: 500});
+                        }else{
+                            showErrorAlert(res.msg);
+                        }
+                    },
+                    error:function(e){
+                        layer.closeAll();
+                        showErrorAlert(e.responseText);
+                    }
+                })
+            }, function(index){
+                layer.close(index);
+                return false;// 取消
+            }
+        );
+    }
+
+    /**
+     * 删除
+     * @param  {[type]} obj [description]
+     * @param  {[type]} opt [description]
+     * @return {[type]}     [description]
+     */
+    function delfile(obj, opt)
+    {
+        var md5keys = [];
+        if ('batch' == opt) {
+            $('input[name^=md5keys]').each(function(i,o){
+                if($(o).is(':checked')){
+                    md5keys.push($(o).val());
+                }
+            })
+            if(md5keys.length == 0){
+                layer.alert('请至少选择一项', {
+                    shade: layer_shade,
+                    area: ['480px', '190px'],
+                    move: false,
+                    title: '提示',
+                    btnAlign:'r',
+                    closeBtn: 3,
+                    success: function () {
+                        $(".layui-layer-content").css('text-align', 'left');
+                    }
+                });
+                return;
+            }
+        } else {
+            md5keys.push($(obj).attr('data-md5key'));
+        }
+
+        layer.confirm('此操作不可逆，确认删除？', {
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '提示',
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['确定', '取消'], //按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            }, function(){
+                // 确定
+                layer_loading('正在处理');
+                $.ajax({
+                    type : 'POST',
+                    url : "{:url('Security/ddos_delfile')}",
+                    data : {md5keys:md5keys, _ajax:1},
+                    dataType : 'json',
+                    success : function(res){
+                        layer.closeAll();
+                        if (res.data && res.data.md5keys) {
+                            $.each(res.data.md5keys, function(index, item){
+                                $('#div_scanlist').find('a[data-md5key='+item+']').parent().parent().remove();
+                            });
+                        }
+
+                        if(res.code == 1){
+                            $('#scan_doubtotal').text(res.data.file_doubt_total);
+                            layer.msg(res.msg, {icon: 1, time: 500});
+                        }else{
+                            showErrorAlert(res.msg);
+                        }
+                    },
+                    error:function(e){
+                        layer.closeAll();
+                        showErrorAlert(e.responseText);
+                    }
+                })
+            }, function(index){
+                layer.close(index);
+                return false;// 取消
+            }
+        );
+    }
+
+    function win_reload()
+    {
+        window.location.reload();
+    }
+
+    // 上传图片检测木马
+    function check_illegal_open_submit(value) {
+        layer_loading('正在处理');
+        $.ajax({
+            url: "{:url('Security/illegal_check_open')}",
+            data: {value:value,_ajax:1},
+            type: 'post',
+            dataType: 'json',
+            success: function (res) {
+                layer.closeAll();
+                if (1 == res.code) {
+                    layer.msg(res.msg, {time: 1000}, function(){
+                        window.location.reload();
+                    });
+                }
+            },
+            error:function (e) {
+                layer.closeAll();
+                showErrorAlert(e.responseText);
+            }
+        });
     }
 </script>
 {include file="public/footer" /}

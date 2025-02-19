@@ -27,6 +27,15 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'original_title' => 
+  array (
+    'name' => 'original_title',
+    'type' => 'varchar(100)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'controller_name' => 
   array (
     'name' => 'controller_name',

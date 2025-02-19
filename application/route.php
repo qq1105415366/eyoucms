@@ -12,7 +12,7 @@
  */
 
 $home_rewrite = [];
-$route = [
+$route = $default_route = [
     '__pattern__' => [
         'tid' => '[\-\w]+',
         'dirname' => '[\-\w]+',
@@ -669,4 +669,23 @@ if ('on' == trim($uiset, '/')) { // 可视化页面必须是兼容模式的URL
 }
 
 $route = array_merge($route, $home_rewrite);
+
+// 命令行执行的php脚本，不需要走路由规则
+if (IS_CLI) {
+    if (is_dir('./weapp/Im/')) {
+        // Win 环境
+        if (IS_WIN) {
+            if (!empty($_SERVER['argv'][0]) && preg_match('/weapp(\/|\\\)Im(\/|\\\)/', $_SERVER['argv'][0])) {
+                $route = $default_route;
+            }
+        }
+        // 非 Win 环境
+        else {
+            if (!empty($_SERVER['argv'][1]) && 'Im' == $_SERVER['argv'][1]) {
+                $route = $default_route;
+            }
+        }
+    }
+}
+
 return $route;

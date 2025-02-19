@@ -47,7 +47,7 @@
                                                     <input type="hidden" name="list" value="1">
                                                     <div class="input-with-select el-input el-input-group el-input-group--append">
                                                         <input type="search" name="keywords" value="{$keywords}" autocomplete="off" placeholder="输入文档标题" class="search-text">
-                                                        <input type="submit" value="" class="search-btn iconfont">
+                                                        <button type="submit" class="search-btn"><i class="iconfont-users2 icon-users2-sousuo1"></i></button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -72,7 +72,6 @@
                                                     <td  align="center" axis="col0" colspan="50">
                                                         <div class="cell pt100 tc">
                                                             <span class="mb10"><img id="litpic_img" src="{eyou:static file='users/skin/images/null-data.png' /}"></span>
-                                                            <p>当前暂无投稿记录哦~</p>
                                                          </div>
                                                     </td>
                                                 </tr>
@@ -141,7 +140,7 @@
                                         </div>
                                         {$page}
                                         {eyou:if condition="!empty($pager->totalRows)"}
-                                        <div class="fytotal">共{$pager->totalRows}条记录</div>
+                                        <div class="fytotal">{:sprintf(foreign_lang('page5'), $pager->totalPages, $pager->totalRows)}</div>
                                         {/eyou:if}
                                     </div>
                                 </div>

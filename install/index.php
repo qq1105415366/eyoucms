@@ -86,7 +86,7 @@ switch ($step) {
         if ($mini_php <= phpversion()){
             $phpvStr = '<img src="images/ok.png">';
         }else{
-            $phpvStr = '<img src="images/del.png"> &nbsp;<a href="http://www.eyoucms.com/wenda/3132.html" target="_blank">当前版本('.phpversion().')不支持</a>';
+            $phpvStr = '<img src="images/del.png"> &nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31482" target="_blank">当前版本('.phpversion().')不支持</a>';
             $err++;
         }
         $os = PHP_OS;
@@ -98,10 +98,10 @@ switch ($step) {
         $max_execution_time = ini_get('max_execution_time');
         $allow_reference = (ini_get('allow_call_time_pass_reference') ? '<img src="images/ok.png">' : '<img src="images/del.png">');
         $allow_url_fopen = (ini_get('allow_url_fopen') ? '<img src="images/ok.png">' : '<img src="images/del.png">');
-        $safe_mode = (ini_get('safe_mode') ? '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3125.html" target="_blank">详情</a>' : '<img src="images/ok.png">');
+        $safe_mode = (ini_get('safe_mode') ? '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31483" target="_blank">详情</a>' : '<img src="images/ok.png">');
         
         if (empty($tmp['GD Version'])) {
-            $gd = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3126.html" target="_blank">详情</a>';
+            $gd = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31483" target="_blank">详情</a>';
             $err++;
         } else {
             $gd = '<img src="images/ok.png">';
@@ -109,24 +109,24 @@ switch ($step) {
         if (function_exists('mysqli_connect')) {
             $mysql = '<img src="images/ok.png">';
         } else {
-            $mysql = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3127.html" target="_blank">详情</a>';
+            $mysql = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31484" target="_blank">详情</a>';
             $err++;
         }
         // if (ini_get('file_uploads')) {
         //     $uploadSize = '<img src="images/ok.png">';
         // } else {
-        //     $uploadSize = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3128.html" target="_blank">详情</a>';
+        //     $uploadSize = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31485" target="_blank">详情</a>';
         // }
         if (class_exists('pdo')) {
             $pdo = '<img src="images/ok.png">';
         } else {
-            $pdo = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3129.html" target="_blank">详情</a>';
+            $pdo = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31486" target="_blank">详情</a>';
             $err++;
         }
         if (extension_loaded('pdo_mysql')) {
             $pdo_mysql = '<img src="images/ok.png">';
         } else {
-            $pdo_mysql = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3129.html" target="_blank">详情</a>';
+            $pdo_mysql = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31486" target="_blank">详情</a>';
             $err++;
         }
 /*        if (function_exists('session_start')) {
@@ -138,13 +138,13 @@ switch ($step) {
         if(function_exists('curl_init')){
             $curl = '<img src="images/ok.png">';
         }else{
-            $curl = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3130.html" target="_blank">详情</a>';
+            $curl = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31487" target="_blank">详情</a>';
             $err++;
         }
         if(function_exists('file_put_contents')){
             $file_put_contents = '<img src="images/ok.png">';
         }else{
-            $file_put_contents = '<img src="images/del.png">&nbsp;<a href="http://www.eyoucms.com/wenda/3131.html" target="_blank">详情</a>';
+            $file_put_contents = '<img src="images/del.png">&nbsp;<a href="https://www.eyoucms.com/plus/view.php?aid=31488" target="_blank">详情</a>';
             $err++;
         }
         // if(function_exists('scandir')){
@@ -361,7 +361,7 @@ switch ($step) {
             if (false === $is_bool) {
                 $database_version = !empty($database_version) ? $database_version :'无';
                 $arr['code'] = 0;
-                $arr['msg'] = "无法安装，数据库文件版本号(<font color='red'>{$database_version}</font>)与CMS源码版本号(<font color='red'>{$cms_version}</font>)不一致，<a href='http://www.eyoucms.com/wenda/7227.html' target='_blank'>点击查看</a>！";
+                $arr['msg'] = "无法安装，数据库文件版本号(<font color='red'>{$database_version}</font>)与CMS源码版本号(<font color='red'>{$cms_version}</font>)不一致，<a href='https://www.eyoucms.com/plus/view.php?aid=31161' target='_blank'>点击查看</a>！";
                 echo json_encode($arr);
                 exit;
             }
@@ -377,7 +377,8 @@ switch ($step) {
 
             if (strstr($sql, 'CREATE TABLE')) {
                 preg_match('/CREATE TABLE `([^ ]*)`/', $sql, $matches);
-                mysqli_query($conn,"DROP TABLE IF EXISTS `$matches[1]");
+                mysqli_query($conn,"DROP TABLE IF EXISTS `$matches[1]`");
+                $sql = str_ireplace('CHARACTER SET utf8mb4', '', $sql);
                 $ret = mysqli_query($conn,$sql);
                 if (!$ret) {
                     $message = '创建数据表' . $matches[1] . '失败，请尝试F5刷新!';
@@ -387,8 +388,9 @@ switch ($step) {
                     exit;
                 }
             } else {
-                if(trim($sql) == '')
+                if(trim($sql) == '') {
                    continue;
+                }
                 preg_match('/INSERT INTO `([^ ]*)`/', $sql, $matches);
                 $ret = mysqli_query($conn,$sql);
                 if (!$ret) {
@@ -447,7 +449,9 @@ switch ($step) {
         $strConfig = str_replace('#DB_PREFIX#', $dbPrefix, $strConfig);
         $strConfig = str_replace('#DB_CHARSET#', 'utf8', $strConfig);
         $strConfig = str_replace('#DB_DEBUG#', false, $strConfig);
-        @chmod(SITEDIR . 'application/database.php',0777); //数据库配置文件的地址
+        if (function_exists('chmod')) {
+            @chmod(SITEDIR . 'application/database.php',0777); //数据库配置文件的地址
+        }
         @file_put_contents(SITEDIR . 'application/database.php', $strConfig); //数据库配置文件的地址
         
         //读取配置文件，并替换缓存前缀
@@ -455,7 +459,9 @@ switch ($step) {
         $uniqid_str = uniqid();
         $uniqid_str = md5($uniqid_str);
         $strConfig = str_replace('eyoucms_cache_prefix', $uniqid_str, $strConfig);           
-        @chmod(SITEDIR . 'application/config.php',0777); //配置文件的地址
+        if (function_exists('chmod')) {
+            @chmod(SITEDIR . 'application/config.php',0777); //配置文件的地址
+        }
         @file_put_contents(SITEDIR . 'application/config.php', $strConfig); //配置文件的地址
         
         $web_cmspath = preg_replace('/(.*)\/install([\w]*)\/index\.php/i', '$1', $_SERVER['SCRIPT_NAME']);
@@ -470,6 +476,10 @@ switch ($step) {
 
         //更新网站配置的CMS版本号
         $sql = "UPDATE `{$dbPrefix}config` SET `value` = '$cms_version' WHERE name = 'system_version' AND inc_type = 'system'";
+        mysqli_query($conn, $sql);
+
+        //清除重新检测时间
+        $sql = "UPDATE `{$dbPrefix}config` SET `value` = '0' WHERE name LIKE 'php_atqueryrequest_time%' AND inc_type = 'php'";
         mysqli_query($conn, $sql);
         
         $auth_code = get_auth_code($conn, $dbPrefix);
@@ -532,7 +542,7 @@ switch ($step) {
         $mt_rand_str = $create_date.sp_random_string(6);
         $service_ey = base64_decode(SERVICE_URL);
         $ajax_url = 'L2luZGV4LnBocD9tPWFwaSZjPVNlcnZpY2UmYT11c2VyX3B1c2g=';
-        $str_constant = "<?php".PHP_EOL."define('INSTALL_DATE',".$time.");".PHP_EOL."define('SERIALNUMBER','".$mt_rand_str."');";
+        $str_constant = "<?php".PHP_EOL."define('INSTALL_DATE', ".$time.");".PHP_EOL."define('SERIALNUMBER', '".$mt_rand_str."');";
         @file_put_contents(SITEDIR . 'application/admin/conf/constant.php', $str_constant);
 
         // 还原sqldata目录名
@@ -675,7 +685,9 @@ function dir_create($path, $mode = 0777) {
         if (@is_dir($cur_dir))
             continue;
         @mkdir($cur_dir, 0777, true);
-        @chmod($cur_dir, 0777);
+        if (function_exists('chmod')) {
+            @chmod($cur_dir, 0777);
+        }
     }
     return is_dir($path);
 }

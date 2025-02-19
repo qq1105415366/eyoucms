@@ -30,19 +30,28 @@
     <div class="flexigrid">
         <div class="fixed-bar">
             <div class="item-title">
-                {include file="public/callback_page_1" /}<!-- 返回箭头 -->
-                <a class="back_sz" href="javascript:void(0);" data-href="{:url('ShopProduct/help')}" onclick="openHelpframe(this, '设置与帮助', '500px', '100%', 'r');" title="设置与帮助"><i class="iconfont e-shezhi-tongyong"></i></a>
-                <div class="subject">
-                    <h3>发布商品</h3>
-                    <h5></h5>
+                <div class="item-title-lr">
+                    <div class="item-title-l">
+                        {include file="public/callback_page_1" /}<!-- 返回箭头 -->
+                        <div class="subject">
+                            <h3>发布商品</h3>
+                            <h5></h5>
+                        </div>
+                        <ul class="tab-base nc-row">
+                            <li><a href="javascript:void(0);" data-index='1' class="tab current"><span>基础设置</span></a></li>
+                            <li><a href="javascript:void(0);" data-index='2' class="tab"><span>商品详情</span></a></li>
+                            <li><a href="javascript:void(0);" data-index='3' class="tab"><span>商品参数</span></a></li>
+                            <li><a href="javascript:void(0);" data-index='4' class="tab"><span>高级设置</span></a></li>
+                            <!-- #weapp_li# -->
+                        </ul>
+                    </div>
+                    <div class="item-title-r">
+                        {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/archives/ai_tab_base.htm')" /}
+                            {include file="/weapp/Ai/template/archives/ai_tab_base.htm" /}
+                        {/if}
+                        <a class="back_sz" href="javascript:void(0);" data-href="{:url('ShopProduct/help')}" onclick="openHelpframe(this, '设置与帮助', '500px', '100%', 'r');" title="设置与帮助"><i class="iconfont e-shezhi-tongyong"></i></a>
+                    </div>
                 </div>
-                <ul class="tab-base nc-row">
-                    <li><a href="javascript:void(0);" data-index='1' class="tab current"><span>基础设置</span></a></li>
-                    <li><a href="javascript:void(0);" data-index='2' class="tab"><span>商品详情</span></a></li>
-                    <li><a href="javascript:void(0);" data-index='3' class="tab"><span>商品参数</span></a></li>
-                    <li><a href="javascript:void(0);" data-index='4' class="tab"><span>高级设置</span></a></li>
-                    <!-- #weapp_li# -->
-                </ul>
             </div>
         </div>
 
@@ -240,7 +249,7 @@
                             </script>
                         </div>
                         <span class="err"></span>
-                        <p class="notic">当没有手动上传图片时候，会自动提取正文的第一张图片作为缩略图</p>
+                        <p class="notic"></p>
                     </dd>
                 </dl>
                 <dl class="row">
@@ -382,14 +391,14 @@
                 <dl class="row spec_type_1">
                     <dt class="tit"> <label for="users_price"> <em>*</em>价格 </label> </dt>
                     <dd class="opt">
-                        <input type="text" name="users_price" id="users_price" style="width: 10%;" placeholder="价格" onkeyup="this.value=this.value.replace(/[^\.\d]/g,'');" onpaste="this.value=this.value.replace(/[^\.\d]/g,'');">
+                        <input type="text" name="users_price" id="users_price" style="width: 10%;" placeholder="价格" onpaste='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, "$1");' onkeyup='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, "$1");'>
                     </dd>
                 </dl>
                 <!-- 划线价字段 -->
                 <dl class="row spec_type_1">
                     <dt class="tit"> <label for="crossed_price">划线价 </label> </dt>
                     <dd class="opt">
-                        <input type="text" name="crossed_price" id="crossed_price" style="width: 10%;" placeholder="划线价" onkeyup="this.value=this.value.replace(/[^\.\d]/g,'');" onpaste="this.value=this.value.replace(/[^\.\d]/g,'');">
+                        <input type="text" name="crossed_price" id="crossed_price" style="width: 10%;" placeholder="划线价" onpaste='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, "$1");' onkeyup='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, "$1");'>
                     </dd>
                 </dl>
                 <!-- 会员折扣价 -->
@@ -703,7 +712,7 @@
                     <dd class="opt">
                         <input type="text" name="seo_title" id="seo_title" class="input-txt">
                 		<span class="err"></span>
-                        <p class="notic">一般不超过80个字符，为空时系统自动构成，可以到 <a href="{:url('Seo/index', array('inc_type'=>'seo'))}">SEO设置 - SEO基础</a> 中设置构成规则。</p>
+                        <p class="notic">建议80个字符以内，不填写则使用 {$global['seo_viewtitle_msg']} 在前端展示</p>
                     </dd>
                 </dl>
                 <dl class="row">
@@ -719,7 +728,7 @@
                     <dd class="opt">
                         <textarea rows="5" cols="60" id="seo_description" name="seo_description" style="height: 130px;" class="keywordsTextarea" onkeyup="monitorInputStr();" onkeypress="monitorInputStr();"></textarea>
                         <span class="err"></span>
-                        <p class="notic">一般不超过100个字符，不填写时系统自动提取正文的前100个字符</p>
+                        <p class="notic">一般不超过{$global['seo_description_length']|default=config('global.arc_seo_description_length')}个字符，不填写时系统自动提取正文的前{$global['seo_description_length']|default=config('global.arc_seo_description_length')}个字符</p>
                         <p class="notic2 none" id="beenWritten">你已输入<span id="beenWrittenStr">0</span>个字符</p>
                     </dd>
                 </dl>

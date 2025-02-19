@@ -117,7 +117,8 @@ class Search extends Base
             if (!empty($searchConf['search_tabu_words'])) {
                 foreach ($searchConf['search_tabu_words'] as $key => $val) {
                     if (strstr($word_decode, $val)) {
-                        $this->error(foreign_lang('system13', $this->home_lang));
+                        $msg = sprintf(foreign_lang('system13', $this->home_lang), $val);
+                        $this->error($msg);
                     }
                 }
             }

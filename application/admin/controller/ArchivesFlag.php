@@ -41,4 +41,87 @@ class ArchivesFlag extends Base
         $this->assign('pager',$pager);// 赋值分页对象
         return $this->fetch();
     }
+
+    /**
+     * 删除
+     * @return [type] [description]
+     */
+    public function del()
+    {
+        if (IS_POST) {
+            $id_arr = input('del_id/a');
+            $id_arr = eyIntval($id_arr);
+            if(!empty($id_arr)){     
+                $result = Db::name('archivesFlag')->field('flag_name,id,flag_fieldname')->where("id",'IN',$id_arr)->find();
+                $r = Db::name('archivesFlag')->where([
+                        'id' => ['IN', $id_arr], 'ifsystem' => 0
+                    ])->delete();
+                if($r !== false){
+                    \think\Cache::clear('archives_flag');
+                    $post['flag_fieldname'] = $result['flag_fieldname'];
+                    model('ArchivesFlag')->afterSave($id_arr, $post, 'del');
+                    adminLog('删除文档属性：'.$result['flag_name']);
+                    $this->success('删除成功');
+                }
+            }
+        }
+        $this->error('删除失败');
+    }
+
+    /**
+     * 新增
+     */
+    public function add(){
+        if (IS_POST) {
+            $post = input('post.');
+            if(empty($post['flag_name'])){
+                $this->error('请输入名称','','',2);
+            }
+            if(Db::name('archivesFlag')->where(['flag_name'=>trim($post['flag_name'])])->find()){
+                $this->error('名称已存在','','',2);
+            }
+            if($this->validateFieldA($post['flag_attr'])==false){
+                $this->error('属性值至少2个及以上小写字母','','',2);
+            }
+            if(Db::name('archivesFlag')->where(['flag_attr'=>trim($post['flag_attr'])])->find()){
+                $this->error('属性值已存在','','',2);
+            }            
+            if (strpos($post['flag_attr'], 'is_') !== false) {                
+            } else {
+               $post['flag_fieldname'] = 'is_'.$post['flag_attr'];
+            }
+            $post['flag_attr'] = strtolower($post['flag_attr']);
+            $post['flag_fieldname'] = strtolower($post['flag_fieldname']);
+            $post['status'] = 1;
+            $post['lang'] = $this->admin_lang;
+            $post['add_time'] = time();
+            $post['update_time'] = time();
+            $lastid = Db::name('archivesFlag')->insertGetId($post);
+            if ($lastid) {
+                \think\Cache::clear('hooks');
+                \think\Cache::clear('archives_flag');                                
+                delFile(RUNTIME_PATH);
+                schemaAllTable();
+                model('ArchivesFlag')->afterSave($lastid, $post, 'add');
+                adminLog('新增：文档属性'); // 写入操作日志
+                $this->success("操作成功!");
+            }
+            $this->error('新增失败');
+        }                        
+        return $this->fetch();
+    }
+
+    /**
+     * 验证字段
+     * @param  [type] $value [description]
+     * @return [type]        [description]
+     */
+    private function validateFieldA($value) {
+        // 规则：必须是全小写字母，且至少 2 个字符
+        if (preg_match('/^[a-z]{2,}$/', $value)) {
+            return true; // 验证通过
+        } else {
+            return false; // 验证失败
+        }
+    }
 }

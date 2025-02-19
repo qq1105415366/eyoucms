@@ -64,6 +64,13 @@ class Article extends Model
                 ->join('__ARTICLE_CONTENT__ b', 'b.aid = a.aid', 'LEFT')
                 ->where($map)
                 ->find();
+            if (is_dir('./weapp/CompressContent/')) {                                
+                try {                                                    
+                    $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                
+                    $result = $compressLogic->decrypt_base64_encode(2,$result);                    
+                } catch (Exception $e) {
+                }                
+            }
         } else {
             $field = !empty($field) ? $field : 'a.*';
             $result = Db::name('archives')->field($field)

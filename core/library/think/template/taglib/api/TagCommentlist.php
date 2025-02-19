@@ -31,50 +31,82 @@ class TagCommentlist extends Base
     /**
      * 获取文档评论列表
      */
-    public function getCommentlist($param = array(), $aid = '')
+    public function getCommentlist($param = [], $aid = '')
     {
-        if (!is_dir('./weapp/Comment/')){
-            $redata = [
-                'data'=> '请先安装评论插件',
+      
+        if (!is_dir('./weapp/Comment/')) {
+            return [
+                'data' => '请先安装评论插件',
             ];
-            return $redata;
         }
-
+    
         if (empty($aid)) {
             return false;
         }
-
+    
         $page = empty($param['page']) ? 1 : $param['page'];
         $limit = empty($param['limit']) ? 10 : $param['limit'];
-//        $orderway = empty($param['orderway']) ? 'desc' :$param['orderway'];
-//        $orderby = empty($param['orderby']) ? 'add_time' :$param['orderby'];
-//        $order = $orderby.' '.$orderway;
-        $where_str['a.aid'] = $aid;
-        $where_str['a.is_review'] = 1;
-        $where_str['a.provider'] = $param['provider'];
-        $where_str['b.users_id'] = ['gt', 0];
-        $paginate = array(
-            'page'  => $page,
-        );
-
-        $pages = Db::name('weapp_comment')
-            ->alias('a')
-            ->field('a.*,b.head_pic,b.nickname,b.sex')
-            ->join('users b','a.users_id = b.users_id','left')
-            ->where($where_str)
-            ->order('comment_id desc')
-            ->paginate($limit, false, $paginate);
-        $result = $pages->toArray();
-        foreach ($result['data'] as $key => $val) {
-            $val['head_pic'] = $this->get_head_pic($val['head_pic'], false, $val['sex']);
-            $val['add_time_format'] = $this->time_format($val['add_time']);
-            $val['add_time'] = date('Y-m-d', $val['add_time']);
-            $result['data'][$key] = $val;
-        }
-
-        $redata = [
-            'data'=> !empty($result) ? $result : false,
+       
+        // $provider = empty($param['provider']) ? 'weixin' : $param['provider'];   //此站设置读全部端的数据   
+        $where_str = [
+            'a.aid' => $aid,
+            'a.is_review' => 1,
+            // 'a.provider' => $provider,
         ];
-        return $redata;
+        // 获取所有评论
+        $allComments = Db::name('weapp_comment')
+        ->alias('a')
+        ->field('a.*, b.head_pic, b.nickname, b.sex')
+        ->join('users b', 'a.users_id = b.users_id', 'left')
+        ->where($where_str)
+        ->order('a.add_time DESC') // 转换为时间戳并按时间倒序排列
+        ->select();
+         $topLevelComments = [];
+        $childComments = [];
+        // 格式化数据
+        foreach ($allComments as &$comment) {
+            $comment['head_pic'] = $this->get_head_pic($comment['head_pic'], false, $comment['sex']);
+            $comment['add_time_format'] = $this->time_format($comment['add_time']);
+            $comment['add_time'] = date('Y-m-d', $comment['add_time']);
+            if ($comment['pid'] == 0) {
+                // 父评论，添加到顶级评论数组
+                $topLevelComments[] = $comment;
+            } else {
+                // 子评论，添加到子评论数组
+                $childComments[$comment['pid']][] = $comment;
+            }
+        }
+       
+        // 分离父评论（pid == 0）和子评论（pid > 0）
+       
+       
+        usort($topLevelComments, function($a, $b) {
+            return $b['add_time'] - $a['add_time']; // 时间倒序排列
+        });
+        // 分页顶级评论
+        $offset = ($page - 1) * $limit;
+        $pagedComments = array_slice($topLevelComments, $offset, $limit);
+    
+        // 为每个顶级评论添加 `answerList`
+        foreach ($pagedComments as &$comment) {
+            // 为每个父评论添加其对应的子评论（`answerList`）
+            $comment['answerList'] = isset($childComments[$comment['comment_id']]) 
+                ? $childComments[$comment['comment_id']] 
+                : [];
+        }
+    
+        // 返回分页结构
+        return [
+            'data' => $pagedComments,
+            'current_page' => $page,
+            'last_page' => ceil(count($topLevelComments) / $limit),
+            'per_page' => $limit,
+            'total' => count($topLevelComments),
+        ];
     }
+    
+    
+    
+    
+
 }

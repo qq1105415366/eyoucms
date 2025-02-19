@@ -41,7 +41,7 @@
                         <label for="uname">商家提示</label>
                     </dt>
                     <dd class="opt">
-                        <textarea name="shop[shop_prompt]" placeholder="此处文字将显示在会员下单确认页面上" style="width: 30%; height: 60px;">{$userConfig.shop_prompt}</textarea>
+                        <textarea name="shop[shop_prompt]" placeholder="此处文字将显示在会员下单确认页面上" style="width: 30%; height: 60px;">{$usersConfig.shop_prompt}</textarea>
                     </dd>
                 </dl>
 
@@ -51,14 +51,141 @@
                     </dt>
                     <dd class="opt">
                         <label>
-                            <input type="radio" name="shop[shop_open_offline]" value="0" {if condition="!isset($userConfig.shop_open_offline) || empty($userConfig.shop_open_offline)"}checked="checked"{/if}/>开启
+                            <input type="radio" name="shop[shop_open_offline]" value="0" {if condition="!isset($usersConfig.shop_open_offline) || empty($usersConfig.shop_open_offline)"}checked="checked"{/if}/>开启
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label>
-                            <input type="radio" name="shop[shop_open_offline]" value="1" {if condition="$userConfig.shop_open_offline == 1"}checked="checked"{/if}/>关闭
+                            <input type="radio" name="shop[shop_open_offline]" value="1" {if condition="$usersConfig.shop_open_offline == 1"}checked="checked"{/if}/>关闭
                         </label>
                     </dd>
                 </dl>
+
+                <dl class="row">
+                    <dt class="tit"><label>原路退回</label></dt>
+                    <dd class="opt">
+                        <label>
+                            <input type="radio" name="pay[pay_original_refund]" value="1" {if condition="$usersConfig.pay_original_refund == 1"} checked="checked" {/if}/>开启
+                        </label>
+                        &nbsp;&nbsp;&nbsp;
+                        <label>
+                            <input type="radio" name="pay[pay_original_refund]" value="0" {if condition="!isset($usersConfig.pay_original_refund) || empty($usersConfig.pay_original_refund)"} checked="checked" {/if}/>关闭
+                        </label>
+                        <p class="notic2">后台执行订单退款操作时，退款金额支持原路退回。目前仅微信支付的订单支持原路退回</p>
+                    </dd>
+                </dl>
+
+                <input type="file" id="apiclientClickID" onchange="apiclientClick(this);" style="display: none;">
+                <dl class="row openOriginalRefund none">
+                    <dt class="tit"><label for="wechat_apiclient_cert">apiclient_cert</label></dt>
+                    <dd class="opt">
+                        <input type="hidden" name="pay[pay_wechat_apiclient_cert]" id="wechat_apiclient_cert" value="{$usersConfig.pay_wechat_apiclient_cert|default=''}">
+                        <a href="javascript:void(0);" class="ncap-btn ncap-btn-green" onclick="$('#apiclientClickID').attr('data-type', 'apiclient_cert').trigger('click');">{empty name="$usersConfig.pay_wechat_apiclient_cert"}点击上传{else/}重新上传{/empty}</a>
+                        <span style="{empty name='$usersConfig.pay_wechat_apiclient_cert'}display: none;{/empty} color: red;">上传成功</span>
+                        <p class="notic2">请上传已申请证书中的 apiclient_cert.pem文件</p>
+                    </dd>
+                </dl>
+                <dl class="row openOriginalRefund none">
+                    <dt class="tit"><label for="wechat_apiclient_key">apiclient_key</label></dt>
+                    <dd class="opt">
+                        <input type="hidden" name="pay[pay_wechat_apiclient_key]" id="wechat_apiclient_key" value="{$usersConfig.pay_wechat_apiclient_key|default=''}">
+                        <a href="javascript:void(0);" class="ncap-btn ncap-btn-green" onclick="$('#apiclientClickID').attr('data-type', 'apiclient_key').trigger('click');">{empty name="$usersConfig.pay_wechat_apiclient_key"}点击上传{else/}重新上传{/empty}</a>
+                        <span style="{empty name='$usersConfig.pay_wechat_apiclient_key'}display: none;{/empty} color: red;">上传成功</span>
+                        <p class="notic2">请上传已申请证书中的 apiclient_key.pem文件</p>
+                        <p class="notic2">微信支付平台API证书 <a href="https://kf.qq.com/faq/161222NneAJf161222U7fARv.html" target="_blank">查看教程</a></p>
+                    </dd>
+                </dl>
+
+                <script type="text/javascript">
+                    $(function() {
+                        $('input[name="pay[pay_original_refund]"]').click(function() {
+                            var value = $(this).val();
+                            $('.openOriginalRefund').hide();
+                            if (1 === parseInt(value)) $('.openOriginalRefund').show();
+                        });
+
+                        var payOriginalRefund = {$usersConfig.pay_original_refund};
+                        if (1 === parseInt(payOriginalRefund)) $('.openOriginalRefund').show();
+                    });
+
+                    // 文件上传
+                    function apiclientClick(obj) {
+                        // 获取文件路径名
+                        var file = $(obj)[0].files[0];
+                        var type = $(obj).attr('data-type');
+                        var full_name = type ? type + '.pem' : '';
+                        // 验证上传的文件
+                        if (full_name == 'apiclient_cert.pem' && full_name != file.name) {
+                            console.log('1');
+                            $(obj).val('');
+                            showErrorAlert('apiclient_cert 只允许上传 apiclient_cert.pem 文件');
+                            return false;
+                        } else if (full_name == 'apiclient_key.pem' && full_name != file.name) {
+                            console.log('2');
+                            $(obj).val('');
+                            showErrorAlert('apiclient_key 只允许上传 apiclient_key.pem 文件');
+                            return false;
+                        }
+                        // 验证上传格式
+                        var fileName = file.name;
+                        var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
+                        var ext = judgeExt(fileExt);
+                        if (ext == -1) {
+                            showErrorAlert('不支持选中的文件格式');
+                            return false;
+                        }
+                        // 验证上传大小
+                        var size = "{$upload_max_filesize}";
+                        if (file.size > size) {
+                            showErrorAlert('文件大小超过服务器限制');
+                            return false;
+                        }
+                        // 定义上传数据
+                        var formData = new FormData();
+                        formData.append('file', file);
+                        // 执行上传
+                        layer_loading('上传本地');
+                        $.ajax({
+                            type: 'post',
+                            url : "{:url('PayApi/file_upload')}",
+                            data: formData,
+                            contentType: false,
+                            processData: false,
+                            dataType: 'json',
+                            xhr: function () {
+                                myXhr = $.ajaxSettings.xhr();
+                                if (myXhr.upload) {
+                                    myXhr.upload.addEventListener('progress', function(e) {
+                                        var curr = e.loaded;
+                                        var total = e.total;
+                                        process = parseInt(curr / total * 100);
+                                        $('#wechat_' + type).parent().find('a').html('上传中...'+process+"%");
+                                    });
+                                }
+                                return myXhr;
+                            },
+                            success: function (res) {
+                                $(obj).val('');
+                                layer.closeAll();
+                                $('#wechat_' + type).parent().find('a').html('重新上传');
+                                if (1 === parseInt(res.code)) {
+                                    $('#wechat_' + type).val(res.data.file_url);
+                                    $('#wechat_' + type).parent().find('span').show();
+                                } else {
+                                    showErrorAlert(res.msg);
+                                }
+                            }
+                        });
+                    }
+
+                    // 验证格式
+                    function judgeExt(ext) {
+                        var type = "{$file_type}";
+                        var extArr = [];
+                        extArr = type.split("|");
+                        var ext = ext.replace(".", "");
+                        return extArr.indexOf(ext);
+                    }
+                </script>
 
                 <dl class="row">
                     <dt class="tit">
@@ -75,12 +202,12 @@
                     </dt>
                     <dd class="opt" style="line-height: 30px;">
                         <label>
-                            <input type="radio" name="shop[shop_open_shipping]" value="0" {if condition="!isset($userConfig.shop_open_shipping) || empty($userConfig.shop_open_shipping)"}checked="checked"{/if}/>包邮
+                            <input type="radio" name="shop[shop_open_shipping]" value="0" {if condition="!isset($usersConfig.shop_open_shipping) || empty($usersConfig.shop_open_shipping)"}checked="checked"{/if}/>包邮
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label>
-                            <input type="radio" name="shop[shop_open_shipping]" value="1" {if condition="$userConfig.shop_open_shipping == 1"}checked="checked"{/if}/>需要运费
-                            &nbsp;<a id="a_shop_open_shipping" href="javascript:void(0);" onclick="SetShipping();" class="ncap-btn ncap-btn-green" {if condition="!isset($userConfig.shop_open_shipping) || empty($userConfig.shop_open_shipping)"}style="display:none;"{/if}>设置价格</a>
+                            <input type="radio" name="shop[shop_open_shipping]" value="1" {if condition="$usersConfig.shop_open_shipping == 1"}checked="checked"{/if}/>需要运费
+                            &nbsp;<a id="a_shop_open_shipping" href="javascript:void(0);" onclick="SetShipping();" class="ncap-btn ncap-btn-green" {if condition="!isset($usersConfig.shop_open_shipping) || empty($usersConfig.shop_open_shipping)"}style="display:none;"{/if}>设置价格</a>
                         </label>
                     </dd>
                 </dl>
@@ -91,11 +218,11 @@
                     </dt>
                     <dd class="opt">
                         <label>
-                            <input type="radio" name="shop[shop_type]" value="0" {if condition="!isset($userConfig.shop_type) || empty($userConfig.shop_type) || 2 == $userConfig.shop_type"}checked="checked"{/if}/>实物
+                            <input type="radio" name="shop[shop_type]" value="0" {if condition="!isset($usersConfig.shop_type) || empty($usersConfig.shop_type) || 2 == $usersConfig.shop_type"}checked="checked"{/if}/>实物
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label>
-                            <input type="radio" name="shop[shop_type]" value="1" {if condition="$userConfig.shop_type == 1"}checked="checked"{/if}/>虚拟
+                            <input type="radio" name="shop[shop_type]" value="1" {if condition="$usersConfig.shop_type == 1"}checked="checked"{/if}/>虚拟
                         </label>
                     </dd>
                 </dl>
@@ -106,11 +233,11 @@
                     </dt>
                     <dd class="opt" style="line-height: 30px;">
                         <input type="hidden" id="TestPass" name="TestPass" value="{$TestPass}">
-                        <label><input type="radio" onclick="tag_call('shop_open', '{$TestPass}');" name="shop[shop_open_spec]" value="1" {if condition="$userConfig.shop_open_spec == 1"}checked="checked"{/if}/>开启</label>
+                        <label><input type="radio" onclick="tag_call('shop_open', '{$TestPass}');" name="shop[shop_open_spec]" value="1" {if condition="$usersConfig.shop_open_spec == 1"}checked="checked"{/if}/>开启</label>
                         &nbsp;&nbsp;&nbsp;
-                        <label><input type="radio" name="shop[shop_open_spec]" value="0" {if condition="!isset($userConfig.shop_open_spec) || empty($userConfig.shop_open_spec)"}checked="checked"{/if}/>关闭</label>
+                        <label><input type="radio" name="shop[shop_open_spec]" value="0" {if condition="!isset($usersConfig.shop_open_spec) || empty($usersConfig.shop_open_spec)"}checked="checked"{/if}/>关闭</label>
                         <!--&nbsp;
-                        <span id="a_shop_open_spec" {if condition="!isset($userConfig.shop_open_spec) || empty($userConfig.shop_open_spec)"}style="display:none;"{/if}>
+                        <span id="a_shop_open_spec" {if condition="!isset($usersConfig.shop_open_spec) || empty($usersConfig.shop_open_spec)"}style="display:none;"{/if}>
                             <a href="javascript:void(0);" id='shop_open' onclick="tag_call('shop_open');" class="ncap-btn ncap-btn-green">标签调用</a>
                         </span>-->
                     </dd>
@@ -142,7 +269,7 @@
                         <label for="order_unpay_close_time">未付款关闭时间</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" id="order_unpay_close_time" name="order[order_unpay_close_time]" value="{$userConfig.order_unpay_close_time|default='0'}"/><span class="ml10">分钟</span>
+                        <input type="text" id="order_unpay_close_time" name="order[order_unpay_close_time]" value="{$usersConfig.order_unpay_close_time|default='0'}"/><span class="ml10">分钟</span>
                         <p class="notic">订单创建后多长时间未付款将自动关闭，订单自动关闭后商品库存将自动补回<br/><span style="color: red;">0表示不关闭未付款订单</span></p>
                     </dd>
                 </dl>
@@ -152,7 +279,7 @@
                         <label for="order_auto_receipt_time">发货后收货时间</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" id="order_auto_receipt_time" name="order[order_auto_receipt_time]" value="{$userConfig.order_auto_receipt_time|default='0'}"/><span class="ml10">天后</span>
+                        <input type="text" id="order_auto_receipt_time" name="order[order_auto_receipt_time]" value="{$usersConfig.order_auto_receipt_time|default='0'}"/><span class="ml10">天后</span>
                         <p class="notic">订单发货后自动收货时间<br/><span style="color: red;">0表示不自动确认收货</span></p>
                     </dd>
                 </dl>
@@ -162,7 +289,7 @@
                         <label for="order_right_protect_time">收货后可维权时间</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" id="order_right_protect_time" name="order[order_right_protect_time]" value="{$userConfig.order_right_protect_time|default='0'}"/><span class="ml10">天内</span>
+                        <input type="text" id="order_right_protect_time" name="order[order_right_protect_time]" value="{$usersConfig.order_right_protect_time|default='0'}"/><span class="ml10">天内</span>
                         <p class="notic">订单确认收货完成后，多长时间内可申请维权<br/><span style="color: red;">0表示订单不允许维权，修改为0仅影响修改之后的订单</span></p>
                     </dd>
                 </dl>
@@ -191,17 +318,17 @@
                 <dl class="row">
                     <dt class="tit"> <label>商品评价</label> </dt>
                     <dd class="opt">
-                        <label> <input type="radio" name="shop[shop_open_comment]" value="1" {if condition="$userConfig.shop_open_comment == 1"} checked="checked" {/if}/>开启 </label>
+                        <label> <input type="radio" name="shop[shop_open_comment]" value="1" {if condition="$usersConfig.shop_open_comment == 1"} checked="checked" {/if}/>开启 </label>
                         &nbsp;&nbsp;&nbsp;
-                        <label> <input type="radio" name="shop[shop_open_comment]" value="0" {if condition="!isset($userConfig.shop_open_comment) || empty($userConfig.shop_open_comment)"} checked="checked" {/if}/>关闭 </label>
+                        <label> <input type="radio" name="shop[shop_open_comment]" value="0" {if condition="!isset($usersConfig.shop_open_comment) || empty($usersConfig.shop_open_comment)"} checked="checked" {/if}/>关闭 </label>
                     </dd>
                 </dl>
                 <dl class="row">
                     <dt class="tit"> <label>评价审核</label> </dt>
                     <dd class="opt">
-                        <label> <input type="radio" name="shop[shop_open_comment_audit]" value="1" {if condition="$userConfig.shop_open_comment_audit == 1"} checked="checked" {/if}/>开启 </label>
+                        <label> <input type="radio" name="shop[shop_open_comment_audit]" value="1" {if condition="$usersConfig.shop_open_comment_audit == 1"} checked="checked" {/if}/>开启 </label>
                         &nbsp;&nbsp;&nbsp;
-                        <label> <input type="radio" name="shop[shop_open_comment_audit]" value="0" {if condition="$userConfig.shop_open_comment_audit == 0"} checked="checked" {/if}/>关闭 </label>
+                        <label> <input type="radio" name="shop[shop_open_comment_audit]" value="0" {if condition="$usersConfig.shop_open_comment_audit == 0"} checked="checked" {/if}/>关闭 </label>
                     </dd>
                 </dl>
             </div>
@@ -231,7 +358,7 @@
                         <label for="addr_contact_person">联系人</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" id="addr_contact_person" style="width: 30%;" name="addr[addr_contact_person]" value="{$userConfig.addr_contact_person|default=''}"/>
+                        <input type="text" id="addr_contact_person" style="width: 30%;" name="addr[addr_contact_person]" value="{$usersConfig.addr_contact_person|default=''}"/>
                     </dd>
                 </dl>
 
@@ -240,7 +367,7 @@
                         <label for="addr_contact_phone">联系号码</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" id="addr_contact_phone" style="width: 30%;" maxlength="11" name="addr[addr_contact_phone]" value="{$userConfig.addr_contact_phone|default=''}"/>
+                        <input type="text" id="addr_contact_phone" style="width: 30%;" maxlength="11" name="addr[addr_contact_phone]" value="{$usersConfig.addr_contact_phone|default=''}"/>
                     </dd>
                 </dl>
 
@@ -249,7 +376,7 @@
                         <label for="addr_shipping_addr">收货地址</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" id="addr_shipping_addr" style="width: 30%;" name="addr[addr_shipping_addr]" value="{$userConfig.addr_shipping_addr|default=''}"/>
+                        <input type="text" id="addr_shipping_addr" style="width: 30%;" name="addr[addr_shipping_addr]" value="{$usersConfig.addr_shipping_addr|default=''}"/>
                     </dd>
                 </dl>
             </div>

@@ -73,7 +73,7 @@
                     {/if}   
                 {/eq}
                 {eq name="'Level@index'|is_check_access" value="1"}
-                    {if condition="1 == $userConfig.level_member_upgrade"}
+                    {if condition="1 == $usersConfig.level_member_upgrade"}
                         {eq name="'Level@upgrade_index'|is_check_access" value="1"}
                             <li>
                                 <a {if condition="in_array($Request.action, ['upgrade_index'])"}class="current"{/if} href='{:url("Level/upgrade_index")}'>
@@ -85,8 +85,8 @@
                 {/eq}
                 {eq name="'Member@money_index'|is_check_access" value="1"}
                 <li>
-                    <a {if condition="in_array($Request.action, ['money_index'])"}class="current"{/if} href='{:url("Member/money_index", ["status"=>2])}'>
-                        余额充值
+                    <a {if condition="in_array($Request.action, ['money_index'])"}class="current"{/if} href='{:url("Member/money_index")}'>
+                        余额明细
                     </a>
                 </li>
                 {/eq}

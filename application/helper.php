@@ -243,6 +243,10 @@ if (!function_exists('typeurl')) {
      */
     function typeurl($url = '', $param = '', $suffix = true, $domain = false, $seo_pseudo = null, $seo_pseudo_format = null)
     {
+        // 解析参数 by 小虎哥
+        if (is_string($param)) {
+            parse_str($param, $param);
+        }
         $root_dir = ROOT_DIR;
         $domain_old = $domain;
         if (!$domain){
@@ -665,12 +669,16 @@ if (!function_exists('arcurl')) {
      */
     function arcurl($url = '', $param = '', $suffix = true, $domain = false, $seo_pseudo = '', $seo_pseudo_format = null)
     {
+        static $globalConfig = null;
+        null === $globalConfig && $globalConfig = tpCache('global');
+        // 解析参数 by 小虎哥
+        if (is_string($param)) {
+            parse_str($param, $param);
+        }
         $root_dir = ROOT_DIR;
         $domain_old = $domain;
         if (!$domain){
-            static $absolute_path_open = null;
-            null === $absolute_path_open && $absolute_path_open = tpCache('web.absolute_path_open'); //是否开启绝对链接
-            if ($absolute_path_open){
+            if (!empty($globalConfig['absolute_path_open'])){ //是否开启绝对链接
                 $domain = true;
             }
         }
@@ -680,14 +688,10 @@ if (!function_exists('arcurl')) {
         null === $uiset && $uiset = input('param.uiset/s', 'off');
         $uiset = trim($uiset, '/');
         
-        static $static_seo_pseudo = null;
-        null === $static_seo_pseudo && $static_seo_pseudo = tpCache('seo.seo_pseudo');
-        $seo_pseudo = !empty($seo_pseudo) ? $seo_pseudo : $static_seo_pseudo;
+        $seo_pseudo = !empty($seo_pseudo) ? $seo_pseudo : intval($globalConfig['seo_pseudo']);
 
         //开启会员,查看权限限制，静态强制转动态
-        static $web_users_switch = null;
-        null === $web_users_switch && $web_users_switch = tpCache('web.web_users_switch');
-        if (!empty($web_users_switch) && ((!empty($param['typearcrank']) && $param['typearcrank'] > 0) || (!empty($param['arcrank']) && $param['arcrank'] > 0)) && $seo_pseudo == 2){
+        if (!empty($globalConfig['web_users_switch']) && ((!empty($param['typearcrank']) && $param['typearcrank'] > 0) || (!empty($param['arcrank']) && $param['arcrank'] > 0)) && $seo_pseudo == 2){
             $seo_pseudo = 1;
         }
 
@@ -697,8 +701,7 @@ if (!function_exists('arcurl')) {
             }
         }
         // 多站点 - 静态模式下默认以动态URL访问
-        static $web_basehost = null;
-        null === $web_basehost && $web_basehost = tpCache('web.web_basehost');
+        $web_basehost = empty($globalConfig['web_basehost']) ? '' : $globalConfig['web_basehost'];
         $full_domain = preg_replace('/^(http(s)?:)?(\/\/)?([^\/\:]*)(.*)$/i', '${4}', $web_basehost);
         static $city_switch_on = null;
         null === $city_switch_on && $city_switch_on = config('city_switch_on');
@@ -708,9 +711,8 @@ if (!function_exists('arcurl')) {
                 $seo_pseudo_format = 1;
             }
         }
-        static $site_default_home = null;
-        null === $site_default_home && $site_default_home = tpCache('site.site_default_home');
-
+        $site_default_home = empty($globalConfig['site_default_home']) ? 0 : (int)$globalConfig['site_default_home'];
+        $site_arcurl_showall = empty($globalConfig['site_arcurl_showall']) ? 0 : (int)$globalConfig['site_arcurl_showall'];
         if ('on' != $uiset && 1 == $seo_pseudo && 2 == $seo_pseudo_format) {
             if (is_array($param)) {
                 $vars = array(
@@ -885,10 +887,8 @@ if (!function_exists('arcurl')) {
                 }else{
                     $aid = $param['aid'];
                 }
-                static $seo_html_pagename = null;
-                null === $seo_html_pagename && $seo_html_pagename = tpCache('seo.seo_html_pagename');
-                static $seo_html_arcdir = null;
-                null === $seo_html_arcdir && $seo_html_arcdir = tpCache('seo.seo_html_arcdir');
+                $seo_html_pagename = empty($globalConfig['seo_html_pagename']) ? 0 : (int)$globalConfig['seo_html_pagename'];
+                $seo_html_arcdir = empty($globalConfig['seo_html_arcdir']) ? '' : $globalConfig['seo_html_arcdir'];
                 if($seo_html_pagename == 1){//存放顶级目录
                     $dirpath = explode('/',$param['dirpath']);
                     $url = $seo_html_arcdir.'/'.$dirpath[1].'/'.$aid.'.html';
@@ -1013,10 +1013,19 @@ if (!function_exists('arcurl')) {
                         }
                     }
                 } else if (!empty($subDomain) && 'www' != $subDomain && $subDomain == get_home_site()) {
-                    $vars['site'] = true;
-                    $domain = $full_domain;
-                } else {
-                    $vars['site'] = true;
+                    if(isset($site_arcurl_showall)&&$site_arcurl_showall==1){  //20241119 是否跟随分站
+                        $full_domain=$domain = get_home_site().'.'.$rootDomain;
+                        $vars['site'] = true;
+                    }else{                                        
+                        $vars['site'] = true;
+                        $domain = $full_domain;
+                    } 
+                } else {                            
+                    if(isset($site_arcurl_showall)&&$site_arcurl_showall==1){
+                         $vars['site'] = '';
+                    }else{
+                         $vars['site'] = true;
+                    }
                 }
             }
             /*--end*/
@@ -1102,8 +1111,13 @@ if (!function_exists('arcurl')) {
                         }
                     }
                 } else if (!empty($subDomain) && 'www' != $subDomain && $subDomain == get_home_site()) {
-                    $vars['site'] = true;
-                    $domain = $full_domain;
+                    if(isset($site_arcurl_showall)&&$site_arcurl_showall==1){  //20241119 是否跟随分站
+                        $full_domain=$domain = get_home_site().'.'.$rootDomain;
+                        $vars['site'] = true;                         
+                    }else{                        
+                        $vars['site'] = true;
+                        $domain = $full_domain;
+                    }  
                 } else {
                     $vars['site'] = true;
                 }
@@ -1144,6 +1158,10 @@ if (!function_exists('tagurl')) {
      */
     function tagurl($url = '', $param = '', $suffix = true, $domain = false, $seo_pseudo = '', $seo_pseudo_format = null)
     {
+        // 解析参数 by 小虎哥
+        if (is_string($param)) {
+            parse_str($param, $param);
+        }
         if (!$domain){
             static $absolute_path_open = null;
             null === $absolute_path_open && $absolute_path_open = tpCache('web.absolute_path_open'); //是否开启绝对链接
@@ -1259,6 +1277,10 @@ if (!function_exists('askurl')) {
      */
     function askurl($url = '', $param = '', $suffix = true, $domain = false, $seo_pseudo = '', $seo_pseudo_format = null, $seo_inlet = null)
     {
+        // 解析参数 by 小虎哥
+        if (is_string($param)) {
+            parse_str($param, $param);
+        }
         $eyouUrl    = '';
         static $static_seo_pseudo = null;
         null === $static_seo_pseudo && $static_seo_pseudo = tpCache('seo.seo_pseudo');
@@ -1305,6 +1327,12 @@ if (!function_exists('siteurl')) {
      */
     function siteurl($siteinfo = '')
     {
+        if (is_array($siteinfo)) {
+            $vars         = $siteinfo;
+        } else {
+            parse_str($siteinfo, $vars);
+        }
+        
         $eyouUrl = '';
         // 是否支持去掉index.php小尾巴
         static $seo_inlet = null;
@@ -1348,12 +1376,6 @@ if (!function_exists('siteurl')) {
         $inletStr = '/index.php';
         1 == intval($seo_inlet) && $inletStr = '';
         /*--end*/
-
-        if (is_array($siteinfo)) {
-            $vars         = $siteinfo;
-        } else {
-            parse_str($siteinfo, $vars);
-        }
 
         if (1 == $seo_pseudo) {
             if (empty($vars['is_open'])) {

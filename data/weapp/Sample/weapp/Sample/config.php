@@ -21,6 +21,7 @@ return array(
     'litpic'    => '/weapp/#CODE#/logo.png',
     'scene' => '#SCENE#',  // 使用场景 0 PC+手机 1 手机 2 PC
     'subroot' => 'on',
+    // 'install_target' => '_self',
     'permission' => [],
     'management' => [],
 );

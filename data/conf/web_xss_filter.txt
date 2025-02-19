@@ -1,0 +1,1 @@
+{"web_xss_filter":"","web_xss_words":"union\r\ndelete\r\noutfile\r\nchar\r\nconcat\r\ntruncate\r\ninsert\r\nrevoke\r\ngrant\r\nreplace\r\nrename\r\ndeclare\r\nexec\r\ndelimiter\r\nphar\r\neval\r\nonerror\r\nscript","web_anti_brushing":"1","web_anti_words":"wd"}

@@ -366,7 +366,7 @@
                                 ,done: function(res){
                                     //上传完毕回调
                                     if (res.state=="SUCCESS"){
-                                        layer.msg('上传成功!')
+                                        layer.msg(ey_foreign_system10)
                                         $("#{$vo.fieldArr}_{$vo.name|default=''}").val(res.url);
                                         $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").css('display','');
                                         $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").attr('href',res.url);
@@ -417,6 +417,8 @@
                             {$vo.fieldArr}_{$vo.name|default=''}_oss_upload_media(e);
                         } else if ('cos' == data_type) {
                             {$vo.fieldArr}_{$vo.name|default=''}_cos_upload_media(e);
+                        } else if ('aws' == data_type) {
+                            {$vo.fieldArr}_{$vo.name|default=''}_aws_upload_media(e);
                         } else {
                             {$vo.fieldArr}_{$vo.name|default=''}_local_upload_media(e);
                         }
@@ -486,7 +488,7 @@
                                                 return myXhr;
                                             },
                                             success: function(res2) {
-                                                $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text('上传成功');
+                                                $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text(ey_foreign_system10);
                                                 setTimeout(function() {
                                                     $('#{$vo.fieldArr}_{$vo.name|default=\'\'}_title_upload_media').text('上传文件');
                                                 }, 2000);
@@ -560,7 +562,7 @@
                                                 var res = $(data).find('PostResponse');
                                                 if (res) {
                                                     var key = res.find('Key').text();
-                                                    $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text('上传成功');
+                                                    $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text(ey_foreign_system10);
                                                     setTimeout(function () {
                                                         $('#{$vo.fieldArr}_{$vo.name|default=\'\'}_title_upload_media').text('上传文件');
                                                     }, 2000);
@@ -625,7 +627,58 @@
                                 },
                                 success: function (res) {
                                     if (1 == res.code) {
-                                        $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text('上传成功');
+                                        $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text(ey_foreign_system10);
+                                        $("#{$vo.fieldArr}_{$vo.name|default=''}").val(res.data.url);
+                                        $("#media_a_{$vo.fieldArr}_{$vo.name|default=''}").show();
+                                        $("#media_a_{$vo.fieldArr}_{$vo.name|default=''}").attr('href', res.data.url);
+                                    } else {
+                                        $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text('上传失败');
+                                    }
+                                    setTimeout(function () {
+                                        $('#{$vo.fieldArr}_{$vo.name|default=\'\'}_title_upload_media').text('上传文件');
+                                    }, 2000);
+                                },
+                                error: function (e) {
+                                    layer.closeAll();
+                                    showErrorMsg(e.responseText);
+                                }
+                            });
+                        }
+                    }
+                    function {$vo.fieldArr}_{$vo.name|default=''}_aws_upload_media(e) {
+                        var file = $(e)[0].files[0];
+                        var fileName = file.name;
+                        var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
+                        ret = beforeUploadMedia(fileExt,file);
+                        if (ret) {
+                            var formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('file_ext', fileExt);
+                            $.ajax({
+                                type: 'post',
+                                url: '__ROOT_DIR__/index.php?m=plugins&c=Aws&a=aws_upload&_ajax=1',
+                                data: formData,
+                                contentType: false,
+                                processData: false,
+                                dataType: 'json',
+                                xhr: function () {
+                                    myXhr = $.ajaxSettings.xhr();
+                                    if (myXhr.upload) {
+                                        myXhr.upload.addEventListener('progress', function (e) {
+                                            var curr = e.loaded;
+                                            var total = e.total;
+                                            process = parseInt(curr / total * 100);
+                                            if (100 == process) {
+                                                process = 99;
+                                            }
+                                            $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text('上传中...' + process + "%");
+                                        });
+                                    }
+                                    return myXhr;
+                                },
+                                success: function (res) {
+                                    if (1 == res.code) {
+                                        $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").text(ey_foreign_system10);
                                         $("#{$vo.fieldArr}_{$vo.name|default=''}").val(res.data.url);
                                         $("#media_a_{$vo.fieldArr}_{$vo.name|default=''}").show();
                                         $("#media_a_{$vo.fieldArr}_{$vo.name|default=''}").attr('href', res.data.url);
@@ -672,7 +725,7 @@
                                 },
                                 success: function (res) {
                                     if ("SUCCESS" == res.state) {
-                                        $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").html('上传成功');
+                                        $("#{$vo.fieldArr}_{$vo.name|default=''}_title_upload_media").html(ey_foreign_system10);
                                         setTimeout(function () {
                                             $('#{$vo.fieldArr}_{$vo.name|default=\'\'}_title_upload_media').html('上传文件');
                                         }, 2000);
@@ -814,7 +867,7 @@
                         <label for="title">{if condition="isset($vo['ifrequire']) AND !empty($vo['ifrequire'])"}<span class="red">*</span>{/if}{$vo.title|default=''}：</label>
                     </div>
                     <div class="from-row-r">
-                        <input type="text" value="{$vo.dfvalue|default=''}" name="{$vo.fieldArr}[{$vo.name|default=''}]" id="{$vo.fieldArr}_{$vo.name|default=''}" placeholder="" class="el-input__inner w500" onkeyup="this.value=this.value.replace(/[^0-9\.]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9\.]/g,''));">&nbsp;{$vo.dfvalue_unit|default=''}
+                        <input type="text" value="{$vo.dfvalue|default=''}" name="{$vo.fieldArr}[{$vo.name|default=''}]" id="{$vo.fieldArr}_{$vo.name|default=''}" placeholder="" class="el-input__inner w300" onkeyup="this.value=this.value.replace(/[^0-9\.]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9\.]/g,''));">&nbsp;{$vo.dfvalue_unit|default=''}
                         <span class="err"></span>
                         <p class="notic">{$vo.remark|default=''}</p>
                     </div>
@@ -829,7 +882,7 @@
                         <label for="title">{if condition="isset($vo['ifrequire']) AND !empty($vo['ifrequire'])"}<span class="red">*</span>{/if}{$vo.title|default=''}：</label>
                     </div>
                     <div class="from-row-r">
-                        <input type="text" value="{$vo.dfvalue|default=''}" name="{$vo.fieldArr}[{$vo.name|default=''}]" id="{$vo.fieldArr}_{$vo.name|default=''}" placeholder="" class="el-input__inner w500" onkeyup="this.value=this.value.replace(/[^0-9\.]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9\.]/g,''));">&nbsp;{$vo.dfvalue_unit|default=''}
+                        <input type="text" value="{$vo.dfvalue|default=''}" name="{$vo.fieldArr}[{$vo.name|default=''}]" id="{$vo.fieldArr}_{$vo.name|default=''}" placeholder="" class="el-input__inner w300" onkeyup="this.value=this.value.replace(/[^0-9\.]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^0-9\.]/g,''));">&nbsp;{$vo.dfvalue_unit|default=''}
                         <span class="err"></span>
                         <p class="notic">{$vo.remark|default=''}</p>
                     </div>
@@ -881,7 +934,7 @@
                         removeFormatAttributes: 'class,style,lang,width,height,align,hspace,valign',//允许的最大字符数 'fullscreen',
                         pasteplain:false, //是否默认为纯文本粘贴。false为不使用纯文本粘贴，true为使用纯文本粘贴
                         autoHeightEnabled: false,
-                        toolbars: [['fullscreen', 'forecolor', 'backcolor', 'removeformat', '|', 'simpleupload', 'unlink', '|', 'paragraph', 'fontfamily', 'fontsize']],
+                        toolbars: ueditor_toolbars,
                         // xss 过滤是否开启,inserthtml等操作
                         xssFilterRules: true,
                         //input xss过滤

@@ -127,16 +127,16 @@
             function pay_money() {
                 var money = $('input[name=money]');
                 if($.trim(money.val()) == ''){
-                    showLayerMsg('充值金额不能为空');
+                    showLayerMsg(ey_foreign_users13);
                     money.focus();
                     return false;
                 } else if (isNaN($.trim(money.val()))) {
-                    showLayerMsg('请输入正确的充值金额');
+                    showLayerMsg(ey_foreign_users14);
                     money.focus();
                     return false;
                 }
                 if ($('input[name=payment_type]').val() == '') {
-                    showLayerMsg('请选择支付方式');
+                    showLayerMsg(ey_foreign_users15);
                     return false;
                 }
 

@@ -23,6 +23,16 @@ use think\Db;
  */
 class AjaxLogic extends Model
 {
+    public $home_lang = '';
+
+    /**
+     * 初始化操作
+     */
+    public function initialize() {
+        parent::initialize();
+        $this->home_lang = get_home_lang();
+    }
+
     /**
      * 保存足迹
      */
@@ -33,7 +43,8 @@ class AjaxLogic extends Model
             //查询标题模型缩略图信息
             $arc = Db::name('archives')
                 ->field('aid,channel,typeid,title,litpic')
-                ->find($aid);
+                ->where(['aid'=>$aid])
+                ->find();
             if (!empty($arc)) {
                 $count = Db::name('users_footprint')->where([
                     'users_id' => $users_id,
@@ -53,7 +64,7 @@ class AjaxLogic extends Model
                     }
 
                     $arc['users_id']    = $users_id;
-                    $arc['lang']        = get_home_lang();
+                    $arc['lang']        = $this->home_lang;
                     $arc['add_time']    = getTime();
                     $arc['update_time'] = getTime();
                     Db::name('users_footprint')->add($arc);
@@ -90,6 +101,13 @@ class AjaxLogic extends Model
             $users['reg_time'] = MyDate('Y-m-d H:i:s', $users['reg_time']);
             // 购物车数量
             $users['cart_num'] = Db::name('shop_cart')->where(['users_id'=>$users_id])->sum('product_num');
+            // 收藏数
+            $where = [
+                'a.users_id' => $users_id,
+                'c.aid' => ['GT', 0],
+                'c.lang' => $this->home_lang,
+            ];
+            $users['collection_num'] = Db::name('users_collection')->alias('a')->where($where)->join('__ARCHIVES__ c', 'a.aid = c.aid', 'LEFT')->count('a.id');
 
             $data = [
                 'ey_is_login'   => 1,

@@ -283,8 +283,8 @@ class Pay extends Base
                         $this->success('等待支付', null, $ReturnOrderData);
                     } else {
                         $payment_type = input('post.payment_type/s');
-                        // 第二、第三、第四版会员中心充值处理
-                        if (in_array($this->usersTplVersion, ['v2', 'v3', 'v4']) && !empty($payment_type)) {
+                        // 第二、第三、第四、第五版会员中心充值处理
+                        if (in_array($this->usersTplVersion, ['v2', 'v3', 'v4', 'v5']) && !empty($payment_type)) {
                             $payment_type_arr = explode('_', $payment_type);
                             $pay_mark = !empty($payment_type_arr[1]) ? $payment_type_arr[1] : '';
                             $payApiRow = Db::name('pay_api_config')->where(['pay_mark'=>$pay_mark,'lang'=>$this->home_lang])->find();

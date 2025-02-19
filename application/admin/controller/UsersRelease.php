@@ -22,10 +22,6 @@ class UsersRelease extends Base {
     public function __construct(){
         parent::__construct();
 
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig',$this->UsersConfigData);
-
         // 模型是否开启
         $channeltype_row = \think\Cache::get('extra_global_channeltype');
         $this->assign('channeltype_row',$channeltype_row);

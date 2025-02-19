@@ -57,6 +57,7 @@ class ShopPublicHandle
         // 规格处理
         $goodsSpecList = [];
         $goodsSpec = !empty($goods['data']) ? unserialize($goods['data']) : [];
+        $goodsSpec = empty($goodsSpec) && !empty($goods['detailsData']) ? unserialize($goods['detailsData']) : $goodsSpec;
         if (!empty($goodsSpec['spec_value'])) {
             $specValueArr = explode('<br/>', htmlspecialchars_decode($goodsSpec['spec_value']));
             foreach ($specValueArr as $value_10000) {
@@ -74,7 +75,7 @@ class ShopPublicHandle
     }
 
     // 获取商品规格列表(查询数据库)
-    public function getGoodsSpecList($goods = '')
+    public function getGoodsSpecList($goods = [])
     {
         $goodsSpecList = [];
         if (!empty($goods['spec_value_id'])) {
@@ -89,7 +90,7 @@ class ShopPublicHandle
                 foreach ($productSpecData as $value_10001) {
                     $goodsSpecList[] = [
                         'name'  => !empty($value_10001['spec_name']) ? trim($value_10001['spec_name']) : '',
-                        'value' => !empty($value_10001['spec_value']) ? trim($value_10001['spec_value']) : '',
+                        'value' => !empty($value_10001['spec_value']) ? trim(htmlspecialchars_decode($value_10001['spec_value'])) : '',
                     ];
                 }
             }
@@ -860,64 +861,65 @@ EOF;
     {
         // 订单是否改价过
         $is_change_price = 0;
-        $orderLog = Db::name('shop_order_log')->field('action_desc')->where('order_id', $order_id)->find();
-        if (!empty($orderLog) && stristr($orderLog['action_desc'], '改价')) {
-            $is_change_price = 1;
+        $orderLog = Db::name('shop_order_log')->field('action_desc')->where('order_id', $order_id)->select();
+        if (!empty($orderLog)) {
+            foreach ($orderLog as $key => $value) {
+                if (!empty($value['action_desc']) && stristr($value['action_desc'], '改价')) $is_change_price = 1;
+            }
         }
-
         return $is_change_price;
     }
 
-    public function order_coupon_handle($coupon_where = [],$list = [],$users_discount = 100)
+    // 订单使用优惠券时的处理
+    public function order_coupon_handle($where = [], $list = [], $users_discount = 100)
     {
         $coupon_table = 'shop_coupon';
         $coupon_use_table = 'shop_coupon_use';
         $weappInfo = $this->getWeappInfo("Coupons");
-        if (!empty($weappInfo['status']) && 1 == $weappInfo['status']) {
+        if (!empty($weappInfo['status']) && 1 === intval($weappInfo['status'])) {
             $coupon_table = 'weapp_coupons';
             $coupon_use_table = 'weapp_coupons_use';
         }
 
-        $coupon_where['a.start_time'] = ['<=',getTime()];
-        $coupon_where['a.end_time'] = ['>=',getTime()];
-        $coupon_info = Db::name($coupon_use_table)
-            ->alias('a')
-            ->join("{$coupon_table} b",'a.coupon_id = b.coupon_id','left')
-            ->where($coupon_where)
-            ->find();
-        if ($users_discount != 1 && !empty($coupon_info['use_limit'])) return [];
-        if (!empty($coupon_info)){
-            if (2 == $coupon_info['coupon_form']) {
-                $coupon_discount = 1 - ($coupon_info['coupon_discount'] / 10); //优惠的折扣
-                if (1 == $coupon_info['coupon_type']) {
-                    $coupon_discount_money = 0;
-                    foreach ($list as $key => $value) {
-                        if (empty($coupon_info['use_limit']) || ( !empty($coupon_info['use_limit']) && empty($value['use_discount_price']) )){
-                            $coupon_discount_money += unifyPriceHandle($value['users_price'] * $value['product_num']);
-                        }
+        $where['a.start_time'] = ['<=',getTime()];
+        $where['a.end_time'] = ['>=',getTime()];
+        $coupon_info = Db::name($coupon_use_table)->alias('a')->join("{$coupon_table} b",'a.coupon_id = b.coupon_id','left')->where($where)->find();
+        if (intval($users_discount) !== 1 && !empty($coupon_info['use_limit'])) return [];
+
+        // 使用优惠券处理
+        if (!empty($coupon_info) && 2 === intval($coupon_info['coupon_form'])) {
+            $coupon_discount = 1 - (intval($coupon_info['coupon_discount']) / 10); //优惠的折扣
+            if (1 === intval($coupon_info['coupon_type'])) {
+                $coupon_discount_money = 0;
+                foreach ($list as $key => $value) {
+                    if (empty($coupon_info['use_limit']) || (!empty($coupon_info['use_limit']) && empty($value['use_discount_price']))) {
+                        $coupon_discount_money += unifyPriceHandle($value['users_price'] * $value['product_num']);
                     }
-                    $coupon_info['coupon_price'] = unifyPriceHandle($coupon_discount_money * $coupon_discount);
-                } elseif (2 == $coupon_info['coupon_type']) {
-                    $coupon_product_ids = explode(',',$coupon_info['product_id']);
-                    $coupon_discount_money = 0;
-                    foreach ($list as $key => $value) {
-                        if (empty($coupon_info['use_limit']) || ( !empty($coupon_info['use_limit']) && empty($value['use_discount_price']) )){
-                            if (in_array($value['aid'],$coupon_product_ids) ) $coupon_discount_money += unifyPriceHandle($value['users_price'] * $value['product_num']);
-                        }
-                    }
-                    $coupon_info['coupon_price'] = unifyPriceHandle($coupon_discount_money * $coupon_discount);
-                } elseif (3 == $coupon_info['coupon_type']) {
-                    $coupon_arctype_ids = explode(',',$coupon_info['arctype_id']);
-                    $coupon_discount_money = 0;
-                    foreach ($list as $key => $value) {
-                        if (empty($coupon_info['use_limit']) || ( !empty($coupon_info['use_limit']) && empty($value['use_discount_price']) )){
-                            if (in_array($value['typeid'],$coupon_arctype_ids)) $coupon_discount_money += unifyPriceHandle($value['users_price'] * $value['product_num']);
-                        }
-                    }
-                    $coupon_info['coupon_price'] = unifyPriceHandle($coupon_discount_money * $coupon_discount);
                 }
+                $coupon_info['coupon_price'] = unifyPriceHandle($coupon_discount_money * $coupon_discount);
+            }
+            else if (2 === intval($coupon_info['coupon_type'])) {
+                $coupon_product_ids = explode(',',$coupon_info['product_id']);
+                $coupon_discount_money = 0;
+                foreach ($list as $key => $value) {
+                    if (empty($coupon_info['use_limit']) || (!empty($coupon_info['use_limit']) && empty($value['use_discount_price']))) {
+                        if (in_array($value['aid'], $coupon_product_ids)) $coupon_discount_money += unifyPriceHandle($value['users_price'] * $value['product_num']);
+                    }
+                }
+                $coupon_info['coupon_price'] = unifyPriceHandle($coupon_discount_money * $coupon_discount);
+            }
+            else if (3 === intval($coupon_info['coupon_type'])) {
+                $coupon_arctype_ids = explode(',',$coupon_info['arctype_id']);
+                $coupon_discount_money = 0;
+                foreach ($list as $key => $value) {
+                    if (empty($coupon_info['use_limit']) || (!empty($coupon_info['use_limit']) && empty($value['use_discount_price']))) {
+                        if (in_array($value['typeid'], $coupon_arctype_ids)) $coupon_discount_money += unifyPriceHandle($value['users_price'] * $value['product_num']);
+                    }
+                }
+                $coupon_info['coupon_price'] = unifyPriceHandle($coupon_discount_money * $coupon_discount);
             }
         }
+
         return $coupon_info;
     }
 }

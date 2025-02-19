@@ -25,7 +25,7 @@ class TagCollectnum extends Base
     }
 
     /**
-     * 在内容页模板显示下载次数
+     * 在内容页模板显示收藏次数
      * @author wengxianhu by 2018-4-20
      */
     public function getCollectnum($aid = '')

@@ -30,7 +30,6 @@ class ViewFilterBehavior {
         self::$method = request()->method();
         null === self::$web_users_switch && self::$web_users_switch = tpCache('web.web_users_switch');
         self::$web_users_switch = intval(self::$web_users_switch);
-        // file_put_contents ( DATA_PATH."log.txt", date ( "Y-m-d H:i:s" ) . "  " . var_export('admin_CoreProgramBehavior',true) . "\r\n", FILE_APPEND );
         $this->_initialize($params);
     }
 
@@ -69,10 +68,12 @@ EOF;
     {
         // 排除小程序端，其他场景都显示统计代码和商桥代码
         if (!isWeixinApplets()) {
-            $name = 'web_thirdcode_' . (isMobile() ? 'wap' : 'pc'); // PC端与手机端的变量名自适应，可彼此通用
-            $web_thirdcode = tpCache('web.'.$name);
-            if (!empty($web_thirdcode)) {
-                $params = str_ireplace('</body>', htmlspecialchars_decode($web_thirdcode)."\n</body>", $params);
+            if (function_exists('is_template_opt') && is_template_opt()) {
+                $name = 'web_thirdcode_' . (isMobile() ? 'wap' : 'pc'); // PC端与手机端的变量名自适应，可彼此通用
+                $web_thirdcode = tpCache('web.'.$name);
+                if (!empty($web_thirdcode)) {
+                    $params = str_ireplace('</body>', htmlspecialchars_decode($web_thirdcode)."\n</body>", $params);
+                }
             }
         }
     }
@@ -92,7 +93,7 @@ EOF;
             $lang_str = config('lang_switch_on') ? " var __lang__='{$lang}';" : '';
             $srcurl = get_absolute_url("{$root_dir}/public/static/common/js/ey_footer.js?v={$version}");
             $ey_footer_js = <<<EOF
-<script type="text/javascript">var root_dir="{$root_dir}";var ey_u_switch={$web_users_switch};var ey_aid={$aid};{$lang_str}</script>
+<script type="text/javascript">var root_dir="{$root_dir}";var ey_aid={$aid};{$lang_str}</script>
 <script language="javascript" type="text/javascript" src="{$srcurl}"></script>
 EOF;
             $params = str_ireplace('</body>', $ey_footer_js."\n</body>", $params);

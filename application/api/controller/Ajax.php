@@ -115,7 +115,6 @@ class Ajax extends Base
         ];
         $post = input('post.');
         $archivesInfo = empty($post['archives']) ? '' : json_decode(base64_decode($post['archives']), true);
-//         @file_put_contents(ROOT_PATH . "/log.txt", date("Y-m-d H:i:s") . "  " . var_export($archivesInfo, true) . "\r\n", FILE_APPEND);
 
         if (!empty($archivesInfo['litpic']) && !empty($archivesInfo['is_syn_local'])) {
             $ret_litpic = saveRemote($archivesInfo['litpic'],'allimg');
@@ -279,10 +278,10 @@ class Ajax extends Base
                 $type = input('param.type/s', '');
                 $archives_db = Db::name('archives');
                 if ('view' == $type) {
-                    $archives_db->where('aid', $aids)->setInc('click');
+                    $archives_db->where(['aid'=>['IN', $aids]])->setInc('click');
                     eyou_statistics_data(1); // 统计浏览数
                 }
-                $click = $archives_db->where('aid', $aids)->value('click');
+                $click = $archives_db->where(['aid'=>['IN', $aids]])->value('click');
                 echo "document.write('" . $click . "');\r\n";
                 exit;
             }
@@ -314,10 +313,10 @@ class Ajax extends Base
                 if ($aid > 0) {
                     $archives_db = Db::name('archives');
                     if ('view' == $type) {
-                        $archives_db->where(array('aid' => $aid))->setInc('click');
+                        $archives_db->where(['aid' => $aid])->setInc('click');
                         eyou_statistics_data(1); // 统计浏览数
                     }
-                    $click = $archives_db->where(array('aid' => $aid))->getField('click');
+                    $click = $archives_db->where(['aid' => $aid])->getField('click');
                 }
                 echo($click);
                 exit;
@@ -482,6 +481,9 @@ class Ajax extends Base
                         }
                     }
                     $innertext .= " {$key}='{$val}'";
+                }
+                if($tagid){
+                   $innertext .= " tagid='{$tagid}'";
                 }
                 $innertext .= " limit='{$offset},{$row}'}";
                 $innertext .= $tpl_content;
@@ -817,9 +819,7 @@ class Ajax extends Base
         }
         exit();
     }
-    /*
-     * 表单提交完成之后操作----短信发送
-     */
+    
     /**
      * 表单提交完成之后操作----邮箱发送
      */
@@ -831,113 +831,148 @@ class Ajax extends Base
 
         $type = input('param.type/s');
 
-        // 留言发送邮件
-        if (IS_AJAX_POST && 'gbook_submit' == $type) {
-
-            // 是否满足发送邮箱的条件
-            $is_open = Db::name('smtp_tpl')->where(['send_scene' => 1, 'lang' => $this->home_lang])->value('is_open');
-            $smtp_config = tpCache('smtp');
-            if (empty($is_open) || empty($smtp_config['smtp_user']) || empty($smtp_config['smtp_pwd'])) {
-                $this->error("邮箱尚未配置，发送失败");
-            }
-
-            $tid = input('param.tid/d');
-            $aid = input('param.aid/d');
-            $form_type = input('param.form_type/d', 0);
-
-            $send_email_scene = config('send_email_scene');
-            $scene = $send_email_scene[1]['scene'];
-
-            if (1 == $form_type) {
-                $info = Db::name('guestbook')->field('a.*, b.form_name')
-                    ->alias('a')
-                    ->join('form b','a.typeid = b.form_id','left')
-                    ->where(['a.aid'=>$aid, 'a.form_type'=>$form_type])
-                    ->find();
-            } else {
-                $info = Db::name('guestbook')->field('a.*, b.typename as form_name')
-                    ->alias('a')
-                    ->join('arctype b','a.typeid = b.id','left')
-                    ->where(['a.aid'=>$aid, 'a.form_type'=>$form_type])
-                    ->find();
-            }
-            $city = "";
-            try {
-                $city_arr = getCityLocation($info['ip']);
-                if (!empty($city_arr)) {
-                    !empty($city_arr['location']) && $city .= $city_arr['location'];
+        if (IS_AJAX_POST) {
+            // 留言发送邮件
+            if ('gbook_submit' == $type) {
+                // 是否满足发送邮箱的条件
+                $is_open = Db::name('smtp_tpl')->where(['send_scene' => 1, 'lang' => $this->home_lang])->value('is_open');
+                $smtp_config = tpCache('smtp', [], $this->home_lang);
+                if (empty($is_open) || empty($smtp_config['smtp_user']) || empty($smtp_config['smtp_pwd']) || empty($smtp_config['smtp_from_eamil'])) {
+                    $this->error("邮箱尚未配置，发送失败");
                 }
-            } catch (\Exception $e) {}
-            $info['city'] = $city;
 
-            // 判断标题拼接
-            $web_name = tpCache('web.web_name');
-            $web_name = $info['form_name'] . '-' . $web_name;
+                $tid = input('param.tid/d');
+                $aid = input('param.aid/d');
+                $form_type = input('param.form_type/d', 0);
 
-            // 拼装发送的字符串内容
-            $attr_list = Db::name('guestbook_attribute')->where(['typeid'=>$tid,'form_type'=>$form_type])->order('attr_id asc')->select();
-            $attr_values = Db::name('guestbook_attr')->field('attr_id,attr_value')->where(['aid'=>$aid,'form_type'=>$form_type])->getAllWithIndex('attr_id');
-            foreach ($attr_list as $key => $val) {
-                $val['attr_value'] = empty($attr_values[$val['attr_id']]) ? '' : $attr_values[$val['attr_id']]['attr_value'];
-                $attr_list[$key] = $val;
-            }
-            $content = '';
-            foreach ($attr_list as $key => $val) {
-                if ($val['attr_input_type'] == 9) {
-                    $val['attr_value'] = Db::name('region')->where('id', 'in', $val['attr_value'])->column('name');
-                    $val['attr_value'] = implode('', $val['attr_value']);
-                } else if ($val['attr_input_type'] == 4) {
-                    $val['attr_value'] = filter_line_return($val['attr_value'], '、');
-                } else if (5 == $val['attr_input_type']) {//单张图
-                    $val['attr_value'] = handle_subdir_pic($val['attr_value'], 'img', true);
-                    $val['attr_value'] = "<a href='{$val['attr_value']}' target='_blank'><img src='{$val['attr_value']}' width='60' height='60' style='float: unset;cursor: pointer;' /></a>";
-                } else if (10 == $val['attr_input_type']) {//时间类型
-                    $val['attr_value'] = date('Y-m-d H:i:s', $val['attr_value']);
-                } else if (11 == $val['attr_input_type']) {//多张图
-                    $attr_value_arr = explode(",", $val['attr_value']);
-                    $attr_value_str = "";
-                    foreach ($attr_value_arr as $attr_value_k => $attr_value_v) {
-                        $attr_value_v = handle_subdir_pic($attr_value_v, 'img', true);
-                        $attr_value_str .= "<a href='{$attr_value_v}' target='_blank'><img src='{$attr_value_v}' width='60' height='60' style='float: unset;cursor: pointer;' /></a>";
-                    }
-                    $val['attr_value'] = $attr_value_str;
+                $send_email_scene = config('send_email_scene');
+                $scene = $send_email_scene[1]['scene'];
+
+                if (1 == $form_type) {
+                    $info = Db::name('guestbook')->field('a.*, b.form_name')
+                        ->alias('a')
+                        ->join('form b','a.typeid = b.form_id','left')
+                        ->where(['a.aid'=>$aid, 'a.form_type'=>$form_type])
+                        ->find();
                 } else {
-                    if (preg_match('/(\.(jpg|gif|png|bmp|jpeg|ico|webp))$/i', $val['attr_value'])) {
-                        if (!stristr($val['attr_value'], '|')) {
-                            $val['attr_value'] = handle_subdir_pic($val['attr_value'], 'img', true);
-                            $val['attr_value'] = "<a href='{$val['attr_value']}' target='_blank'><img src='{$val['attr_value']}' width='60' height='60' style='float: unset;cursor: pointer;' /></a>";
+                    $info = Db::name('guestbook')->field('a.*, b.typename as form_name')
+                        ->alias('a')
+                        ->join('arctype b','a.typeid = b.id','left')
+                        ->where(['a.aid'=>$aid, 'a.form_type'=>$form_type])
+                        ->find();
+                }
+                $city = "";
+                try {
+                    $city_arr = getCityLocation($info['ip']);
+                    if (!empty($city_arr)) {
+                        !empty($city_arr['location']) && $city .= $city_arr['location'];
+                    }
+                } catch (\Exception $e) {}
+                $info['city'] = $city;
+
+                // 判断标题拼接
+                $web_name = tpCache('web.web_name');
+                $web_name = $info['form_name'] . '-' . $web_name;
+
+                // 拼装发送的字符串内容
+                $attr_list = Db::name('guestbook_attribute')->where(['typeid'=>$tid,'form_type'=>$form_type])->order('attr_id asc')->select();
+                $attr_values = Db::name('guestbook_attr')->field('attr_id,attr_value')->where(['aid'=>$aid,'form_type'=>$form_type])->getAllWithIndex('attr_id');
+                foreach ($attr_list as $key => $val) {
+                    $val['attr_value'] = empty($attr_values[$val['attr_id']]) ? '' : $attr_values[$val['attr_id']]['attr_value'];
+                    $attr_list[$key] = $val;
+                }
+                $content = '';
+                foreach ($attr_list as $key => $val) {
+                    if ($val['attr_input_type'] == 9) {
+                        $val['attr_value'] = Db::name('region')->where('id', 'in', $val['attr_value'])->column('name');
+                        $val['attr_value'] = implode('', $val['attr_value']);
+                    } else if ($val['attr_input_type'] == 4) {
+                        $val['attr_value'] = filter_line_return($val['attr_value'], '、');
+                    } else if (5 == $val['attr_input_type']) {//单张图
+                        $val['attr_value'] = handle_subdir_pic($val['attr_value'], 'img', true);
+                        $val['attr_value'] = "<a href='{$val['attr_value']}' target='_blank'><img src='{$val['attr_value']}' width='60' height='60' style='float: unset;cursor: pointer;' /></a>";
+                    } else if (10 == $val['attr_input_type']) {//时间类型
+                        $val['attr_value'] = date('Y-m-d H:i:s', $val['attr_value']);
+                    } else if (11 == $val['attr_input_type']) {//多张图
+                        $attr_value_arr = explode(",", $val['attr_value']);
+                        $attr_value_str = "";
+                        foreach ($attr_value_arr as $attr_value_k => $attr_value_v) {
+                            $attr_value_v = handle_subdir_pic($attr_value_v, 'img', true);
+                            $attr_value_str .= "<a href='{$attr_value_v}' target='_blank'><img src='{$attr_value_v}' width='60' height='60' style='float: unset;cursor: pointer;' /></a>";
                         }
-                    } elseif (preg_match('/(\.(' . tpCache('basic.file_type') . '))$/i', $val['attr_value'])) {
-                        if (!stristr($val['attr_value'], '|')) {
-                            $val['attr_value'] = handle_subdir_pic($val['attr_value'], 'img', true);
-                            $val['attr_value'] = "<a href='{$val['attr_value']}' download='" . time() . "'><img src=\"" . $this->request->domain() . ROOT_DIR . "/public/static/common/images/file.png\" alt=\"\" style=\"width: 16px;height:  16px;\">点击下载</a>";
+                        $val['attr_value'] = $attr_value_str;
+                    } else {
+                        if (preg_match('/(\.(jpg|gif|png|bmp|jpeg|ico|webp))$/i', $val['attr_value'])) {
+                            if (!stristr($val['attr_value'], '|')) {
+                                $val['attr_value'] = handle_subdir_pic($val['attr_value'], 'img', true);
+                                $val['attr_value'] = "<a href='{$val['attr_value']}' target='_blank'><img src='{$val['attr_value']}' width='60' height='60' style='float: unset;cursor: pointer;' /></a>";
+                            }
+                        } elseif (preg_match('/(\.(' . tpCache('basic.file_type') . '))$/i', $val['attr_value'])) {
+                            if (!stristr($val['attr_value'], '|')) {
+                                $val['attr_value'] = handle_subdir_pic($val['attr_value'], 'img', true);
+                                $val['attr_value'] = "<a href='{$val['attr_value']}' download='" . time() . "'><img src=\"" . $this->request->domain() . ROOT_DIR . "/public/static/common/images/file.png\" alt=\"\" style=\"width: 16px;height:  16px;\">点击下载</a>";
+                            }
                         }
                     }
+                    $content .= $val['attr_name'] . '：' . $val['attr_value'] . '<br/>';
                 }
-                $content .= $val['attr_name'] . '：' . $val['attr_value'] . '<br/>';
-            }
-            $content .= '所属表单：' . $info['form_name'] . '<br/>';
-            $content .= 'IP来源：' . $info['ip'];
-            if (!empty($info['city'])) {
-                $content .= "({$info['city']})";
-            } else {
-                $content .= "(<a href=\"https://www.baidu.com/s?wd={$info['ip']}\" target=\"_blank\">查看地区</a>)";
-            }
-            $content .= '<br/>';
-            if (2 == $info['source']) {
-                $content .= "提交来源：手机端<br/>";
-            } else {
-                $content .= "提交来源：电脑端<br/>";
-            }
-            $content .= '提交时间：' . MyDate('Y-m-d H:i:s', $info['add_time']) . '<br/>';
-            $html = "<p style='text-align: left;'>{$web_name}</p><p style='text-align: left;'>{$content}</p>";
+                $content .= '所属表单：' . $info['form_name'] . '<br/>';
+                $content .= 'IP来源：' . $info['ip'];
+                if (!empty($info['city'])) {
+                    $content .= "({$info['city']})";
+                } else {
+                    $content .= "(<a href=\"https://www.baidu.com/s?wd={$info['ip']}\" target=\"_blank\">查看地区</a>)";
+                }
+                $content .= '<br/>';
+                if (2 == $info['source']) {
+                    $content .= "提交来源：手机端<br/>";
+                } else {
+                    $content .= "提交来源：电脑端<br/>";
+                }
+                $content .= '提交时间：' . MyDate('Y-m-d H:i:s', $info['add_time']) . '<br/>';
+                $html = "<p style='text-align: left;'>{$web_name}</p><p style='text-align: left;'>{$content}</p>";
 
-            // 发送邮件
-            $res = send_email(null, null, $html, $scene);
-            if (intval($res['code']) == 1) {
-                $this->success($res['msg']);
-            } else {
-                $this->error($res['msg']);
+                // 发送邮件
+                $res = send_email(null, null, $html, $scene);
+                if (intval($res['code']) == 1) {
+                    $this->success($res['msg']);
+                } else {
+                    $this->error($res['msg']);
+                }
+            }
+            else if ('admin_login' == $type) {
+                // 是否满足发送邮箱的条件
+                $tplInfo = Db::name('smtp_tpl')->where(['send_scene' => 30, 'lang' => $this->home_lang])->find();
+                $smtp_config = tpCache('smtp');
+                if (empty($tplInfo['is_open']) || empty($smtp_config['smtp_user']) || empty($smtp_config['smtp_pwd'])) {
+                    $this->error("邮箱尚未配置，发送失败");
+                }
+
+                // 判断标题拼接
+                $web_name = '网站名称：'.tpCache('web.web_name');
+                $code = get_rand_str(6, 0, 1);
+                $content = "您的后台登录验证为 ${code} ，该验证码30分钟内有效，请勿泄露于他人。<br/>";
+                $html = "<p style='text-align: left;'>{$web_name}</p><p style='text-align: left;'>{$content}</p>";
+
+                // 发送邮件
+                $send_email_scene = config('send_email_scene');
+                $scene = $send_email_scene[1]['scene'];
+                $email = input('param.email/s');
+                $email = preg_replace('/([\,]*)/i', '', $email);
+                $res = send_email($email, $tplInfo['tpl_title'], $html, $scene);
+                if (intval($res['code']) == 1) {
+                    // 数据添加
+                    $datas = [];
+                    $datas['source']   = 30;
+                    $datas['email']    = $email;
+                    $datas['code']     = $code;
+                    $datas['lang']     = $this->home_lang;
+                    $datas['add_time'] = getTime();
+                    M('smtp_record')->add($datas);
+                    $this->success($res['msg']);
+                } else {
+                    $this->error($res['msg']);
+                }
             }
         }
     }
@@ -966,6 +1001,8 @@ class Ajax extends Base
         if (IS_AJAX_POST) {
             $post = input('post.');
             $source = !empty($post['source']) ? $post['source'] : 0;
+            !empty($post['phone']) && $post['phone'] = preg_replace('/([^0-9]+)/i', '', $post['phone']);
+            !empty($post['mobile']) && $post['mobile'] = preg_replace('/([^0-9]+)/i', '', $post['mobile']);
 
             // 留言验证类型发送短信处理
             if (isset($post['scene']) && in_array($post['scene'], [7])) {
@@ -1066,19 +1103,14 @@ class Ajax extends Base
             }
             // 其他类型发送短信处理
             else {
+                $sms_config = tpCache('sms');
+                $sms_type = isset($sms_config['sms_type']) ? $sms_config['sms_type'] : 1;
+                $smsTemp = Db::name('sms_template')->where(["send_scene"=>$post['source'],"sms_type"=>$sms_type,'lang'=>get_admin_lang()])->find();
+                if (empty($smsTemp) || empty($smsTemp['sms_sign']) || empty($smsTemp['sms_tpl_code']) || empty($smsTemp['tpl_content'])){
+                    $this->error('尚未正确配置短信模板，请联系管理员！');
+                }
+                
                 if (isset($post['type']) && in_array($post['type'], ['users_mobile_reg', 'users_mobile_login', 'reg'])) {
-                    // 数据验证
-                    $rule = [
-                        'mobile' => 'require|token:__mobile_1_token__',
-                    ];
-                    $message = [
-                        'mobile.require' => foreign_lang('users28', $this->home_lang),
-                    ];
-                    $validate = new \think\Validate($rule, $message);
-                    if (!$validate->batch()->check($post)) {
-                        $this->error('表单令牌过期，请尝试刷新页面~');
-                    }
-
                     $post['is_mobile'] = true;
                 }
                 $mobile = !empty($post['mobile']) ? $post['mobile'] : session('mobile');
@@ -1125,9 +1157,28 @@ class Ajax extends Base
                     if (!$verify->check($post['vertify'], $post['type'])) $this->error('图形验证码错误！', null, ['code' => 'vertify']);
                 }
                 /* END */
+                
+                if (true === $post['is_mobile']) {
+                    // 数据验证
+                    $rule = [
+                        'mobile' => 'require|token:__mobile_1_token__',
+                    ];
+                    $message = [
+                        'mobile.require' => foreign_lang('users28', $this->home_lang),
+                    ];
+                    $validate = new \think\Validate($rule, $message);
+                    if (!$validate->batch()->check($post)) {
+                        $this->error('表单令牌过期，请尝试刷新页面~');
+                    }
+                }
 
                 /*发送并返回结果*/
-                $Result = sendSms($source, $mobile, array('content' => mt_rand(1000, 9999)));
+                if (30 == $source) {
+                    $content = mt_rand(100000, 999999);
+                } else {
+                    $content = mt_rand(1000, 9999);
+                }
+                $Result = sendSms($source, $mobile, array('content' => $content));
                 if (intval($Result['status']) == 1) {
                     $this->success('发送成功！');
                 } else {
@@ -1795,6 +1846,27 @@ class Ajax extends Base
             $this->error('未收藏', null, ['total' => $total]);
         }
         abort(404);
+
+        /*$aid = input('param.aid/s');
+        if (IS_AJAX_POST && !empty($aid)) {
+            $aid_arr = explode(',', $aid);
+            foreach ($aid_arr as $key => $val) {
+                $aid_arr[$key] = intval($val);
+            }
+            $data1 = Db::name('users_collection')->field('aid, count(aid) as total')->where([
+                'aid'   => ['IN', $aid_arr],
+            ])->group('aid')->getAllWithIndex('aid');
+            $users_id = session('users_id');
+            if (!empty($users_id)) {
+                $data2 = Db::name('users_collection')->field('aid, count(aid) as total')->where([
+                    'aid'   => ['IN', $aid_arr],
+                    'users_id'  => $users_id,
+                ])->group('aid')->getAllWithIndex('aid');
+                $this->success('已收藏', null, ['data1'=>$data1, 'data2'=>$data2]);
+            }
+            $this->error('未收藏', null, ['data1'=>$data1]);
+        }
+        abort(404);*/
     }
 
     /**
@@ -1889,10 +1961,17 @@ class Ajax extends Base
         }
         $artData = Db::name('archives')
             ->alias('a')
-            ->field('a.title,a.restric_type,a.arc_level_id,a.users_price,a.no_vip_pay,a.add_time,b.content,b.content_ey_m')
+            ->field('a.channel,a.title,a.restric_type,a.arc_level_id,a.users_price,a.no_vip_pay,a.add_time,b.content,b.content_ey_m')
             ->join('article_content b', 'a.aid = b.aid')
             ->where('a.aid', $aid)
             ->find();
+        if (is_dir('./weapp/CompressContent/')) {                            
+            try {                    
+                $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                
+                $artData = $compressLogic->decrypt_base64_encode(2,$artData);                        
+            } catch (Exception $e) {
+            }                
+        }
         if (isMobile() && !empty($artData['content_ey_m'])) {
             $artData['content'] = $artData['content_ey_m'];
         }
@@ -2217,11 +2296,14 @@ class Ajax extends Base
     //下载付费
     public function get_download($aid = 0)
     {
+        $result = [];
         if (empty($aid)) {
             $this->error('缺少文档id');
         }
-        $artData = Db::name('archives')
-            ->where('aid', $aid)
+        $artData = Db::name('archives')->alias('a')
+            ->field('a.*, b.content')
+            ->join('download_content b', 'a.aid = b.aid', 'left')
+            ->where('a.aid', $aid)
             ->find();
 
         $artData['arc_level_value'] = 0;
@@ -2288,6 +2370,9 @@ class Ajax extends Base
             }
         }
         $result['canDownload'] = $canDownload;
+        if (1 == $canDownload) {
+            $result['art_content'] = htmlspecialchars_decode($artData['content']);
+        }
         $result['download_tips'] = $download_tips;
 
         if (1 == $buyVip) {

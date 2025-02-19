@@ -9,10 +9,11 @@
         <ul>
             <li>数据备份功能根据你的选择备份全部数据或指定数据，导出的数据文件可用“数据恢复”功能或 phpMyAdmin 导入</li>
             <li>建议定期备份数据库</li>
+            <li>数据备份路径：__ROOT_DIR__{$global.web_sqldatapath|default=config('DATA_BACKUP_PATH')}</li>
         </ul>
     </div>
-    <div class="flexigrid">
-        <div class="mDiv">
+    <div class="flexigrid mt10">
+        <div class="mDiv mt10">
             {eq name="$Think.const.CONTROLLER_NAME.'@export'|is_check_access" value="1"}
                 <div class="fbutton">
                     <a id="ing_btn">

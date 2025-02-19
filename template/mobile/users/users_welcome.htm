@@ -39,7 +39,7 @@
                                 </div>
                                 <div class="level">
                                     <span class="set">{$users.level_name}</span>&emsp;&emsp;
-                                    {eyou:neq name='$users.level' value='1'}剩余会员天数：<span class="red">{$users.maturity_date}</span>{/eyou:neq}
+                                    {eyou:neq name='$users.level' value='1'}会员天数：<span class="">{$users.maturity_date}</span>{/eyou:neq}
                                 </div>
                             </div>
                             {/empty}
@@ -100,7 +100,7 @@
                         {gt name='$php_servicemeal' value='1'}
                         <a href="{:url('user/Shop/after_service')}" class="nav-item nav-item-a">
                             <span class="nav-item-icon3"><img src="{eyou:static file='users/skin/images/nav5.png' /}"></span>
-                            <span>售后</span>
+                            <span>售后中</span>
                             <span class="fb">{$order.AfterService}</span>
                         </a>
                         {/gt}

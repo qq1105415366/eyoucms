@@ -237,11 +237,11 @@
                     {eq name="'Archives@move'|is_check_access" value="1"}
                     <a href="javascript:void(0);" onclick="func_move(this, 'ids');" data-url="{:url('Archives/move', array('typeid'=>$Request.param.typeid))}">移动文档</a>
                     {/eq}
-                    {eq name="'Archives@del'|is_check_access" value="1"}
-                    <a href="javascript:void(0);" onclick="batch_del(this, 'ids');" data-url="{:url('Archives/del')}" {eq name="$global['web_recycle_switch']" value='1'} data-deltype="del" {else /} data-deltype="pseudo" {/eq}>删除文档</a>
-                    {/eq}
                 </div>
             </div>
+            {eq name="'Archives@del'|is_check_access" value="1"}
+            <a href="javascript:void(0);" onclick="batch_del(this, 'ids');" data-url="{:url('Archives/del')}" {eq name="$global['web_recycle_switch']" value='1'} data-deltype="del" {else /} data-deltype="pseudo" {/eq} class="layui-btn layui-btn-primary" title="删除文档">删除文档</a>
+            {/eq}
             {eq name="'Archives@check'|is_check_access" value="1"}
             <a href="javascript:void(0);" onclick="batch_check(this, 'ids');" data-type="check"  data-url="{:url('Archives/check')}" class="layui-btn layui-btn-primary">审核文档</a>
             {/eq}
@@ -337,137 +337,6 @@
             maxmin: false, //开启最大化最小化按钮
             area: ['480px', '360px'],
             content: url
-        });
-    }
-
-    /**
-     * 获取修改之前的内容
-     */
-    function get_aids()
-    {
-        return aids;
-    }
-    var typeid_arr = [];   //已经生成过静态的typeid
-    var build_finish = false;  //是否已经全部生成静态
-    //检查是否已经生成静态，刷新页面
-    function build_finish_polling(){
-        if(build_finish === true){
-            layer.closeAll();
-            layer.msg('操作成功', {icon: 1});
-            window.location.reload();
-        }
-    }
-    /**
-     * 批量审核
-     */
-    function batch_check(obj, name) {
-
-        var url = $(obj).attr('data-url');
-        var data_type = $(obj).attr('data-type');//uncheck
-
-        var a = [];
-        $('input[name^='+name+']').each(function(i,o){
-            if($(o).is(':checked')){
-                a.push($(o).val());
-            }
-        })
-        if(a.length == 0){
-            layer.alert('请至少选择一项', {
-                shade: layer_shade,
-                area: ['480px', '190px'],
-                move: false,
-                title: '提示',
-                btnAlign:'r',
-                closeBtn: 3,
-                success: function () {
-                      $(".layui-layer-content").css('text-align', 'left');
-                  }
-            });
-            return;
-        }
-
-        layer_loading('正在处理');
-        var seo_pseudo = {$seo_pseudo|default=1};
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: {ids:a, _ajax:1},
-            dataType: 'json',
-            success: function (data) {
-                if(data.code == 1){
-                    var last = false;
-                    if (data_type === 'check') {
-                        if (2 == seo_pseudo) {
-                            for(var i=0;i<a.length;i++){
-                                var id_value = a[i];
-                                var typeid =$("#aid_"+id_value).data('typeid');
-                                if ((i+1) == a.length){
-                                    last = true;
-                                }
-                                up_html(id_value,typeid,last);
-                            }
-                            window.setTimeout(build_finish_polling, 3000);
-                        } else {
-                            layer.closeAll();
-                            layer.msg('操作成功', {icon: 1});
-                            window.location.reload();
-                        }
-                    }else{
-                        layer.closeAll();
-                        layer.msg(data.msg, {icon: 1});
-                        window.location.reload();
-                    }
-                }else{
-                    layer.closeAll();
-                    layer.alert(data.msg, {icon: 2, title:false});
-                }
-            },
-            error:function(e){
-                layer.closeAll();
-                layer.alert(e.responseText, {icon: 2, title:false});
-            }
-        });
-    }
-
-    //生成静态页面
-    function up_html(id_value,typeid,last){
-        $.ajax({
-            url:__root_dir__+"/index.php?m=home&c=Buildhtml&a=upHtml&lang="+__lang__+"&id="+id_value+"&t_id="+typeid+"&type=view&ctl_name=Archives&_ajax=1",
-            type:'GET',
-            dataType:'json',
-            data:{},
-            success:function(res1){
-//                layer.closeAll();
-//                layer.msg('生成完成', {icon: 1, time: 1500});
-                if (typeid_arr.indexOf(typeid) === -1){
-                    typeid_arr.push(typeid);
-                    $.ajax({
-                        url:__root_dir__+"/index.php?m=home&c=Buildhtml&a=upHtml&lang="+__lang__+"&id="+id_value+"&t_id="+typeid+"&type=lists&ctl_name=Archives&_ajax=1",
-                        type:'GET',
-                        dataType:'json',
-                        data:{},
-                        success:function(res2){
-                            if (last === true){
-                                build_finish = true;
-                            }
-//                        layer.closeAll();
-//                        layer.msg('生成完成', {icon: 1, time: 1500});
-                        },
-                        error: function(e){
-                            layer.closeAll();
-                            layer.alert('生成当前栏目HTML失败，请手工生成栏目静态！', {icon: 5, title: false});
-                        }
-                    });
-                }else{
-                    if (last === true){
-                        build_finish = true;
-                    }
-                }
-            },
-            error: function(e){
-                layer.closeAll();
-                layer.alert('生成HTML失败，请手工生成静态HTML！', {icon: 5, title: false});
-            }
         });
     }
 

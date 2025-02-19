@@ -114,22 +114,24 @@ class View extends Base
                     abort(404, '页面不存在');
                 }
             } else if (!empty($site)) {
-                if (empty($archivesInfo['province_id']) && empty($archivesInfo['city_id']) && empty($archivesInfo['area_id'])) { // 全国文档
-                    abort(404, '页面不存在');
-                }
-                $siteInfo = Db::name('citysite')->where(['domain'=>$site])->find();
-                if (!empty($siteInfo)) {
-                    if (!empty($archivesInfo['area_id'])) {
-                        if ($archivesInfo['area_id'] != $siteInfo['id']) {
-                            abort(404, '页面不存在');
-                        }
-                    } else if (!empty($archivesInfo['city_id'])) {
-                        if ($archivesInfo['city_id'] != $siteInfo['id']) {
-                            abort(404, '页面不存在');
-                        }
-                    } else if (!empty($archivesInfo['province_id'])) {
-                        if ($archivesInfo['province_id'] != $siteInfo['id']) {
-                            abort(404, '页面不存在');
+                if (empty($this->eyou['global']['site_arcurl_showall'])) {
+                    if (empty($archivesInfo['province_id']) && empty($archivesInfo['city_id']) && empty($archivesInfo['area_id'])) { // 全国文档
+                        abort(404, '页面不存在');
+                    }
+                    $siteInfo = Db::name('citysite')->where(['domain'=>$site])->find();
+                    if (!empty($siteInfo)) {
+                        if (!empty($archivesInfo['area_id'])) {
+                            if ($archivesInfo['area_id'] != $siteInfo['id']) {
+                                abort(404, '页面不存在');
+                            }
+                        } else if (!empty($archivesInfo['city_id'])) {
+                            if ($archivesInfo['city_id'] != $siteInfo['id']) {
+                                abort(404, '页面不存在');
+                            }
+                        } else if (!empty($archivesInfo['province_id'])) {
+                            if ($archivesInfo['province_id'] != $siteInfo['id']) {
+                                abort(404, '页面不存在');
+                            }
                         }
                     }
                 }
@@ -164,7 +166,7 @@ class View extends Base
         if (!empty($arctypeInfo)) {
 
             /*URL上参数的校验*/
-            /*if (3 == $seo_pseudo) {
+            if (3 == $seo_pseudo) {
                 $dirname            = input('param.dirname/s');
                 $dirname2           = '';
                 $seo_rewrite_format = config('ey_config.seo_rewrite_format');
@@ -182,7 +184,7 @@ class View extends Base
                 if ($dirname != $dirname2) {
                     abort(404, '页面不存在');
                 }
-            }*/
+            }
             /*--end*/
 
             // 是否有子栏目，用于标记【全部】选中状态
@@ -275,54 +277,22 @@ class View extends Base
         }
 
         $users_id = (int)session('users_id');
-        $emptyhtml = $this->check_arcrank($this->eyou['field'],$users_id);
-//        if ($this->eyou['field']['arcrank'] > 0 || $this->eyou['field']['typearcrank'] > 0) { // 若需要会员权限则执行
-//            if (empty($users_id)) {
-//                $url = url('user/Users/login');
-//                if (stristr($url, '?')) {
-//                    $url = $url."&referurl=".urlencode($this->eyou['field']['arcurl']);
-//                } else {
-//                    $url = $url."?referurl=".urlencode($this->eyou['field']['arcurl']);
-//                }
-//                $this->redirect($url);
-//            }
-//            $msg = action('api/Ajax/get_arcrank', ['aid' => $aid, 'vars' => 1]);
-//            if (true !== $msg) {
-//                $this->error($msg);
-//            }
-//        } else if ($this->eyou['field']['arcrank'] <= -1) {
-//            /*待审核稿件，是否有权限查阅的处理，登录的管理员可查阅*/
-//            $admin_id = input('param.admin_id/d');
-//            if ( (session('?admin_id') && !empty($admin_id)) || ($this->eyou['field']['users_id'] > 0 && $this->eyou['field']['users_id'] == $users_id) ) {
-//
-//            }
-//            else if (empty($users_id) && empty($admin_id)) {
-//                abort(404);
-//            }
-//            else {
-//                $emptyhtml = <<<EOF
-//<!DOCTYPE html>
-//<html>
-//    <head>
-//        <title>{$this->eyou['field']['seo_title']}</title>
-//        <meta name="description" content="{$this->eyou['field']['seo_description']}" />
-//        <meta name="keywords" content="{$this->eyou['field']['seo_keywords']}" />
-//    </head>
-//    <body>
-//    </body>
-//</html>
-//EOF;
-//            }
-//            /*end*/
-//        }
+        $emptyhtml = $this->check_arcrank($this->eyou['field'], $users_id);
         if (!empty($emptyhtml)) {
             /*尝试写入静态缓存*/
-//            write_html_cache($emptyhtml, $result);
+            // write_html_cache($emptyhtml, $result);
             /*--end*/
             return $this->fetch("./public/html/empty_view.htm");
-
-//            return $this->display($emptyhtml);
+            // return $this->display($emptyhtml);
         } else {
+            $dealerParam = input('param.dealerParam/s', '', 'trim');
+            if (!empty($dealerParam)) {
+                cookie('dealerParam', null);
+                session('dealerParam', null);
+                cookie('dealerParam', $dealerParam);
+                session('dealerParam', $dealerParam);
+            }
+
             return $this->fetch(":{$viewfile}");
         }
     }
@@ -516,9 +486,23 @@ EOF;
                 }
             }
         }
-
         // 下载次数限制
         !empty($result['arc_level_id']) && $this->down_num_access($result['aid']);
+        
+        //判断外部链接的拓展名是否是图片或者txt
+        if (is_http_url($result['file_url'])){
+            $url_arr = explode('.',$result['file_url']);
+            $count = count($url_arr);
+            $ext = $url_arr[$count - 1];
+            $image_ext_arr = explode(',', config('global.image_ext'));
+            $image_ext_arr = array_merge($image_ext_arr, ['txt']);
+            if (in_array($ext, $image_ext_arr)){
+                //保存到本地
+                $result['file_url'] = remote_file_to_local($result['file_url']);
+                $result['is_remote'] = 0;
+                $result['remote_to_local'] = 1;
+            }
+        }
 
         // 外部下载链接
         if (is_http_url($result['file_url']) || !empty($result['is_remote'])) {
@@ -544,7 +528,8 @@ EOF;
         // 本站链接
         else
         {
-            if (md5_file('.' . $file_url_gbk) != $result['md5file']) {
+            //如果是远程转换到本地的不做这个判断
+            if (md5_file('.' . $file_url_gbk) != $result['md5file'] && empty($result['remote_to_local'])) {
                 $this->error('下载文件包已损坏！');
             }
 
@@ -554,7 +539,6 @@ EOF;
             // }
             // 记录下载次数
             $this->download_log($result['file_id'], $result['aid']);
-
             $uhash_mch = mchStrCode($uhash);
             $url       = $this->root_dir . "/index.php?m=home&c=View&a=download_file&file_id={$file_id}&uhash={$uhash_mch}";
             cookie($file_id.$uhash_mch, 1);
@@ -717,21 +701,27 @@ EOF;
     {
         $aid = input('param.aid/d');
         $field_name = input('param.field/s');
+        $field_name = mchStrCode($field_name, 'DECODE', $aid.get_auth_code());
         $archivesInfo = Db::name('archives')->field('aid,channel')->where(['aid'=>$aid])->find();
         if (empty($archivesInfo) || empty($field_name)) {
             $this->error('下载地址出错！');
+        } else {
+            $dtype = Db::name('channelfield')->where(['name'=>$field_name, 'channel_id'=>$archivesInfo['channel']])->value('dtype');
+            if (!empty($dtype) && 'file' !== $dtype) {
+                $this->error('下载地址出错！');
+            }
         }
         $table = Db::name('channeltype')->where(['id'=>$archivesInfo['channel']])->value('table');
         $down_url  = Db::name($table.'_content')->where(['aid'=>$aid])->value($field_name);
-        if (empty($down_url)) {
+        if (empty($down_url) || !eyPreventShell($down_url) || stristr($down_url, '../')) {
             $this->error('下载地址出错！');
         }
         $down_arr = explode('|', $down_url);
+        $down_url = $down_arr[0];
         if (1 >= count($down_arr) || empty($down_arr[1])) {
-            $this->redirect($down_arr[0]);
+            $this->redirect($down_url);
             exit;
         } else {
-            $down_url = $down_arr[0];
             $down_name = $down_arr[1];
             download_file($down_url, '', $down_name);
             exit;
@@ -923,7 +913,7 @@ EOF;
             ->find();
         if (!empty($result['courseware'])) {
             $file_url = preg_replace('#^(' . $this->root_dir . ')?(/)#i', '$2', $result['courseware']);
-            if ((!is_http_url($result['file_url']) && !file_exists('.' . $file_url))) {
+            if (!is_http_url($file_url) && !file_exists('.' . $file_url)) {
                 $this->error('附件文件不存在！');
             }
         }
@@ -960,6 +950,12 @@ EOF;
             }elseif (empty($is_buy)){
                 $this->error('请先购买！');
             }
+        }
+        
+        // 如果是远程附件地址，而且不是本站资源，直接跳转访问
+        $file_domain = preg_replace('/^(http(s)?:)?(\/\/)?([^\/\:]*)(.*)$/i', '${4}', $file_url);
+        if (is_http_url($file_url) && GetUrlToDomain() != GetUrlToDomain($file_domain)) {
+            $this->redirect($file_url);
         }
 
         download_file($file_url, '', $file_url);
@@ -1028,7 +1024,7 @@ EOF;
 
         Db::name('media_file')->where(['file_id' => $fid])->setInc('playcount');
         $res['seo_title']       = set_arcseotitle($res['title'], $res['seo_title'], $res['typename'], $res['typeid']);
-        $res['seo_description'] = @msubstr(checkStrHtml($res['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        $res['seo_description'] = @msubstr(checkStrHtml($res['seo_description']), 0, get_seo_description_length(), false);
         $res = $this->fieldLogic->getChannelFieldList($res, 5); // 自定义字段的数据格式处理
         $eyou['field'] = $res;
         $eyou['field']['fid'] = $fid;

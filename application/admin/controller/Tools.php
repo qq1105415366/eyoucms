@@ -132,6 +132,26 @@ class Tools extends Base {
             //创建备份文件
             $Database = new Backup($file, $config);
             if(false !== $Database->create()){
+                // 同步备份到安装目录里
+                $install_path = $this->install_exist();
+                if (!empty($install_path)) {
+                    try {
+                        $config_ins = $config;
+                        $config_ins['path'] = $install_path . DS;
+                        $config_ins['part'] = 1000000000; // 接近1G
+                        $config_ins['compress'] = 0;
+                        $file_ins = [
+                            'name' => 'install',
+                            'part' => 1,
+                            'version' => getCmsVersion(),
+                        ];
+                        if (@unlink($config_ins['path'].'eyoucms.sql')) {
+                            $Database_ins = new Backup($file_ins, $config_ins);
+                            $Database_ins->create();
+                        }
+                    } catch (\Exception $e) {}
+                }
+
                 $speed = (floor((1/count($tables))*10000)/10000*100);
                 $speed = sprintf("%.2f", $speed);
                 $tab = array('id' => 0, 'start' => 0, 'speed'=>$speed, 'table'=>$tables[0], 'optstep'=>1);
@@ -140,79 +160,81 @@ class Tools extends Base {
                 return json(array('msg'=>'初始化失败，备份文件创建失败！', 'code'=>0, 'url'=>''));
             }
         } elseif (IS_POST && is_numeric($id) && is_numeric($start) && 1 == intval($optstep)) { //备份数据
+            $init_start = $start;
             $tables = session('backup_tables');
             //备份指定表
             $Database = new Backup(session('backup_file'), session('backup_config'));
-            $start  = $Database->backup($tables[$id], $start);
+            $start  = $Database->backup($tables[$id], $init_start);
             if(false === $start){ //出错
                 return json(array('msg'=>'备份出错！', 'code'=>0, 'url'=>''));
-            } elseif (0 === $start) { //下一表
-                if(isset($tables[++$id])){
-                    $speed = (floor((($id+1)/count($tables))*10000)/10000*100);
-                    $speed = sprintf("%.2f", $speed);
-                    $tab = array('id' => $id, 'start' => 0, 'speed' => $speed, 'table'=>$tables[$id], 'optstep'=>1);
-                    return json(array('tab' => $tab, 'msg'=>'备份完成！', 'code'=>1, 'url'=>''));
-                }
-                else { //备份完成，清空缓存
-                    
-                    /*自动覆盖安装目录下的eyoucms.sql*/
-                    $install_path = ROOT_PATH.'install';
-                    if (!is_dir($install_path) || !file_exists($install_path)) {
-                        $dirlist = glob('install_*');
-                        $install_dirname = current($dirlist);
-                        if (!empty($install_dirname)) {
-                            $install_path = ROOT_PATH.$install_dirname;
-                        }
-                    }
-                    if (is_dir($install_path) && file_exists($install_path)) {
-                        $srcfile = session('backup_config.path').session('backup_file.name').'-'.session('backup_file.part').'-'.session('backup_file.version').'.sql';
-                        $dstfile = $install_path.'/eyoucms.sql';
-                        if(@copy($srcfile, $dstfile)){
-                            /*替换所有表的前缀为官方默认ey_，并重写安装数据包里*/
-                            $eyouDbStr = @file_get_contents($dstfile);
-                            if (!empty($eyouDbStr)) {
-                                $dbtables = Db::query('SHOW TABLE STATUS');
-                                $tableName = $eyTableName = [];
-                                foreach ($dbtables as $k => $v) {
-                                    if (preg_match('/^'.PREFIX.'/i', $v['Name'])) {
-                                        $tableName[] = "`{$v['Name']}`";
-                                        $eyTableName[] = preg_replace('/^`'.PREFIX.'/i', '`ey_', "`{$v['Name']}`");
-                                    }
-                                }
-                                foreach ($tableName as $key => $val) {
-                                    if ($val != $eyTableName[$key]) {
-                                        $eyouDbStr = str_replace($tableName, $eyTableName, $eyouDbStr);
-                                    }
-                                }
-                                @file_put_contents($dstfile, $eyouDbStr);
-                                unset($eyouDbStr);
-                            }
-                            /*--end*/
-                        } else {
-                            @unlink($dstfile); // 复制失败就删掉，避免安装错误的数据包
-                        }
-                    }
-                    /*--end*/
-                    @unlink(session('backup_config.path') . 'backup.lock');
-                    session('backup_tables', null);
-                    session('backup_file', null);
-                    session('backup_config', null);
-                    adminLog('备份数据库');
-                    return json(array('msg'=>'备份完成！', 'code'=>1, 'url'=>''));
-                }
             } else {
-                $rate = floor(100 * ($start[0] / $start[1]));
-                $speed = floor((($id+1)/count($tables))*10000)/10000*100 + ($rate/100);
-                $speed = sprintf("%.2f", $speed);
-                $tab  = array('id' => $id, 'start' => $start[0], 'speed' => $speed, 'table'=>$tables[$id], 'optstep'=>1);
-                return json(array('tab' => $tab, 'msg'=>"正在备份...({$rate}%)", 'code'=>1, 'url'=>''));
+                // 同步备份到安装目录里
+                $install_path = $this->install_exist();
+                if (!empty($install_path)) {
+                    //备份指定表
+                    try {
+                        $config_ins = session('backup_config');
+                        $config_ins['path'] = $install_path . DS;
+                        $config_ins['part'] = 1000000000; // 接近1G
+                        $config_ins['compress'] = 0;
+                        $file_ins = [
+                            'name' => 'install',
+                            'part' => 1,
+                            'version' => getCmsVersion(),
+                        ];
+                        $Database_ins = new Backup($file_ins, $config_ins);
+                        $Database_ins->backup($tables[$id], $init_start);
+                    } catch (\Exception $e) {}
+                }
+                if (0 === $start) { //下一表
+                    if(isset($tables[++$id])){
+                        $speed = (floor((($id+1)/count($tables))*10000)/10000*100);
+                        $speed = sprintf("%.2f", $speed);
+                        $tab = array('id' => $id, 'start' => 0, 'speed' => $speed, 'table'=>$tables[$id], 'optstep'=>1);
+                        return json(array('tab' => $tab, 'msg'=>'备份完成！', 'code'=>1, 'url'=>''));
+                    }
+                    else { //备份完成，清空缓存
+                        @unlink(session('backup_config.path') . 'backup.lock');
+                        session('backup_tables', null);
+                        session('backup_file', null);
+                        session('backup_config', null);
+                        adminLog('备份数据库');
+                        return json(array('msg'=>'备份完成！', 'code'=>1, 'url'=>''));
+                    }
+                } else {
+                    $rate = floor(100 * ($start[0] / $start[1]));
+                    $speed = floor((($id+1)/count($tables))*10000)/10000*100 + ($rate/100);
+                    $speed = sprintf("%.2f", $speed);
+                    $tab  = array('id' => $id, 'start' => $start[0], 'speed' => $speed, 'table'=>$tables[$id], 'optstep'=>1);
+                    return json(array('tab' => $tab, 'msg'=>"正在备份...({$rate}%)", 'code'=>1, 'url'=>''));
+                }
             }
-
         } else {//出错
             return json(array('msg'=>'参数有误', 'tab'=>['speed'=>-1], 'code'=>0, 'url'=>''));
         }
     }
-        
+    
+    /**
+     * 安装目录是否存在
+     * @return [type] [description]
+     */
+    private function install_exist()
+    {
+        $install_path = ROOT_PATH.'install';
+        if (!is_dir($install_path) || !file_exists($install_path)) {
+            $dirlist = glob('install_*');
+            $install_dirname = current($dirlist);
+            if (!empty($install_dirname)) {
+                $install_path = ROOT_PATH.$install_dirname;
+            }
+        }
+        if (is_dir($install_path) && file_exists($install_path)) {
+            return $install_path;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * 优化
      */

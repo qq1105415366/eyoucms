@@ -361,7 +361,7 @@
                                     <td>{$sys_info.phpv}</td>
                                 </tr>
                                 <tr>
-                                    <td class="gray_bg">Mysql 版本：</td>
+                                    <td class="gray_bg">{$sys_info['dbtype']|default=''} 版本：</td>
                                     <td>{$sys_info.mysql_version}</td>
                                     <td class="gray_bg">GD 版本：</td>
                                     <td>{$sys_info.gdinfo}</td>

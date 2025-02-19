@@ -186,7 +186,7 @@
                                             <div class="users-form-item">
                                                 <label class="users-form-item-label">最后登录：</label>
                                                 <div class="users-form-item-content">
-                                                    <div class="text">{$info.last_login|date='Y-m-d H:i:s',###}</div>
+                                                    <div class="text">{notempty name="$info['last_login']"}{$info.last_login|date='Y-m-d H:i:s',###}{/notempty}</div>
                                                 </div>
                                             </div>
                                             <div class="users-form-item">

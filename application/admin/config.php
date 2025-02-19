@@ -34,7 +34,7 @@ $admin_config = array(
         'list_rows' => $system_paginate_pagesize,
     ),
     // 默认全局过滤方法 用逗号分隔多个
-    'default_filter'         => 'htmlspecialchars',
+    // 'default_filter'         => 'htmlspecialchars',
     // 登录有效期，单位秒
     'login_expire' => 3600,
     // 登录错误最大次数

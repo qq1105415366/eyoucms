@@ -38,7 +38,7 @@ class TagUser extends Base
      * 会员中心
      * @author wengxianhu by 2018-4-20
      */
-    public function getUser($type = 'default', $img = '', $currentclass = '', $txt = '', $txtid = '', $afterhtml = '')
+    public function getUser($type = 'default', $img = '', $currentclass = '', $txt = '', $txtid = '', $afterhtml = '', $viewfile = '')
     {
         $result = false;
 
@@ -126,6 +126,8 @@ class TagUser extends Base
                             $result['htmlid'] = "ey_htmlid_v".msubstr($t_uniqid, 26, 6);
                             // 登录按钮的事件
                             $result['loginPopupId'] = " id='ey_login_id_v665117' ";
+                            // 加载模板
+                            $result['viewfile'] = $viewfile;
                         }
                         break;
                         

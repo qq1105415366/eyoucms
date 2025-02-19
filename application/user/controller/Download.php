@@ -99,8 +99,7 @@ class Download extends Base
             $post = input('param.');
             $keyword = $post['keyword'];
 
-            $servernames = tpCache('download.download_select_servername');
-            $servernames = unserialize($servernames);
+            $servernames = unserialize(tpCache('download.download_select_servername'));
 
             $search_data = $servernames;
             if (!empty($keyword)) {

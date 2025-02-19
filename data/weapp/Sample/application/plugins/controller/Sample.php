@@ -29,6 +29,6 @@ class Sample extends Base
      */
     public function index()
     {
-        return $this->fetch('Sample/'.THEME_STYLE.'/index');
+        return $this->fetch('sample/'.THEME_STYLE.'/index');
     }
 }

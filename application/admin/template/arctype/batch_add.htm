@@ -96,7 +96,7 @@
                                         <div class="tc"><font color="red" style="font: bold 14px/20px tahoma, verdana;margin-right: 5px;">*</font>顶级栏目名称</div>
                                     </th>
                                     <th abbr="article_title" axis="col3" class="">
-                                        <div style="text-align: left; padding-left: 10px;" class="">子栏目(用"目录名称1,目录名称2..."这样表示多个栏目)</div>
+                                        <div style="text-align: left; padding-left: 10px;" class="">子栏目(用 <font color="red">栏目名称1,栏目名称2,栏目名称3</font> 这样表示多个栏目)</div>
                                     </th>
                                     <th axis="col1" class="w60">
                                         <div class="tc">
@@ -138,13 +138,13 @@
                                         <td class="">
                                             <div class="type-dan-pane w100 tc">
                                                 <div class="images_upload images_upload_html">
-                                                    <a href="javascript:void(0);" onclick="arctypeImageAdd({$i});" class="img-upload no-float" title="点击上传">
+                                                    <a href="javascript:void(0);" onclick="arctypeImageAdd({$i}, 0);" class="img-upload no-float" title="点击上传">
                                                         <div class="y-line" id="litpic_local_y_line_{$i}" ></div>
                                                         <div class="x-line" id="litpic_local_x_line_{$i}" ></div>
                                                         <img src="" id="litpic_local_src_{$i}" class="pic_con" style="display: none;">
                                                     </a>
-                                                    <a href="javascript:void(0)" onclick="arctypeImageClear({$i})" class="delect" title="删除"></a>
-                                                    <a href="javascript:void(0)" onclick="arctypeImageAdd({$i});" class="edit" title="编辑"><i class="iconfont e-bianji"></i></a>
+                                                    <a href="javascript:void(0)" onclick="arctypeImageClear({$i}, 0)" class="delect" title="删除"></a>
+                                                    <a href="javascript:void(0)" onclick="arctypeImageAdd({$i}, 0);" class="edit" title="编辑"><i class="iconfont e-bianji"></i></a>
                                                     <input type="hidden" id="litpic_local_{$i}" name="litpic_local[]">
                                                 </div>
                                             </div>
@@ -182,14 +182,14 @@
                                         <td class="">
                                             <div class="type-dan-pane w100 tc">
                                                 <div class="images_upload images_upload_html">
-                                                    <a href="javascript:void(0);" onclick="arctypeImageAdd({$i});" class="img-upload no-float" title="点击上传">
+                                                    <a href="javascript:void(0);" onclick="arctypeImageAdd({$i}, 1);" class="img-upload no-float" title="点击上传">
                                                         <div class="y-line" id="litpic_local_y_line_{$i}" ></div>
                                                         <div class="x-line" id="litpic_local_x_line_{$i}" ></div>
                                                         <img src="" id="litpic_local_src_{$i}" class="pic_con" style="display: none;">
                                                     </a>
-                                                    <a href="javascript:void(0)" onclick="arctypeImageClear({$i})" class="delect" title="删除"></a>
-                                                    <a href="javascript:void(0)" onclick="arctypeImageAdd({$i});" class="edit" title="编辑"><i class="iconfont e-bianji"></i></a>
-                                                    <input type="hidden" id="litpic_local_{$i}" name="litpic_local[]">
+                                                    <a href="javascript:void(0)" onclick="arctypeImageClear({$i}, 1)" class="delect" title="删除"></a>
+                                                    <a href="javascript:void(0)" onclick="arctypeImageAdd({$i}, 1);" class="edit" title="编辑"><i class="iconfont e-bianji"></i></a>
+                                                    <input type="hidden" id="litpic_local_{$i}" name="litpic_local_1[]">
                                                 </div>
                                             </div>
                                         </td>
@@ -201,7 +201,7 @@
                                         <td class="">
                                             <div class="w60 tc btn_del_1">
                                                 {eq name='$i' value='1'}
-                                                <a class="btn" href="javascript:void(0);" style="background: #e6e6e6;"><i class="fa fa-trash-o"></i>删除</a>
+                                                <a class="btn grey" href="javascript:void(0);" ><i class="fa fa-trash-o"></i>删除</a>
                                                 {else /}
                                                 <a class="btn red" href="javascript:void(0);" onclick="$('#tr_1_{$i}').remove();"><i class="fa fa-trash-o"></i>删除</a>
                                                 {/eq}
@@ -232,19 +232,23 @@
 
 <script type="text/javascript">
     var arctypeIndex = 0;
-    function arctypeImageAdd(index) {
+    var typeIndex = 0;
+    function arctypeImageAdd(index, typeIdx) {
         arctypeIndex = index;
+        typeIndex = typeIdx;
         GetUploadify(1, '', 'allimg', 'arctypeImageCallBack');
     }
     function arctypeImageCallBack(fileurl_tmp) {
-        $('#litpic_local_'+arctypeIndex).val(fileurl_tmp);
-        $('#litpic_local_src_'+arctypeIndex).show().attr('src', fileurl_tmp);
-        $('#litpic_local_y_line_'+arctypeIndex+', #litpic_local_x_line_'+arctypeIndex).hide();
+        $('#batch_list_'+typeIndex+' #litpic_local_'+arctypeIndex).parent().addClass('uploaded');
+        $('#batch_list_'+typeIndex+' #litpic_local_'+arctypeIndex).val(fileurl_tmp);
+        $('#batch_list_'+typeIndex+' #litpic_local_src_'+arctypeIndex).show().attr('src', fileurl_tmp);
+        $('#batch_list_'+typeIndex+' #litpic_local_y_line_'+arctypeIndex+', #batch_list_'+typeIndex+' #litpic_local_x_line_'+arctypeIndex).hide();
     }
-    function arctypeImageClear(arctypeIndex) {
-        $('#litpic_local_'+arctypeIndex).val('');
-        $('#litpic_local_src_'+arctypeIndex).hide().attr('src', '');
-        $('#litpic_local_y_line_'+arctypeIndex+', #litpic_local_x_line_'+arctypeIndex).show();
+    function arctypeImageClear(arctypeIndex, typeIdx) {
+        $('#batch_list_'+typeIdx+' #litpic_local_'+arctypeIndex).parent().removeClass('uploaded');
+        $('#batch_list_'+typeIdx+' #litpic_local_'+arctypeIndex).val('');
+        $('#batch_list_'+typeIdx+' #litpic_local_src_'+arctypeIndex).hide().attr('src', '');
+        $('#batch_list_'+typeIdx+' #litpic_local_y_line_'+arctypeIndex+', #batch_list_'+typeIdx+' #litpic_local_x_line_'+arctypeIndex).show();
     }
 
     var templateList = {$templateList|json_encode};

@@ -79,6 +79,14 @@ class EmailLogic
      * @throws Exception
      */
     public function send_email($to='', $subject='', $data='', $scene=1, $library = 'phpmailer'){
+        // 只保留最近1小时的邮件日志
+        try {
+            $mtime = strtotime("-1 hour");
+            Db::name('smtp_record')->where([
+                'add_time'  => ['lt', $mtime],
+                ])->delete();
+        } catch (\Exception $e) {}
+
         if (0 < intval($scene)) {
             $smtp_tpl_row = Db::name('smtp_tpl')->where([
                     'send_scene'=> $scene,

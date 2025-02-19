@@ -15,7 +15,7 @@ namespace app\api\model\v1;
 
 use think\Db;
 use think\Cache;
-
+use think\template\taglib\api\TagCommentlist;
 /**
  * 微信小程序个人中心模型
  */
@@ -42,10 +42,11 @@ class User extends UserBase
     {
         if (empty($this->session)) return false;
         $where = [
-            'openid' => $this->session['openid'],
             'users_id' => intval($this->session['users_id'])
         ];
         $users_id = Db::name('wx_users')->where($where)->getField('users_id');
+        // 输出查询结果，确认是否正确获取到 users_id
+       
         if (empty($users_id)) {
             return false;
         } else {
@@ -94,6 +95,11 @@ class User extends UserBase
             $session = $this->ttlogin($post['code']);
             $userInfo = !empty($post['user_info']) ? json_decode($post['user_info'], true) : [];
             $users_id = $this->register($session['openid'], $userInfo);
+            $session['unionid'] = '';
+        } elseif (self::$provider == 'alipay') {
+            $session = $this->alipaylogin($post['authCode']);
+            $userInfo = !empty($post['user_info']) ? json_decode($post['user_info'], true) : [];
+            $users_id = $this->register($session['open_id'], $userInfo);
             $session['unionid'] = '';
         } elseif (self::$provider == 'h5') {
             return $this->h5_login($post);
@@ -155,60 +161,78 @@ class User extends UserBase
             Db::name('users')->where(['users_id' => $users_id])->update($update);
         }
 
-        // 生成token (session3rd)
-        $this->token = $this->token($session['unionid'], $session['session_key'], $users_id, $session['openid']);
+    // 生成token (session3rd)
+    $this->token = $this->token($session['unionid'], $session['session_key'], $users_id, $session['openid']);
 
-        return $users_id;
+    return $users_id;
+}
+
+/**
+ * h5登录
+ * @param  [type] $post [description]
+ * @return [type]       [description]
+ */
+private function h5_login($post)
+{
+    $row = $this->wechatLogic->get_wechat_config();
+   
+    if (empty($row['appid']) || empty($row['appsecret'])) {
+        $this->error("请先完善插件里 [公众号配置]");
     }
 
-    /**
-     * h5登录
-     * @param  [type] $post [description]
-     * @return [type]       [description]
-     */
-    private function h5_login($post)
-    {
-        $row = $this->wechatLogic->get_wechat_config();
-        if (empty($row['appid']) || empty($row['appsecret'])) {
-            $this->error("请先完善插件里 [公众号配置]");
-        }
-
-        // 微信配置信息
-        $appid = $row['appid'];
-        $secret = $row['appsecret'];
-        $code = $post['code'];
-        
-        // 获取到会员openid
-        $get_token_url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' . $appid . '&secret=' . $secret . '&code=' . $code . '&grant_type=authorization_code';
-        $data = httpRequest($get_token_url);
-        $WeChatData = json_decode($data, true);
-        if (empty($WeChatData) || (!empty($WeChatData['errcode']) && !empty($WeChatData['errmsg']))) {
-            $this->error('AppSecret错误或已过期');
-        }
-
-        // 获取会员信息
-        $get_userinfo_url = 'https://api.weixin.qq.com/sns/userinfo?access_token=' . $WeChatData["access_token"] . '&openid=' . $WeChatData["openid"] . '&lang=zh_CN';
-        $userInfo = httpRequest($get_userinfo_url);
-        $userInfo = json_decode($userInfo, true);
-        if (empty($userInfo['nickname']) && empty($userInfo['headimgurl'])) {
-            $this->error('用户授权异常，建议清理手机缓存再进行登录');
-        }
-        $userInfo['unionid'] = !empty($userInfo['unionid']) ? $userInfo['unionid'] : '';
-        if (!empty($userInfo['unionid'])) {
-            $where['unionid'] = $userInfo['unionid'];
-        } elseif (!empty($userInfo['openid'])) {
-            $where['open_id'] = $userInfo['openid'];
-        }
-
-        $users_id = Db::name('users')->where($where)->value('users_id');
-        if (empty($users_id)) {
-            $users_id = $this->h5_users_register($userInfo);
-            $post['is_new'] = 1;
-        }
-        $this->token = $this->token('' , '', $users_id, $userInfo['openid']);
-
-        return $users_id;
+    // 微信配置信息
+    $appid = $row['appid'];
+    $secret = $row['appsecret'];
+    $code = $post['code'];
+    
+    // 获取到会员openid
+    $get_token_url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' . $appid . '&secret=' . $secret . '&code=' . $code . '&grant_type=authorization_code';
+    $data = httpRequest($get_token_url);
+    $WeChatData = json_decode($data, true);
+    if (json_last_error() !== JSON_ERROR_NONE || empty($WeChatData)) {
+        $this->error('获取微信数据失败');
     }
+
+    // 获取会员信息
+    $get_userinfo_url = 'https://api.weixin.qq.com/sns/userinfo?access_token=' . $WeChatData["access_token"] . '&openid=' . $WeChatData["openid"] . '&lang=zh_CN';
+    $userInfo = httpRequest($get_userinfo_url);
+    $userInfo = json_decode($userInfo, true);
+    
+    if (empty($userInfo['nickname']) && empty($userInfo['headimgurl'])) {
+        $this->error('用户授权异常，建议清理手机缓存再进行登录');
+    }
+
+    $userInfo['unionid'] = !empty($userInfo['unionid']) ? $userInfo['unionid'] : '';
+
+    if (!empty($userInfo['unionid'])) {
+        $where['union_id'] = $userInfo['unionid'];
+    } elseif (!empty($userInfo['openid'])) {
+        $where['open_id'] = $userInfo['openid'];
+    }
+
+    $users_id = Db::name('users')->where($where)->value('users_id');   
+  
+     if (empty($users_id)) {
+        $users_id = $this->h5_users_register($userInfo);
+        $post['is_new'] = 1;
+    } else {
+        // 查询当前昵称
+        $currentNickname = Db::name('users')->where(['users_id' => $users_id])->value('nickname');
+     
+        // 如果当前昵称是 "微信用户"，更新用户信息
+        if ($currentNickname === '微信用户') {
+            Db::name('users')->where(['users_id' => $users_id])->update([
+                'nickname' => filterNickname($userInfo['nickname']),
+                'head_pic' =>!empty($userInfo['headimgurl']) ? $userInfo['headimgurl'] : ROOT_DIR . '/public/static/common/images/dfboy.png',
+                'update_time' => time() // 可选：记录更新时间
+            ]);
+        }
+    }
+
+    $this->token = $this->token('', '', $users_id, $userInfo['openid']);
+
+    return $users_id;
+}
 
     // h5 - 自动注册users表用户
     private function h5_users_setReg($userInfo)
@@ -242,42 +266,66 @@ class User extends UserBase
     // h5 - 自动注册用户
     private function h5_users_register($userInfo = [])
     {
-        if (!empty($userInfo['unionid'])) {
-            $u_where['union_id'] = $w_where['unionid'] = $userInfo['unionid'];
-            $users_id = Db::name('users')->where($u_where)->value('users_id');
-            if (!empty($users_id)) return $users_id;
-        } else {
-            $w_where['openid'] = $userInfo['openid'];
+        if (empty($userInfo['openid'])) {
+            $this->error('openid 不能为空');
         }
 
-        // 查询用户是否已存在
+        // 检查是否存在 unionid
+        if (!empty($userInfo['unionid'])) {
+            $u_where['union_id'] = $userInfo['unionid'];
+            $users_id = Db::name('users')->where($u_where)->value('users_id');
+            if (!empty($users_id)) {
+                return $users_id;
+            }
+        }
+
+        // 默认使用 openid 查询是否已存在
+        $w_where = ['openid' => $userInfo['openid']];
         $we_user = Db::name('wx_users')->field('users_id')->where($w_where)->find();
+
         if (empty($we_user)) {
+            // 用户不存在，需要注册
             $users_id = $this->h5_users_setReg($userInfo);
             if (!empty($users_id)) {
-                //微信用户信息存在表里
-                $wxuser_id = Db::name('wx_users')->insertGetId([
+                // 插入到 wx_users 表
+                $insertData = [
                     'users_id' => $users_id,
                     'openid' => $userInfo['openid'],
-                    'unionid' => $userInfo['unionid'],
+                    'union_id' => $userInfo['unionid'],
                     'nickname' => !empty($userInfo['nickname']) ? filterNickname($userInfo['nickname']) : '',
                     'headimgurl' => !empty($userInfo['headimgurl']) ? filterNickname($userInfo['headimgurl']) : '',
                     'provider' => 'gzh',
                     'add_time' => getTime(),
-                ]);
-                if (!empty($wxuser_id)) {
-                    return $users_id;
-                } else {
-                    Db::name('users')->where(['users_id' => $users_id])->delete();
+                ];
+
+                // 启用事务确保数据一致性
+                Db::startTrans();
+                try {
+                    $wxuser_id = Db::name('wx_users')->insertGetId($insertData);
+                    if (!empty($wxuser_id)) {
+                        Db::commit();  // 提交事务
+                        return $users_id;
+                    } else {
+                        Db::rollback();  // 回滚事务
+                        Db::name('users')->where(['users_id' => $users_id])->delete();  // 删除用户数据
+                        $this->error('微信用户信息插入失败');
+                    }
+                } catch (\Exception $e) {
+                    Db::rollback();  // 回滚事务
+                    $this->error('注册过程中发生错误');
                 }
             }
             $this->error('用户注册失败！');
         } else {
+            // 如果用户已存在，更新微信用户信息
             $users = Db::name('users')->field('users_id')->where([
                 'users_id' => $we_user['users_id'],
             ])->find();
+
             if (empty($users)) {
+                // 用户数据已存在但未绑定，重新注册
                 $users_id = $this->h5_users_setReg($userInfo);
+                
                 if (!empty($users_id)) {
                     Db::name('wx_users')->where($w_where)->update([
                         'users_id' => $users_id,
@@ -292,6 +340,7 @@ class User extends UserBase
             }
         }
     }
+
 
     //头条登录
     private function ttlogin($code)
@@ -311,6 +360,101 @@ class User extends UserBase
 
         return $session;
     }
+     //支付宝登录
+    public function alipaylogin($authCode)
+    {
+        // 获取支付宝小程序配置
+        $inc = model('ShopPublicHandle')->getSpecifyAppletsConfig();
+        $inc = [
+            'appid' => !empty($inc['appid']) ? $inc['appid'] : '',
+            'appPrivateKey' => !empty($inc['appPrivateKey']) ? $inc['appPrivateKey'] : '',
+            'alipayPublicKey' => !empty($inc['alipayPublicKey']) ? $inc['alipayPublicKey'] : '',
+        ];
+        if (empty($inc['appid']) || empty($inc['appPrivateKey'])) {
+            $this->error('未填写支付宝小程序配置');
+        }
+    
+        // 获取 session 信息
+        $session = $this->alipayUserSessionKey($authCode, $inc);
+        // 检查是否有错误
+        if (isset($session['errcode'])) {
+            $this->error($session['errmsg']);
+        }
+    
+        // 返回 session 信息
+        return $session;
+    }
+    /**
+     * 获取支付宝登录的session_key
+     * @param $code
+     * @return array|mixed
+     */
+    private function alipayUserSessionKey($authCode, $inc)
+    {
+        $url = "https://openapi.alipay.com/gateway.do";
+        // 构造请求参数
+        $postData = [
+            'app_id' => !empty($inc['appid']) ? $inc['appid'] : '',
+            'method' => 'alipay.system.oauth.token',
+            'format' => 'json',
+            'charset' => 'UTF-8',
+            'sign_type' => 'RSA2',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'version' => '1.0',
+            'grant_type' => 'authorization_code',
+            'code' => $authCode,
+        ];
+       // 生成签名
+        $postData['sign'] = $this->generateAlipaySign($postData, $inc['appPrivateKey']); 
+        $response = httpRequest($url, 'POST', http_build_query($postData));
+        $params = json_decode($response, true);
+        if (isset($params['error_response'])) {
+            // 返回错误信息
+            return [
+                'errcode' => $params['error_response']['code'] ?? "-1",
+                'errmsg' => $params['error_response']['msg'] ?? "未知错误",
+            ];
+        } else {
+            // 成功返回数据
+            return $params['alipay_system_oauth_token_response'] ?? [];
+        }
+    }
+
+    /**
+     * 生成支付宝签名
+     * @param array $data
+     * @param string $privateKey
+     * @return string
+     */
+  private function generateAlipaySign($data, $privateKey)
+{
+    // 按照键名升序排序
+    ksort($data);
+    
+    $stringToSign = '';
+    foreach ($data as $key => $value) {
+        if ($value !== '' && !is_null($value) && $key !== 'sign') {
+            $stringToSign .= "$key=$value&";
+        }
+    }
+
+    // 去掉末尾多余的 &
+    $stringToSign = rtrim($stringToSign, '&');
+    
+    // 加载私钥
+    $privateKey = "-----BEGIN RSA PRIVATE KEY-----\n" . implode("\n", explode("\n", $privateKey)) . "\n-----END RSA PRIVATE KEY-----";
+    $privateKeyResource = openssl_pkey_get_private($privateKey);
+    
+    if (!$privateKeyResource) {
+        die('私钥加载失败');
+    }
+
+    // 使用 RSA2 签名，采用 SHA256 算法
+    openssl_sign($stringToSign, $sign, $privateKeyResource, OPENSSL_ALGO_SHA256);
+
+    // 返回 Base64 编码后的签名
+    return base64_encode($sign);
+}
 
     /**
      * 获取抖音登录的session_key
@@ -499,13 +643,22 @@ class User extends UserBase
         if (empty($we_user)) {
             $users_id = $this->setReg($userInfo);
             if (!empty($users_id)) {
+                 if(self::$provider  == 'alipay') {
+                    $userInfo = $userInfo['response'];  // 修改这一行，正确访问数组元素
+                    $nickname = !empty($userInfo['nickName']) ? filterNickname($userInfo['nickName']) : '';
+                    $avatar =  !empty($userInfo['avatar']) ? filterNickname($userInfo['avatar']) : '';
+                } else{ 
+                    $nickname = !empty($userInfo['nickName']) ? filterNickname($userInfo['nickName']) : '';
+                    $avatar = !empty($userInfo['avatarUrl']) ? filterNickname($userInfo['avatarUrl']) : '';
+                }
+               
                 //微信用户信息存在表里
                 $wxuser_id = Db::name('wx_users')->insertGetId([
                     'users_id'   => $users_id,
                     'openid'     => $openid,
                     'unionid'     => $unionid,
-                    'nickname'   => !empty($userInfo['nickName']) ? filterNickname($userInfo['nickName']) : '',
-                    'headimgurl' => !empty($userInfo['avatarUrl']) ? filterNickname($userInfo['avatarUrl']) : '',
+                    'nickname'   => $nickname,
+                    'headimgurl' => $avatar,
                     'add_time'   => getTime(),
                 ]);
                 if (!empty($wxuser_id)) {
@@ -545,7 +698,15 @@ class User extends UserBase
         $username = rand_username('', 'U', 3);
         // 用户昵称
         $nickname = !empty($userInfo['nickName']) ? filterNickname($userInfo['nickName']) : '';
-        // 创建用户账号
+        if(self::$provider  == 'alipay') {
+            $userInfo = $userInfo['response'];  // 修改这一行，正确访问数组元素
+            $nickname = !empty($userInfo['nickName']) ? filterNickname($userInfo['nickName']) : '';
+            $avatar = !empty($userInfo['avatar']) ? $userInfo['avatar'] : ROOT_DIR . '/public/static/common/images/dfboy.png' ;
+        } else{ 
+            $nickname = !empty($userInfo['nickName']) ? filterNickname($userInfo['nickName']) : '';
+            $avatar = !empty($userInfo['avatarUrl']) ? $userInfo['avatarUrl'] : ROOT_DIR . '/public/static/common/images/dfboy.png';
+        }
+       
         $addData  = [
             'username'            => $username,//用户名-生成
             'nickname'            => !empty($nickname) ? trim($nickname) : $username,//昵称，同微信用户名
@@ -556,7 +717,7 @@ class User extends UserBase
             'open_level_time'     => getTime(),
             'level_maturity_days' => 0,
             'reg_time'            => getTime(),
-            'head_pic'            => !empty($userInfo['avatarUrl']) ? $userInfo['avatarUrl'] : ROOT_DIR . '/public/static/common/images/dfboy.png',
+            'head_pic'            => $avatar,
             'mobile'            => !empty($userInfo['mobile']) ? $userInfo['mobile'] : '',
             'is_mobile'            => !empty($userInfo['mobile']) ? 1 : 0,
             'lang'                => self::$lang,
@@ -565,6 +726,8 @@ class User extends UserBase
             $addData['source'] = 5;//1-PC端 2-H5 3-微信公众号/微站点 4-微信小程序 5-百度小程序 6-抖音小程序
         } elseif (self::$provider == 'toutiao') {
             $addData['source'] = 6;//1-PC端 2-H5 3-微信公众号/微站点 4-微信小程序 5-百度小程序 6-抖音小程序
+        }  elseif (self::$provider == 'alipay') {
+            $addData['source'] = 7;//1-PC端 2-H5 3-微信公众号/微站点 4-微信小程序 5-百度小程序 6-抖音小程序  7-支付宝小程序
         } else {
             $addData['source'] = 4;//1-PC端 2-H5 3-微信公众号/微站点 4-微信小程序 5-百度小程序 6-抖音小程序
         }
@@ -743,7 +906,7 @@ class User extends UserBase
     public function fromXml($xml)
     {
         // 禁止引用外部xml实体
-        libxml_disable_entity_loader(true);
+        @libxml_disable_entity_loader(true);
         return json_decode(json_encode(simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA)), true);
     }
 
@@ -892,6 +1055,7 @@ class User extends UserBase
                 $content_arr[$v['id']] = $channel_content_arr;
             }
             $count_arr = Db::name($type)->where('aid','in',$aids)->field('aid,count(id) as count')->group('aid')->getAllWithIndex('aid');
+            $commentListObj = new TagCommentlist();
             foreach ($result['data'] as $key => $val) {
                 $val['is_litpic'] = 0;
                 if (!empty($val['litpic'])){
@@ -902,6 +1066,10 @@ class User extends UserBase
                 $val['arc_add_time_format'] = $this->time_format($val['arc_add_time']);
                 $val['arc_add_time'] = date('Y-m-d H:i:s',$val['arc_add_time']);
                 $val['update_time'] = date('Y-m-d H:i:s',$val['update_time']);
+                $commentsData = $commentListObj->getCommentlist([], $val['aid']);
+          
+                $val['comments'] = isset($commentsData['total']) ? $commentsData['total'] : 0; // 获取评论总数
+            
                 $val['count'] = !empty($count_arr[$val['aid']]) ? $count_arr[$val['aid']]['count'] : 0;
                 // 内容扩展表数据
                 $content_data = $content_arr[$val['channel']][$val['aid']];

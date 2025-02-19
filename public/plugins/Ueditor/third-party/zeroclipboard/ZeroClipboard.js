@@ -1248,9 +1248,8 @@
     });
   } else if (typeof module === "object" && module && typeof module.exports === "object" && module.exports) {
     module.exports = ZeroClipboard;
-  } else {
-    window.ZeroClipboard = ZeroClipboard;
   }
+  window.ZeroClipboard = ZeroClipboard;
 })(function() {
   return this;
 }());

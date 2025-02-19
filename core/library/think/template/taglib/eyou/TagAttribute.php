@@ -71,7 +71,7 @@ class TagAttribute extends Base
                     ->field('a.attr_name as name, b.attr_value as value')
                     ->join('__SHOP_PRODUCT_ATTR__ b', 'a.attr_id = b.attr_id', 'LEFT')
                     ->where($where)
-                    ->order('a.sort_order asc, a.attr_id asc')
+                    ->order('b.sort_order asc, a.attr_id asc')
                     ->select();
             }
         } else {

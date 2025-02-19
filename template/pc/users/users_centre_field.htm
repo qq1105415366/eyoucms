@@ -25,9 +25,9 @@
             <div class="from-row-r">
                 {$vo.dfvalue|default=''}
                 {eyou:eq name='$users.is_mobile' value='1'}
-                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_mobile_code('更改手机');">( 更改手机 )</a></span>
+                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_mobile_code('更改手机');">更改</a></span>
                 {eyou:else/}
-                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_mobile_code('绑定手机');">( 绑定手机 )</a></span>
+                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_mobile_code('绑定手机');">绑定</a></span>
                 {/eyou:eq}
                 <script type="text/javascript">
                     function get_{$vo.fieldArr}{$vo.name|default=''}_mobile_code(title) {
@@ -69,9 +69,9 @@
             <div class="from-row-r">
                 {$vo.dfvalue|default=''}
                 {eyou:eq name='$users.is_email' value='1'}
-                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_email_code('更改邮箱');">( 更改邮箱 )</a></span>
+                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_email_code('更改邮箱');">更改</a></span>
                 {eyou:else/}
-                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_email_code('绑定邮箱');">( 绑定邮箱 )</a></span>
+                    <span class="err"><a href="JavaScript:void(0);" onclick="get_{$vo.fieldArr}{$vo.name|default=''}_email_code('绑定邮箱');">绑定</a></span>
                 {/eyou:eq}
                 <p class="notic">{$vo.remark|default=''}</p>
             </div>
@@ -349,7 +349,7 @@
                         size: {$vo.filesize},
                         done: function(res) {
                             if (res.state == "SUCCESS") {
-                                layer.msg('上传成功!')
+                                layer.msg(ey_foreign_system10)
                                 $("#{$vo.fieldArr}_{$vo.name|default=''}").val(res.url);
                                 $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").css('display','');
                                 $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").attr('href',res.url);

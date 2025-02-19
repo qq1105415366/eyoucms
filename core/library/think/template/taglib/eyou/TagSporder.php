@@ -119,9 +119,26 @@ class TagSporder extends Base
 
             // 获取订单状态列表
             $order_status_arr = Config::get('global.order_status_arr');
+            // 封装获取订单支付方式名称
+            $pay_method_arr = Config::get('global.pay_method_arr');
+            if ('v5' == $this->usersTplVersion) {
+                foreach ($order_status_arr as $key => $val) {
+                    if (isset($this->order_status_arr[$key])) {
+                        $val = $this->order_status_arr[$key];
+                    }
+                    $order_status_arr[$key] = $val;
+                }
+                foreach ($pay_method_arr as $key => $val) {
+                    if (isset($this->pay_method_arr[$key])) {
+                        $val = $this->pay_method_arr[$key];
+                    }
+                    $pay_method_arr[$key] = $val;
+                }
+            }
+
             $result['OrderData']['order_status_name'] = $order_status_arr[$result['OrderData']['order_status']];
             if (!empty($this->weappInfo) && 2 === intval($result['OrderData']['logistics_type']) && 1 === intval($result['OrderData']['order_status'])) {
-                $result['OrderData']['order_status_name'] = '待核销';
+                $result['OrderData']['order_status_name'] = show_foreign_lang('待核销');
             }
             $result['OrderData']['TotalAmount'] = '0';
             
@@ -268,15 +285,13 @@ class TagSporder extends Base
                 }
 
                 // 处理订单主表的地址数据
-                $result['OrderData']['country']  = '中国';
+                $result['OrderData']['country']  = ('v5' == $this->usersTplVersion) ? get_country_name($result['OrderData']['country']) : '中国';
                 $result['OrderData']['province'] = get_province_name($result['OrderData']['province']);
                 $result['OrderData']['city']     = get_city_name($result['OrderData']['city']);
                 $result['OrderData']['district'] = get_area_name($result['OrderData']['district']);
-                
-                // 封装获取订单支付方式名称
-                $pay_method_arr = Config::get('global.pay_method_arr');
+
                 if (!empty($result['OrderData']['payment_method'])) {
-                    $result['OrderData']['pay_name'] = '货到付款';
+                    $result['OrderData']['pay_name'] = $pay_method_arr['delivery_pay'];
                 } else {
                     $pay_name = '未支付';
                     if (!empty($result['OrderData']['pay_name'])){

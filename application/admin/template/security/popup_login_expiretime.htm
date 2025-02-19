@@ -1,0 +1,85 @@
+{include file="public/layout"/}
+<body class="bodystyle" style="min-width:auto;">
+<div id="toolTipLayer" style="position: absolute; z-index: 9999; display: none; visibility: visible; left: 95px; top: 573px;"></div>
+<div id="append_parent"></div>
+<div id="ajaxwaitid"></div>
+<div class="page min-hg-c-10" style="min-width:auto; ">
+    <div class="flexigrid htitx">
+        <form class="form-horizontal" id="handlepost1" method="post" enctype="multipart/form-data" action="{:url('Security/popup_login_expiretime')}">
+            <div class="ncap-form-default">
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="web_login_expiretime">登录超时</label>
+                    </dt>
+                    <dd class="opt" style="width: auto;">
+                        <input id="web_login_expiretime" name="web_login_expiretime" value="{$global.web_login_expiretime|default=config('login_expire')}" autocomplete="off" type="text" class="w200" />&nbsp;秒
+                        <input type="hidden" name="login_expiretime_old" value="{$global.web_login_expiretime|default=0}">
+                        <p class="notic">默认3600秒等于1小时，最多不超过1个月（2592000秒）</p>
+                        <p class="notic2 none red" id="tips_web_login_expiretime"></p>
+                    </dd>
+                </dl>
+                <dl class="row">
+                    <div class="bot" style="padding-bottom:0px;">
+                        <a href="JavaScript:void(0);" onclick="checkForm1();" class="ncap-btn-big ncap-btn-green">保存</a>
+                    </div>
+                </dl>
+            </div>
+        </form>
+        
+    </div>
+</div>
+
+<script type="text/javascript">
+    var parentObj = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+    
+    $(document).ready(function(){
+        $('#web_login_expiretime').keyup(function(){
+            var web_login_expiretime = $(this).val();
+            if (web_login_expiretime > 2592000) {
+                $(this).val(2592000);
+                $('#tips_web_login_expiretime').html('最多不能设置超过一个月（2592000秒）').show();
+            } else if (web_login_expiretime < 60) {
+                $('#tips_web_login_expiretime').html('最少不能设置低于60秒').show();
+            } else {
+                $('#tips_web_login_expiretime').hide();
+            }
+        });
+    });
+
+    function checkForm1(){
+        // 后台登录超时
+        var web_login_expiretime_obj = $('input[name=web_login_expiretime]');
+        if (web_login_expiretime_obj.val() < 60) {
+            showErrorMsg('后台登录超时不能少于60秒！');
+            web_login_expiretime_obj.focus();
+            return false;
+        }
+        layer_loading('正在处理');
+        setTimeout(function (){
+            $.ajax({
+                type : 'post',
+                url : "{:url('Security/popup_login_expiretime', ['_ajax'=>1])}",
+                data : $('#handlepost1').serialize(),
+                dataType : 'json',
+                success : function(res){
+                    layer.closeAll();
+                    if(res.code == 1){
+                        var _parent = parent;
+                        _parent.layer.close(parentObj);
+                        _parent.layer.msg(res.msg, {shade: layer_shade, time: 1000}, function(){
+                            _parent.window.location.reload();
+                        });
+                    }else{
+                        showErrorMsg(res.msg);
+                    }
+                },
+                error: function(e){
+                    layer.closeAll();
+                    showErrorAlert(e.responseText);
+                }
+            });
+        }, 1);
+    }
+</script>
+
+{include file="public/footer" /}

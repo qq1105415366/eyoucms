@@ -61,7 +61,6 @@
                                                             <span class="mb10">
                                                                 <img id='litpic_img' src="{eyou:static file='users/skin/images/null-data.png' /}"/>
                                                             </span>
-                                                            <p>当前暂无下载记录哦~</p>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -124,7 +123,7 @@
                                     </div>
                                     {$page}
                                     {eyou:if condition="!empty($pager->totalRows)"}
-                                    <div class="fytotal">共{$pager->totalRows}条记录</div>
+                                    <div class="fytotal">{:sprintf(foreign_lang('page5'), $pager->totalPages, $pager->totalRows)}</div>
                                     {/eyou:if}
                                 </div>
                             </div>

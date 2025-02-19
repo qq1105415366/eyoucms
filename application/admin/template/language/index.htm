@@ -163,7 +163,7 @@
                                         <a class="btn grey" href="javascript:void(0);" data-id="{$vo.admin_id}">删除</a>
                                     {else /}
                                         <i></i>
-                                        <a class="btn blue" href="javascript:void(0);" data-id="{$vo.id}" onClick="sync_arc(this);">同步</a>
+                                        <a class="btn blue" href="javascript:void(0);" data-id="{$vo.id}" data-name="{$languagemarkList[$vo['mark']]['cn_title']}" onClick="sync_arc(this);">同步</a>
                                         {eq name="'Language@del'|is_check_access" value="1"}
                                         <i></i>
                                         <a class="btn red" href="javascript:void(0)" data-url="{:url('Language/del')}" data-id="{$vo.id}" onClick="delfun(this);">删除</a>
@@ -348,14 +348,16 @@
     }
     
     function sync_arc(obj) {
-        var sync_arc_tip = layer.confirm('一键同步和中文主站有关联的栏目文档，将清空该语言下的所有原文档', {
+        var id = $(obj).data('id');
+        var lname = $(obj).data('name');
+        var sync_arc_tip = layer.confirm('一键同步和中文主站有关联的栏目文档，<span class="red">全部同步</span>将清空<span class="red">【'+lname+'】</span>语言下所有原文档', {
                 area: ['480px', '190px'],
                 move: false,
                 title: '提示',
                 shade: layer_shade,
                 btnAlign: 'r',
                 closeBtn: 3,
-                btn: ['确定', '取消'],//按钮
+                btn: ['全部同步', '同步新文档'] ,//按钮
                 success: function () {
                     $(".layui-layer-content").css('text-align', 'left');
                 }
@@ -363,7 +365,6 @@
                 layer.close(sync_arc_tip);
                 layer_loading('正在处理');
                 var is_jump = 0;
-                var id = $(obj).data('id');
                 // var is_jump_val = $("#is_jump:checked").val();
                 // if ('on' == is_jump_val){
                 //     is_jump = 1;
@@ -371,7 +372,7 @@
                 $.ajax({
                     type: "POST",
                     url: "{:url('Language/sync', ['_ajax'=>1])}",
-                    data: {id: id,is_jump:is_jump},
+                    data: {id: id,is_jump:is_jump,is_frm:1,is_lang:lname},
                     dataType: 'json',
                     success: function (res) {
                         layer.closeAll();
@@ -389,10 +390,29 @@
             }
             , function () {
                 layer.close(sync_arc_tip);
+				layer_loading('正在处理');
+				var is_jump = 0;
+				$.ajax({
+				    type: "POST",
+				    url: "{:url('Language/sync', ['_ajax'=>1])}",
+				    data: {id: id,is_jump:is_jump,is_frm:2,is_lang:lname},
+				    dataType: 'json',
+				    success: function (res) {
+				        layer.closeAll();
+				        if (res.code == 1) {
+				            layer.msg(res.msg, {icon: 1});
+				        } else {
+				            layer.alert(res.msg, {icon: 2, title: false});
+				        }
+				    },
+				    error: function (e) {
+				        layer.closeAll();
+				        layer.alert(e.responseText, {icon: 2, title: false});
+				    }
+				});
             }
         )
         // $(".layui-layer-content").append('<p><input type="checkbox" id="is_jump" checked>跳过已存在文档</p>');
-
     }
 </script>
 

@@ -109,7 +109,7 @@
                     <p class="notic"></p>
                 </dd>
             </dl>
-            <dl class="row">
+            <dl class="row" {if condition="empty($global['wechat_push_notice_open'])"} style="display: none;" {/if}>
                 <dt class="tit">
                     <label>关注公众号</label>
                 </dt>
@@ -692,6 +692,18 @@
                     return false;
                 }
             }
+            
+            /*var password2 = $('#password2').val();
+            if(password2 == ''){
+                showErrorMsg('确认密码不能为空！');
+                $('input[name=password2]').focus();
+                return false;
+            }
+            if (password != password2) {
+                showErrorMsg('两次密码输入不一致！');
+                $('input[name=password]').focus();
+                return false;
+            }*/
         }
 
         layer_loading('正在处理');

@@ -20,13 +20,13 @@ use think\Model;
  */
 class UsersParameter extends Model
 {
-    private $admin_lang = 'cn';
+    private $lang = 'cn';
     //初始化
     protected function initialize()
     {
         // 需要调用`Model`的`initialize`方法
         parent::initialize();
-        $this->admin_lang = get_admin_lang();
+        $this->lang = get_current_lang();
     }
 
     /**
@@ -40,9 +40,8 @@ class UsersParameter extends Model
         if (($value == '0' && $field == 'is_required') || ($value == '1' && $field == 'is_hidden')) {
             $where = [
                 $id_name => $id_value,
-                'lang'   => $this->admin_lang,
             ];
-            $paraData = Db::name('users_parameter')->where($where)->field('dtype')->find();
+            $paraData = $this->getInfo('dtype', $where);
             if ($paraData['dtype'] == 'email') {
                 $usersData = getUsersConfigData('users.users_verification');
                 if ($usersData == '2') {
@@ -62,9 +61,8 @@ class UsersParameter extends Model
         } else if ($value == 1 && $field == 'is_reg') {
             $where = [
                 $id_name => $id_value,
-                'lang'   => $this->admin_lang,
             ];
-            $paraData = Db::name('users_parameter')->where($where)->field('is_hidden')->find();
+            $paraData = $this->getInfo('is_hidden', $where);
             if (1 == $paraData['is_hidden']) {
                 $return = [
                     'msg'   => '该属性已被禁用！',
@@ -74,5 +72,36 @@ class UsersParameter extends Model
         }
 
         return $return;
+    }
+
+    public function getList($field = '*', $where = [], $index_key = '')
+    {
+        $map = [];
+        if (!empty($where)) {
+            $map = array_merge($map, $where);
+        }
+        if (!isset($map['lang'])) {
+            $map['lang'] = $this->lang;
+        }
+        $result = Db::name('users_parameter')->field($field)->where($map)->cache(true, EYOUCMS_CACHE_TIME, "users_parameter")->order('sort_order asc, para_id asc')->select();
+        if (!empty($index_key)) {
+            $result = convert_arr_key($result, $index_key);
+        }
+        
+        return $result;
+    }
+
+    public function getInfo($field = '*', $where = [])
+    {
+        $map = [];
+        if (!empty($where)) {
+            $map = array_merge($map, $where);
+        }
+        if (!isset($map['lang'])) {
+            $map['lang'] = $this->lang;
+        }
+        $result = Db::name('users_parameter')->field($field)->where($map)->find();
+        
+        return $result;
     }
 }

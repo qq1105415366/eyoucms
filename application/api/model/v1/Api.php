@@ -201,13 +201,8 @@ class Api extends Base
                 unset($detail['users_free']);
                 unset($detail['downcount']);
                 /*产品参数*/
-                if (!empty($detail['attrlist_id'])) { // 新版参数
-                    $productAttrModel = new \app\home\model\ProductAttr;
-                    $attr_list = $productAttrModel->getProAttrNew($aid, 'a.attr_id,a.attr_name,b.attr_value,b.aid');
-                } else { // 旧版参数
-                    $productAttrModel = new \app\home\model\ProductAttr;
-                    $attr_list = $productAttrModel->getProAttr($aid);
-                }
+                $productAttrModel = new \app\home\model\ProductAttr;
+                $attr_list = $productAttrModel->getProAttrNew($aid, 'a.attr_id,a.attr_name,b.attr_value,b.aid');
                 $attr_list = !empty($attr_list[$aid]) ? $attr_list[$aid] : [];
                 foreach ($attr_list as $key => $val) {
                     $val['attr_value'] = htmlspecialchars_decode($val['attr_value']);
@@ -219,8 +214,10 @@ class Api extends Base
                 /*规格数据*/
                 $detail['spec_attr'] = $this->getSpecAttr($aid, $users);
                 /* END */
+                // 商品真实销量
+                $detail['real_sales'] = $detail['sales_num'];
                 //商品总销量 = 实际总销量 + 虚拟销量
-                $detail['sales_all'] = intval($detail['sales_num']) + intval($detail['sales_all']);
+                // $detail['sales_all'] = intval($detail['sales_num']) + intval($detail['sales_all']);
                 // 商品服务标签关联绑定数据
                 if (!empty($aid)) $detail['goodsLabel'] = model('ShopGoodsLabel')->getGoodsLabelList($aid, true);
 
@@ -718,7 +715,8 @@ class Api extends Base
 
         // 筛选条件
         $filter = [
-            'status' => 1
+            'status' => 1,
+            'is_del' => 0,
         ];
         $filter['start_date'] = ['<=',getTime()];
         $filter['end_date'] = ['>=',getTime()];
@@ -1366,6 +1364,93 @@ class Api extends Base
         }
         return ['code'=>0, 'msg'=>'添加评论失败'];
     }
+    public function addArticleReply($param = [], $users = [])
+    {
+        $users_level_id = !empty($users['level_id']) ? $users['level_id'] : 0; // 0-游客
+        $comment_level_data = Db::name('weapp_comment_level')->where('users_level_id', $users_level_id)->find();
+        
+        // 检查是否有评论权限
+        if (empty($comment_level_data['is_comment'])) {
+            return ['code' => 0, 'msg' => '您没有评论权限'];
+        }
+    
+        // 是否需要审核
+        $param['is_review'] = !empty($comment_level_data['is_review']) ? 0 : 1;
+    
+        // 基本字段处理
+        $param['add_time'] = getTime();
+        $param['update_time'] = getTime();
+        $param['users_id'] = !empty($users['users_id']) ? $users['users_id'] : 0;
+        $param['username'] = !empty($users['username']) ? $users['username'] : '游客';
+        $param['users_ip'] = clientIP();
+        $param['pid'] = !empty($param['comment_id']) ? intval($param['comment_id']) : 0; // 父评论ID
+        $param['at_users_id'] = !empty($param['at_users_id']) ? intval($param['at_users_id']) : 0; // 被回复用户ID
+    
+        // 确保不会手动设置主键 comment_id
+        unset($param['comment_id']);
+    
+        // 内容过滤
+        if (!empty($param['content'])) {
+            $content_tmp = filterNickname($param['content']);
+            if ($content_tmp != $param['content']) {
+                return ['code' => 0, 'msg' => '不支持表情等特殊符号'];
+            }
+        }
+    
+        // 插入数据
+        $comment_id = Db::name('weapp_comment')->insertGetId($param);
+        if (false !== $comment_id) {
+            $data = ['code' => 1, 'is_show' => 0];
+            if (empty($param['is_review'])) {
+                $msg = '回复成功，进入待审核中';
+            } else {
+                $msg = '回复成功';
+    
+                // 查询所有评论数据，按父子关系分组
+                $allComments = Db::name('weapp_comment')
+                    ->alias('a')
+                    ->field('a.*, b.head_pic, b.nickname, b.sex')
+                    ->join('users b', 'a.users_id = b.users_id', 'left')
+                    ->order('a.add_time ASC')
+                    ->select(); // 获取所有评论及其子评论
+    
+                // 处理头像和时间格式
+                foreach ($allComments as &$comment) {
+                    $comment['head_pic'] = $this->get_head_pic($comment['head_pic'], false, $comment['sex']);
+                    $comment['add_time_format'] = $this->time_format($comment['add_time']);
+                    $comment['add_time'] = date('Y-m-d', $comment['add_time']);
+                }
+    
+                // 将评论分组为以父评论为键的数组
+                $commentsByPid = [];
+                foreach ($allComments as $comment) {
+                    $commentsByPid[$comment['pid']][] = $comment;
+                }
+    
+                // 将子评论分配到对应父评论的 answerList 字段
+                foreach ($allComments as &$comment) {
+                    $comment['answerList'] = isset($commentsByPid[$comment['comment_id']]) 
+                        ? $commentsByPid[$comment['comment_id']] 
+                        : [];
+                }
+    
+                // 获取当前回复的完整数据
+                $reply = array_filter($allComments, function ($c) use ($comment_id) {
+                    return $c['comment_id'] == $comment_id;
+                });
+                $reply = reset($reply); // 获取回复的第一条记录
+                $data['reply'] = $reply;
+                $data['is_show'] = 1;
+            }
+            $data['msg'] = $msg;
+    
+            return $data;
+        }
+    
+        return ['code' => 0, 'msg' => '添加回复失败'];
+    }
+    
+
     /**
      * 索引页
      */
@@ -1551,7 +1636,7 @@ class Api extends Base
             $gourl = url('user/Shop/shop_order_details', ['order_id' => $result_id]);
             $orderInfo = Db::name('shop_order')->where(['order_id' => $result_id])->find();
             $orderDetailsInfo = Db::name('shop_order_details')->where(['order_id' => $orderInfo['order_id']])->order('details_id asc')->select();
-            $product_name_new = msubstr($orderDetailsInfo[0]['product_name'], 0, 22);
+            $product_name_new = msubstr($orderDetailsInfo[0]['product_name'], 0, 16);
             if ($product_name_new == $orderDetailsInfo[0]['product_name'] && count($orderDetailsInfo) == 1) {
                 $product_name = $product_name_new;
             } else {
@@ -1581,10 +1666,12 @@ class Api extends Base
             } else { // 留言模型
                 $title = Db::name('arctype')->where(['id' => $gbookInfo['typeid']])->value('typename');
             }
-            $title = msubstr($title, 0, 22);
+
+            $title_new = msubstr($title, 0, 17);
+            if (trim($title) != trim($title_new)) $title_new .= '...';
             $data = [
                 'thing7' => [
-                    'value' => $title,
+                    'value' => $title_new,
                 ],
                 'time6' => [
                     'value' => MyDate('Y-m-d H:i:s', $gbookInfo['add_time']),

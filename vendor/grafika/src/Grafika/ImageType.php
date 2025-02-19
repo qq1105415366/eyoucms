@@ -18,4 +18,6 @@ class ImageType {
     const PNG = 'PNG';
 
     const WBMP = 'WBMP';
+    
+    const WEBP = 'WEBP';  // 添加 WEBP 常量
 }

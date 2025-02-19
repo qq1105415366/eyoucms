@@ -150,13 +150,13 @@ class Base
             }
 
             // 图片远程化
-            $pregRule = "/<img(.*?)src(\s*)=(\s*)[\'|\"](\/[\/\w]+)?(\/public\/upload\/|\/uploads\/|\/\/)(.*?(?:[\.jpg|\.jpeg|\.png|\.gif|\.bmp|\.ico]))[\'|\"](.*?)[\/]?(\s*)>/i";
+            $pregRule = "/<img(.*?)src(\s*)=(\s*)[\'|\"](\/[\/\w\-]+)?(\/public\/upload\/|\/uploads\/|\/\/)(.*?(?:[\.jpg|\.jpeg|\.png|\.gif|\.bmp|\.ico]))[\'|\"](.*?)[\/]?(\s*)>/i";
             $content  = preg_replace($pregRule, '<img ${1} src="' . self::$request->domain().ROOT_DIR . '${5}${6}'.$t.'" ${7} />', $content);
 
             // 视频远程化
-            $pregRule = "/<source(.*?)src(\s*)=(\s*)[\'|\"](\/[\/\w]+)?(\/public\/upload\/|\/uploads\/|\/\/)(.*?(?:[\.mp4|\.mov|\.m4v|\.3gp|\.avi|\.m3u8|\.webm]))[\'|\"](.*?)[\/]?(\s*)>/i";
+            $pregRule = "/<source(.*?)src(\s*)=(\s*)[\'|\"](\/[\/\w\-]+)?(\/public\/upload\/|\/uploads\/|\/\/)(.*?(?:[\.mp4|\.mov|\.m4v|\.3gp|\.avi|\.m3u8|\.webm]))[\'|\"](.*?)[\/]?(\s*)>/i";
             $content  = preg_replace($pregRule, '<source ${1} src="' . self::$request->domain().ROOT_DIR . '${5}${6}" ${7} />', $content);
-            $pregRule = "/<video(.*?)src(\s*)=(\s*)[\'|\"](\/[\/\w]+)?(\/public\/upload\/|\/uploads\/|\/\/)(.*?(?:[\.mp4|\.mov|\.m4v|\.3gp|\.avi|\.m3u8|\.webm]))[\'|\"](.*?)[\/]?(\s*)>/i";
+            $pregRule = "/<video(.*?)src(\s*)=(\s*)[\'|\"](\/[\/\w\-]+)?(\/public\/upload\/|\/uploads\/|\/\/)(.*?(?:[\.mp4|\.mov|\.m4v|\.3gp|\.avi|\.m3u8|\.webm]))[\'|\"](.*?)[\/]?(\s*)>/i";
             $content  = preg_replace($pregRule, '<video ${1} src="' . self::$request->domain().ROOT_DIR . '${5}${6}" ${7} />', $content);
 
             $content = str_replace(self::$request->domain().ROOT_DIR.'//', 'http://', $content);

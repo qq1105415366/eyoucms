@@ -144,6 +144,9 @@ class Field extends Model
     public function showViewFormData($list, $formFieldStr, $addonRow = array(), $archivesInfo = [])
     {
         if (!empty($list)) {
+            if (is_dir('./weapp/CompressContent/')) {                                            
+                $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                
+            }   
             foreach ($list as $key => $val) {
                 $val['fieldArr'] = $formFieldStr;
                 switch ($val['dtype']) {
@@ -398,7 +401,12 @@ class Field extends Model
                     case 'htmltext':
                     {
                         $val['dfvalue'] = isset($addonRow[$val['name']]) ? $addonRow[$val['name']] : $val['dfvalue'];
-
+                        if (!empty($compressLogic)) {
+                            try {                                
+                                $val = $compressLogic->decrypt_base64_encode(1,$val);
+                            } catch (Exception $e) {
+                            }                
+                        }                      
                         /*追加指定内嵌样式到编辑器内容的img标签，兼容图片自动适应页面*/
                         $title = '';
                         if (!empty($archivesInfo['title'])) {
@@ -459,6 +467,7 @@ class Field extends Model
                 switch ($dtype) {
 
                     case 'checkbox':
+                    case 'checkboxs':
                     {
                         $val = implode(',', $val);
                         break;
@@ -620,17 +629,33 @@ class Field extends Model
                 }
                 $nowDataExt[$key] = $val;
             }
+            
+            /*if (isset($nowDataExt['content']) && empty($nowDataExt['content'])) {
+                $nowDataExt['content'] = '';
+            }
+            if (isset($nowDataExt['content_ey_m']) && empty($nowDataExt['content_ey_m'])) {
+                $nowDataExt['content_ey_m'] = '';
+            }*/
 
             $nowData = array(
                 'aid'   => $data['aid'],
-                'add_time'   => getTime(),
                 'update_time'   => getTime(),
             );
             !empty($nowDataExt) && $nowData = array_merge($nowDataExt, $nowData);
             $tableExt = Db::name('channeltype')->where('id', $channel_id)->getField('table');
             $tableExt .= '_content';
             $count = Db::name($tableExt)->where('aid', $data['aid'])->count();
+            // 处理内容压缩
+            if (is_dir('./weapp/CompressContent/')){                
+                try {
+                   $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                                    
+                   $compressLogic->copydata(1,$channel_id,$count,$tableExt, $nowData);                    
+                   $nowData = $compressLogic->encrypt_base64_encode($channel_id,$nowData);                
+                } catch (Exception $e){
+                }                
+            }                       
             if (empty($count)) {
+                $nowData['add_time'] = getTime();
                 Db::name($tableExt)->insert($nowData);
             } else {
                 Db::name($tableExt)->where('aid', $data['aid'])->save($nowData);

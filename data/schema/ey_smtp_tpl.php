@@ -39,7 +39,7 @@ return array (
   'send_scene' => 
   array (
     'name' => 'send_scene',
-    'type' => 'tinyint(1)',
+    'type' => 'int(5)',
     'notnull' => false,
     'default' => '0',
     'primary' => false,

@@ -46,7 +46,7 @@
                                            {$search.hidden}
                                            <div class="input-with-select el-input el-input-group el-input-group--append">
                                                <input type="search" name="keywords" value="{$Request.param.keywords}" autocomplete="off" placeholder="输入商品名称、订单号" class="search-text">
-                                               <input type="submit" value="" class="search-btn iconfont">
+                                               <button type="submit" class="search-btn"><i class="iconfont-users2 icon-users2-sousuo1"></i></button>
                                             </div>
                                         </form>
                                         {/eyou:spsearch}
@@ -58,7 +58,6 @@
                             <div class="ey-con-inside">
                                 <div class="el-row cell tc pt100 bgfff">
                                     <p><img id='litpic_img' src="{eyou:static file='users/skin/images/null-data.png' /}"/></p>
-                                    <p>当前暂无订单记录哦~</p>
                                 </div>
                             </div>
                             {eyou:else/}
@@ -66,7 +65,7 @@
                                 {eyou:volist name="eyou.field.service" id="field"}
                                 <div class="service-list-item {eyou:if condition='in_array($field.status_old, $eyou.statusArrEd)'}no{/eyou:if}">
                                     <div class="hd">
-                                        <div class="status-xin"> {eyou:if condition="in_array($field.status_old, $eyou.statusArrEd)"}<span>已完成</span>{else/}处理中{/eyou:if} <small>{$field.status}</small></div>
+                                        <div class="status-xin"> {eyou:if condition="in_array($field.status_old, $eyou.statusArrEd)"}<span>已完成</span>{else/}处理中{/eyou:if} <!-- <small>{$field.status}</small> --></div>
                                         <div class="s-info">
                                             <span>{$field.add_time|date='Y-m-d H:i:s',###}</span>
                                             <span>订单号：<a href="{$field.OrDetailsUrl}" target="_blank">{$field.order_code}</a></span>

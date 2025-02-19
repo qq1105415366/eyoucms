@@ -57,7 +57,7 @@
                         success:function(res){
                             if (res.state == 'SUCCESS') {
                                 layer.closeAll();
-                                MsgOpen('上传成功！');
+                                MsgOpen(ey_foreign_system10);
                                 if (1 == UpFileType) {
                                     parent.$("#litpic_inpiut").val(res.url);
                                     parent.$("#litpic_img").attr('src', res.url);

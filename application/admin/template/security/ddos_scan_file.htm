@@ -1,0 +1,424 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="__PUBLIC__/plugins/bootstrap/css/bootstrap.min.css?v={$version}">
+    <script type="text/javascript">
+        var __root_dir__ = "__ROOT_DIR__";
+        var __lang__ = "{$admin_lang}";
+    </script>
+    <script type="text/javascript" src="__STATIC__/common/js/jquery.min.js?v={$version}"></script>
+    <script type="text/javascript" src="__PUBLIC__/plugins/layer-v3.1.0/layer.js"></script>
+    <style>
+        .gray-bg {
+            background-color: #f3f3f4;
+        }
+        .wrapper-content {
+            padding: 20px;
+        }
+        .ibox {
+            clear: both;
+            margin-bottom: 25px;
+            margin-top: 0;
+            padding: 0;
+        }
+        .ibox-content {
+            clear: both;
+            background-color: #ffffff;
+            color: inherit;
+            padding: 15px 20px 20px 20px;
+            border-color: #e7eaec;
+            -webkit-border-image: none;
+            -o-border-image: none;
+            border-image: none;
+            border-style: solid solid none;
+            border-width: 1px 0px;
+        }
+        .progress {
+            height: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+        }
+        .progress-bar{
+            height: 100%;
+        }
+        .progress-bar-success {
+            background-color: #1c84c6;
+        }
+        .ncap-btn-green {
+            margin: 10px auto 0;
+            width: 100px;
+            height: 36px;
+            line-height: 36px;
+            background-color: #4fc0e8;
+            border:1px solid #3aa8cf;
+            text-align: center;
+            vertical-align: middle;
+            display: block;
+            padding: 0px 9px;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #fff;
+            font-size: 13px;
+        }
+        a.ncap-btn-green:hover{
+            background-color:#3ab0da;
+            color: #fff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body class="">
+    <div class="ibox float-e-margins">
+        <div class="ibox-content">
+            <div class="progress progress-striped active">
+                <div class="progress-bar progress-bar-success" role="progressbar"
+                     aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                </div>
+            </div>
+            <div style="text-align:center" class="success">
+                <div class="finash">
+                    <span><font id="title">正在扫描</font><span class="filepath"></span>，</span>
+                    已扫描<span class="percent" style="color:#ff0000 ;font-size:14px;">0</span>%
+                </div>
+            </div>
+        </div>
+        <a href="javascript:void(0);" id="a_close_pop" onclick="parent.layer.closeAll();" class="ncap-btn-green" style="display: none;">确定</a>
+        <div class="ibox-content" id="error_msg" style="display: none"></div>
+    </div>
+
+    <script type="text/javascript">
+        $('#a_close_pop').hide();
+        var achieve = 0; // 已完成文件/目录数
+        var achievefile = 0; // 已完成文件数
+        var allpagetotal = 0;
+        var allscantotal = 0; // 全部扫描总数
+        var doubtotal = 0;
+        var msg = "";
+        var timestamp1 = Date.parse(new Date());
+        var finash_html = $(".finash").html();
+
+        var recursion_intervalId = "";
+        var ddos_scan_range_files = {$ddos_scan_range_files|default=0};
+        var ddos_scan_range_attachment = {$ddos_scan_range_attachment|default=0};
+        var ddos_scan_range_uploads = {$ddos_scan_range_uploads|default=0};
+        var init_runtype = 'files';
+
+        init()
+        function init()
+        {
+            if (1 == ddos_scan_range_files) {
+                init_runtype = 'files';
+                init_files();
+            } else if (1 == ddos_scan_range_attachment) {
+                init_runtype = 'attachment';
+                init_attachment();
+            }
+        }
+
+        function init_files()
+        {
+            $.ajax({
+                type: "POST",
+                url: "{:url('Security/ddos_arrange_files')}",
+                timeout: 720000, //超时时间设置，单位毫秒 设置了 2小时
+                data: {init_runtype:init_runtype, _ajax:1},
+                dataType: 'json',
+                beforeSend: function(xhr) {
+                    if (init_runtype == 'files') {
+                        $allscantotal = 0;
+                        $('#div_scanlist', window.parent.document).hide();
+                        $('#scan_no_problem', window.parent.document).hide();
+                        $('#scan_yes_problem', window.parent.document).hide();
+                        $('#scan_problem_list', window.parent.document).hide();
+                        $('#scan_problem_list', window.parent.document).find('li.li_problem').remove();
+                    } else {
+                        achieve = 0; // 已完成文件/目录数
+                        achievefile = 0; // 已完成文件数
+                        allpagetotal = 0;
+                        msg = "";
+                    }
+                    $(".finash").html('<span>正在整理，请耐心等待<font id="ellipsis"></font>');
+                    recursion_ellipsis('ellipsis');
+                },
+                success: function (res) {
+                    if(res.code == 1){
+                        clearInterval(recursion_intervalId);
+                        $(".finash").html(finash_html);
+                        send_files();
+                    }else{
+                        parent.layer.alert(res.msg, {icon: 5, title:false});
+                    }
+                },
+                error:function(e){
+                    parent.layer.alert(e.responseText, {icon: 5, title:false});
+                }
+            });
+        }
+
+        function send_files()
+        {
+            $.ajax({
+                url:"{:url('Security/ddos_scan_file')}",
+                type:'POST',
+                dataType:'json',
+                data:{allscantotal:allscantotal, achievefile:achievefile, achieve:achieve, doubtotal:doubtotal, scan_range:'files', _ajax:1},
+                timeout : 360000, //超时时间设置，单位毫秒 设置了 1小时
+                beforeSend:function(){
+                    if (achieve == 0) {
+                        $("#title").html('正在扫描');
+                        $(".progress-bar").css('width','0.01%');
+                        $(".percent").text('0.01');
+                    }
+                    if (doubtotal == 0) {
+                        $('#div_scanlist', window.parent.document).hide();
+                    }
+                },
+                success:function(res){
+                    if (res.code ==0) {
+                        parent.layer.alert(res.msg, {icon: 5, title:false});
+                        return false;
+                    }
+                    achieve = parseInt(res.data.achievepage);
+                    achievefile = parseInt(res.data.achievefile);
+                    allpagetotal = parseInt(res.data.allpagetotal);
+                    var allfilestotal = achievefile;
+                    msg += res.msg;
+                    progress = ((achieve/allpagetotal)*100).toFixed(1);
+                    $('#title').html('扫描文件：');
+                    $(".filepath").html(allscantotal + allfilestotal);
+                    if (progress > 0.01) {
+                        $(".progress-bar").css('width',progress+'%');
+                        $(".percent").text(progress);
+                    }
+                    // 有异常文件
+                    doubtotal = parseInt(res.data.doubtotal);
+                    if (doubtotal > 0) {
+                        $('#div_scanlist', window.parent.document).show();
+                        $('#scan_no_problem', window.parent.document).hide();
+                        $('#scan_yes_problem', window.parent.document).show();
+                        $('#scan_yes_problem', window.parent.document).find('.scan_allpagetotal').text(allscantotal + allfilestotal);
+                        $('#scan_doubtotal', window.parent.document).text(doubtotal);
+                        $('#scan_problem_list', window.parent.document).html(res.data.doubthtml).show();
+                        $('#scan_wlaq_pic', window.parent.document).find('img').attr('src', '__SKIN__/images/security-no.png');
+                    }
+
+                    if (achieve === allpagetotal){
+                        allscantotal = allscantotal + allfilestotal;
+                        if (msg !== ""){
+                            $("#error_msg").show();
+                            $("#error_msg").prepend(msg);
+                        }
+
+                        if (1 == ddos_scan_range_attachment) {
+                            init_attachment();
+                        } else {
+                            var timestamp2 = Date.parse(new Date());
+                            var timestamp3 = (timestamp2 - timestamp1) / 1000;
+                            if (timestamp3 < 1) timestamp3 = 1;
+                            $(".finash").remove();
+                            $(".progress-bar").css('width','100%');
+                            $(".progress").removeClass('progress-striped ').removeClass('active');
+                            $(".success").html("扫描完成 "+allscantotal+"，耗时："+format_time(timestamp3, 'red'));
+                            $('#a_close_pop').show();
+                            if (doubtotal == 0) {
+                                $('#div_scanlist', window.parent.document).show();
+                                $('#scan_no_problem', window.parent.document).show();
+                                $('#scan_no_problem', window.parent.document).find('.scan_allpagetotal').text(allscantotal);
+                                $('#scan_wlaq_pic', window.parent.document).find('img').attr('src', '__SKIN__/images/security-yes.png');
+                            }
+                        }
+                        return false;
+                    }
+                    send_files();
+                },
+                error:function(e){
+                    parent.layer.alert(e.responseText, {icon: 5, title:false});
+                }
+            });
+        }
+
+        function init_attachment()
+        {
+            $.ajax({
+                type: "POST",
+                url: "{:url('Security/ddos_arrange_attachment')}",
+                timeout: 720000, //超时时间设置，单位毫秒 设置了 2小时
+                data: {init_runtype:init_runtype, _ajax:1},
+                dataType: 'json',
+                beforeSend: function(xhr) {
+                    if (init_runtype == 'attachment') {
+                        $allscantotal = 0;
+                        $('#div_scanlist', window.parent.document).hide();
+                        $('#scan_no_problem', window.parent.document).hide();
+                        $('#scan_yes_problem', window.parent.document).hide();
+                        $('#scan_problem_list', window.parent.document).hide();
+                        $('#scan_problem_list', window.parent.document).find('li.li_problem').remove();
+                    } else {
+                        achieve = 0; // 已完成文件/目录数
+                        achievefile = 0; // 已完成文件数
+                        allpagetotal = 0;
+                        msg = "";
+                    }
+                    $(".finash").html('<span>正在整理，请耐心等待<font id="ellipsis"></font>');
+                    recursion_ellipsis('ellipsis');
+                },
+                success: function (res) {
+                    if(res.code == 1){
+                        clearInterval(recursion_intervalId);
+                        $(".finash").html(finash_html);
+                        send_attachment();
+                    }else{
+                        parent.layer.alert(res.msg, {icon: 5, title:false});
+                    }
+                },
+                error:function(e){
+                    parent.layer.alert(e.responseText, {icon: 5, title:false});
+                }
+            });
+        }
+
+        function send_attachment()
+        {
+            $.ajax({
+                url:"{:url('Security/ddos_scan_file')}",
+                type:'POST',
+                dataType:'json',
+                data:{allscantotal:allscantotal, achievefile:achievefile, achieve:achieve, doubtotal:doubtotal, scan_range:'attachment', _ajax:1},
+                timeout : 360000, //超时时间设置，单位毫秒 设置了 1小时
+                beforeSend:function(){
+                    if (achieve == 0) {
+                        $("#title").html('正在扫描');
+                        $(".progress-bar").css('width','0.01%');
+                        $(".percent").text('0.01');
+                    }
+                    if (doubtotal == 0) {
+                        $('#div_scanlist', window.parent.document).hide();
+                    }
+                },
+                success:function(res){
+                    if (res.code ==0) {
+                        parent.layer.alert(res.msg, {icon: 5, title:false});
+                        return false;
+                    }
+                    achieve = parseInt(res.data.achievepage);
+                    achievefile = parseInt(res.data.achievefile);
+                    allpagetotal = parseInt(res.data.allpagetotal);
+                    var allattachmentotal = achieve + achievefile;
+                    msg += res.msg;
+                    progress = ((achieve/allpagetotal)*100).toFixed(1);
+                    $('#title').html('扫描附件：');
+                    $(".filepath").html(allscantotal + allattachmentotal);
+                    if (progress > 0.01) {
+                        $(".progress-bar").css('width',progress+'%');
+                        $(".percent").text(progress);
+                    }
+                    // 有异常附件
+                    doubtotal = parseInt(res.data.doubtotal);
+                    if (doubtotal > 0) {
+                        $('#div_scanlist', window.parent.document).show();
+                        $('#scan_no_problem', window.parent.document).hide();
+                        $('#scan_yes_problem', window.parent.document).show();
+                        $('#scan_yes_problem', window.parent.document).find('.scan_allpagetotal').text(allscantotal + allattachmentotal);
+                        $('#scan_doubtotal', window.parent.document).text(doubtotal);
+                        $('#scan_problem_list', window.parent.document).html(res.data.doubthtml).show();
+                        $('#scan_wlaq_pic', window.parent.document).find('img').attr('src', '__SKIN__/images/security-no.png');
+                    }
+
+                    if (achieve === allpagetotal){
+                        allscantotal = allscantotal + allattachmentotal;
+                        if (msg !== ""){
+                            $("#error_msg").show();
+                            $("#error_msg").prepend(msg);
+                        }
+                        var timestamp2 = Date.parse(new Date());
+                        var timestamp3 = (timestamp2 - timestamp1) / 1000;
+                        if (timestamp3 < 1) timestamp3 = 1;
+                        $(".finash").remove();
+                        $(".progress-bar").css('width','100%');
+                        $(".progress").removeClass('progress-striped ').removeClass('active');
+                        $(".success").html("扫描完成 "+(allscantotal)+"，耗时："+format_time(timestamp3, 'red'));
+                        $('#a_close_pop').show();
+                        if (doubtotal == 0) {
+                            $('#div_scanlist', window.parent.document).show();
+                            $('#scan_no_problem', window.parent.document).show();
+                            $('#scan_no_problem', window.parent.document).find('.scan_allpagetotal').text(allscantotal);
+                            $('#scan_wlaq_pic', window.parent.document).find('img').attr('src', '__SKIN__/images/security-yes.png');
+                        }
+                        return false;
+                    }
+                    send_attachment();
+                },
+                error:function(e){
+                    parent.layer.alert(e.responseText, {icon: 5, title:false});
+                }
+            });
+        }
+
+        /**
+         * 循环显示省略号，展示一直在处理的体验感
+         * @param  {[type]} win_id [description]
+         * @return {[type]}        [description]
+         */
+        function recursion_ellipsis(win_id)
+        {
+            // 初始化值和上限
+            let counter = 0;
+            const maxValue = 6;
+            // 设置循环递增的间隔为1000毫秒（1秒）
+            recursion_intervalId = setInterval(() => {
+                // 递增计数器
+                counter++;
+                // 输出当前计数器的值
+                $('#'+win_id).append('.');
+                // 如果计数器达到最大值，重置计数器并清除定时器
+                if (counter > maxValue) {
+                    counter = 0;
+                    $('#'+win_id).html('');
+                }
+            }, 500);
+        }
+
+        function format_time(timestamp, color)
+        {
+            if (!color) {
+                color = 'black';
+            }
+            //定义变量 d,h,m,s保存倒计时的时间
+            var html = "";
+            var d = Math.floor(timestamp/60/60/24);
+            var h = Math.floor(timestamp/60/60%24);
+            var m = Math.floor(timestamp/60%60);
+            var s = Math.floor(timestamp%60);
+            //将倒计时赋值到div中
+            if (0 < d) {
+                html += "<font color='"+color+"'>" + d + "</font>天";
+            }
+            if (0 < h || 0 < d) {
+                if (h < 10) {
+                    h = '0' + h;
+                }
+                html += "<font color='"+color+"'>" + h + "</font>小时";
+            }
+            if (0 < m || 0 < h) {
+                if (m < 10) {
+                    m = '0' + m;
+                }
+                html += "<font color='"+color+"'>" + m + "</font>分钟";
+            }
+            if (0 < s || 0 < m) {
+                if (s < 10) {
+                    s = '0' + s;
+                }
+                html += "<font color='"+color+"'>" + s + "</font>秒";
+            }
+
+            return html;
+        }
+    </script>
+</body>
+</html>

@@ -119,11 +119,9 @@ class WxPayOrderLogic
         $params = json_decode($response, true);
         if (isset($params['access_token'])) {
             $post_data['payer']['openid'] = \think\Db::name('wx_users')->where('users_id', $order['users_id'])->value('openid');
-            // sleep(3);
             $url = "https://api.weixin.qq.com/wxa/sec/order/upload_shipping_info?access_token={$params['access_token']}";
             $response = httpRequest($url, 'POST', json_encode($post_data, JSON_UNESCAPED_UNICODE));
             $params = json_decode($response, true);
-            // @file_put_contents(ROOT_PATH . "/log.txt", date("Y-m-d H:i:s") . "  " . var_export($params, true) . "\r\n", FILE_APPEND);
             if (48001 == $params['errcode']) $params['errmsg'] .= "(该小程序没有发货信息管理能力)";
             model('ShopPublicHandle')->updateWxShippingInfo($order['users_id'], $order['order_code'], $orderSource, $params['errcode'], $params['errmsg']);
         } else {

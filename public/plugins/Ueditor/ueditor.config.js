@@ -461,7 +461,7 @@ if (typeof __is_mobile__ === 'undefined') {
             source: ['src', 'type'],
             embed: ['type', 'class', 'pluginspage', 'src', 'width', 'height', 'align', 'style', 'wmode', 'play',  
       +  'autoplay','loop', 'menu', 'allowscriptaccess', 'allowfullscreen', 'controls', 'preload'],
-            iframe: ['data-vidtype','allowfullscreen','data-ratio','data-w','scrolling','frameborder','data-src','src','width','height','class','style']
+            iframe: ['data-vidtype','allowfullscreen','data-ratio','data-w','scrolling','frameborder','data-src','src','width','height','class','style','align','max-width','max-height']
         }
     };
 

@@ -105,8 +105,17 @@ function GetUploadify_mobile(num,url)
 
 // 加载层
 function layer_loading(msg){
+    if (!msg || '正在处理' == msg) {
+        if (typeof ey_foreign_system8 === 'undefined') {
+            ey_foreign_system8 = "正在处理";
+        }
+        msg = ey_foreign_system8;
+    }
+    if (typeof ey_foreign_system9 === 'undefined') {
+        ey_foreign_system9 = "请勿刷新页面";
+    }
     var loading = layer.msg(
-    msg+'...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;请勿刷新页面', 
+    msg+'...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+ey_foreign_system9, 
     {
         icon: 1,
         time: 3600000, //1小时后后自动关闭

@@ -554,7 +554,7 @@ class PayApi extends Base {
                 // 手机发送
                 $returnData['mobile'] = GetMobileSendData(tpCache('sms'), $this->users, $orderData, 1, 'delivery_pay');
                 // 发送站内信给后台
-                $orderData['pay_method'] = '货到付款';
+                $orderData['pay_method'] = show_foreign_lang('货到付款');
                 SendNotifyMessage($orderData, 5, 1, 0);
                 // 订单支付通知
                 $params = [

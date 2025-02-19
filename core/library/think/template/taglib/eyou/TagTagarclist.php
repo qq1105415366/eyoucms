@@ -90,7 +90,8 @@ class TagTagarclist extends Base
                         $where_flag_str = " (".implode(" OR ", $where_or_flag).") ";
                         array_push($condition, $where_flag_str);
                     }
-                } elseif ($key == 'noflag') {
+                } 
+                elseif ($key == 'noflag') {
                     $flag_arr = explode(",", $param[$key]);
                     $where_or_flag = array();
                     foreach ($flag_arr as $nk2 => $nv2) {
@@ -196,7 +197,7 @@ class TagTagarclist extends Base
             $channeltype_table = $channeltype_row[$val['channel']]['table'];
 
             /*栏目链接*/
-            if ($val['is_part'] == 1) {
+            if (!empty($val['is_part']) && $val['is_part'] == 1) {
                 $val['typeurl'] = $val['typelink'];
             } else {
                 $val['typeurl'] = typeurl('home/'.$controller_name."/lists", $val);
@@ -204,7 +205,7 @@ class TagTagarclist extends Base
             /*--end*/
 
             /*文档链接*/
-            if ($val['is_jump'] == 1) {
+            if (!empty($val['is_jump']) && $val['is_jump'] == 1) {
                 $val['arcurl'] = $val['jumplinks'];
             } else {
                 $val['arcurl'] = arcurl('home/'.$controller_name.'/view', $val);

@@ -15,6 +15,8 @@ namespace think\template\taglib\api;
 
 use think\Db;
 use app\home\logic\FieldLogic;
+use think\template\taglib\api\TagCommentlist;
+
 
 /**
  * 文章列表(用于列表页,分页)
@@ -22,7 +24,7 @@ use app\home\logic\FieldLogic;
 class TagList extends Base
 {
     public $fieldLogic;
-    
+  
     //初始化
     protected function _initialize()
     {
@@ -119,7 +121,7 @@ class TagList extends Base
 
         // 查询条件
         $condition = array();
-        foreach (array('keywords','keyword','typeid','notypeid','flag','noflag','channel') as $key) {
+        foreach (array('keywords','keyword','typeid','notypeid','flag','noflag','channel','content') as $key) {
             if (isset($param[$key]) && $param[$key] !== '') {
                 if ($key == 'keywords') {
                     array_push($condition, "a.title LIKE '%{$param[$key]}%'");
@@ -246,6 +248,7 @@ class TagList extends Base
         $paginate = array(
             'page'  => $page,
         );
+    
         $pages = Db::name('archives')
             ->field($field)
             ->alias('a')
@@ -254,9 +257,12 @@ class TagList extends Base
             ->orderRaw($orderby)
             ->paginate($pagesize, false, $paginate);
         $result = $pages->toArray();
-
+     
         $users = model('v1.User')->getUser(false);
         $aidArr = $adminArr = $usersArr = $mediaArr = [];
+ 
+        $commentListObj = new TagCommentlist();
+
         foreach ($result['data'] as $key => $val) {
             array_push($aidArr, $val['aid']); // 收集文档ID
             array_push($adminArr, $val['admin_id']); // 收集admin_id
@@ -278,12 +284,20 @@ class TagList extends Base
             }
             // $val['users_price_arr'] = explode('.', $val['users_price']);
             $val['users_price_arr'] = explode('.', sprintf("%.2f", $val['users_price']));
-            
+            $contentRow = Db::name('article_content')->where('aid', $val['aid'])->value('content');
+            $content = htmlspecialchars_decode($contentRow); 
+            $val['content_img_list'] = $this->get_content_img($content); ; // 将 content 字段添加到结果数组中
+           
+            $commentsData = $commentListObj->getCommentlist([], $val['aid']);
+          
+            $val['comments'] = isset($commentsData['total']) ? $commentsData['total'] : 0; // 获取评论总数
+        
+
             $val['real_sales'] = $val['sales_num']; // 真实总销量
             $val['sales_num'] = $val['sales_all']; // 总虚拟销量
-
             $result['data'][$key] = $val;
             array_push($aidArr, $val['aid']); // 文档ID数组
+          
         }
 
         //获取文章作者的信息 需要传值arcrank = on

@@ -54,7 +54,6 @@
 				                            <td  align="center" axis="col0" colspan="50">
 				                                <div class="cell pt100 tc">
 				                                   <span class="mb10"><img id='litpic_img'  src="{eyou:static file='users/skin/images/null-data.png' /}"/></span>
-                                                   <p>当前暂无收藏记录哦~</p>
 				                                 </div>
 				                            </td>
 				                        </tr>
@@ -123,7 +122,7 @@
 				                </div>
 				                {$page}
 				                {eyou:if condition="!empty($pager->totalRows)"}
-				                <div class="fytotal">共{$pager->totalRows}条记录</div>
+				                <div class="fytotal">{:sprintf(foreign_lang('page5'), $pager->totalPages, $pager->totalRows)}</div>
 				                {/eyou:if}
 				            </div>
 				        </div>
@@ -143,9 +142,9 @@
     }
     // 删除单个收藏
     function DelData(obj) {
-        layer.confirm('是否删除该收藏？', {
+        layer.confirm(ey_foreign_users10, {
             title: false,
-            btn: ['是','否'] //按钮
+            btn: [ey_foreign_system5, ey_foreign_system6] //按钮
         }, function(){
             layer_loading('正在处理');
             // 确定
@@ -181,13 +180,13 @@
             }
         })
         if(a.length == 0){
-            showErrorAlert('请至少选择一项！');
+            showErrorAlert(ey_foreign_system7);
             return;
         }
         // 删除按钮
-        layer.confirm('确认批量删除收藏？', {
+        layer.confirm(ey_foreign_users11, {
             title: false,
-            btn: ['确定', '取消'] //按钮
+            btn: [ey_foreign_system2, ey_foreign_system3] //按钮
         }, function () {
             layer_loading('正在处理');
             $.ajax({

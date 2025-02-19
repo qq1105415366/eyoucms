@@ -33,9 +33,6 @@ class Field extends Base
         }
         $this->fieldLogic         = new FieldLogic();
         $this->arctype_channel_id = config('global.arctype_channel_id');
-
-        $userConfig = getUsersConfigData('users');
-        $this->assign('userConfig', $userConfig);
     }
 
     /**
@@ -260,6 +257,10 @@ class Field extends Base
             $maxlength  = $fieldinfos[2];
             $sql        = " ALTER TABLE `$table` ADD  $ntabsql ";
             if (false !== Db::execute($sql)) {
+                if (is_dir('./weapp/CompressContent/')) {                    
+                    $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;  
+                    $compressLogic->copydata(4,$channel_id,'',$table,$sql);
+                }                              
                 if (!empty($post['region_data'])) {
                     $dfvalue = $post['region_data'];
                     unset($post['region_data']);
@@ -545,6 +546,10 @@ class Field extends Base
             $maxlength  = $fieldinfos[2];
             $sql        = " ALTER TABLE `$table` CHANGE COLUMN `{$old_name}` $ntabsql ";
             try {
+                if (is_dir('./weapp/CompressContent/')) {                                            
+                   $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                    
+                   $compressLogic->copydata(4,$channel_id,'',$table,  $sql);        
+                }                  
                 $r = @Db::execute($sql);
             } catch (\Exception $e) {
                 $this->error('该数据类型不支持切换');
@@ -677,26 +682,35 @@ class Field extends Base
         // 如果是区域类型则执行
         if ('region' == $info['dtype']) {
             // 反序列化默认值参数
-            $dfvalue = unserialize($info['dfvalue']);
-            if (0 == $dfvalue['region_id']) {
-                $parent_id = $dfvalue['region_id'];
-            } else {
-                // 查询当前选中的区域父级ID
-                $parent_id = Db::name('region')->where("id", $dfvalue['region_id'])->getField('parent_id');
-                if (0 == $parent_id) {
-                    $parent_id = $dfvalue['region_id'];
-                }
+            if (!preg_match('/^([\x{4e00}-\x{9fa5}\w\"\:\{\}\;\，\,]*)$/u', $info['dfvalue'])) {
+                $info['dfvalue'] = '';
             }
+            $dfvalue = unserialize($info['dfvalue']);
+            if (is_array($dfvalue)) {
+                $dfvalue['region_id'] = preg_replace('/([^\d\,]+)/i', '', $dfvalue['region_id']);
+                $dfvalue['region_ids'] = preg_replace('/([^\d\,]+)/i', '', $dfvalue['region_ids']);
+                $dfvalue['region_names'] = preg_replace("/([^\x{4e00}-\x{9fa5}\,\，]+)/u", '', $dfvalue['region_names']);
 
-            // 查询市\区\县信息
-            $assign_data['City'] = Db::name('region')->where("parent_id", $parent_id)->select();
-            // 加载数据到模板
-            $assign_data['region'] = [
-                'parent_id'    => $parent_id,
-                'region_id'    => $dfvalue['region_id'],
-                'region_names' => $dfvalue['region_names'],
-                'region_ids'   => $dfvalue['region_ids'],
-            ];
+                if (0 == $dfvalue['region_id']) {
+                    $parent_id = $dfvalue['region_id'];
+                } else {
+                    // 查询当前选中的区域父级ID
+                    $parent_id = Db::name('region')->where("id", $dfvalue['region_id'])->getField('parent_id');
+                    if (0 == $parent_id) {
+                        $parent_id = $dfvalue['region_id'];
+                    }
+                }
+
+                // 查询市\区\县信息
+                $assign_data['City'] = Db::name('region')->where("parent_id", $parent_id)->select();
+                // 加载数据到模板
+                $assign_data['region'] = [
+                    'parent_id'    => $parent_id,
+                    'region_id'    => $dfvalue['region_id'],
+                    'region_names' => $dfvalue['region_names'],
+                    'region_ids'   => $dfvalue['region_ids'],
+                ];
+            }
 
             // 删除默认值,防止切换其他类型时使用到
             unset($info['dfvalue']);
@@ -1709,26 +1723,35 @@ class Field extends Base
         // 如果是区域类型则执行
         if (9 == $info['attr_input_type']) {
             // 反序列化默认值参数
-            $dfvalue = unserialize($info['attr_values']);
-            if (0 == $dfvalue['region_id']) {
-                $parent_id = $dfvalue['region_id'];
-            } else {
-                // 查询当前选中的区域父级ID
-                $parent_id = Db::name('region')->where("id", $dfvalue['region_id'])->getField('parent_id');
-                if (0 == $parent_id) {
-                    $parent_id = $dfvalue['region_id'];
-                }
+            if (!preg_match('/^([\x{4e00}-\x{9fa5}\w\"\:\{\}\;\，\,]*)$/u', $info['attr_values'])) {
+                $info['attr_values'] = '';
             }
+            $dfvalue = unserialize($info['attr_values']);
+            if (is_array($dfvalue)) {
+                $dfvalue['region_id'] = preg_replace('/([^\d\,]+)/i', '', $dfvalue['region_id']);
+                $dfvalue['region_ids'] = preg_replace('/([^\d\,]+)/i', '', $dfvalue['region_ids']);
+                $dfvalue['region_names'] = preg_replace("/([^\x{4e00}-\x{9fa5}\,\，]+)/u", '', $dfvalue['region_names']);
 
-            // 查询市\区\县信息
-            $assign_data['City'] = Db::name('region')->where("parent_id", $parent_id)->select();
-            // 加载数据到模板
-            $assign_data['region'] = [
-                'parent_id'    => $parent_id,
-                'region_id'    => $dfvalue['region_id'],
-                'region_names' => $dfvalue['region_names'],
-                'region_ids'   => $dfvalue['region_ids'],
-            ];
+                if (0 == $dfvalue['region_id']) {
+                    $parent_id = $dfvalue['region_id'];
+                } else {
+                    // 查询当前选中的区域父级ID
+                    $parent_id = Db::name('region')->where("id", $dfvalue['region_id'])->getField('parent_id');
+                    if (0 == $parent_id) {
+                        $parent_id = $dfvalue['region_id'];
+                    }
+                }
+
+                // 查询市\区\县信息
+                $assign_data['City'] = Db::name('region')->where("parent_id", $parent_id)->select();
+                // 加载数据到模板
+                $assign_data['region'] = [
+                    'parent_id'    => $parent_id,
+                    'region_id'    => $dfvalue['region_id'],
+                    'region_names' => $dfvalue['region_names'],
+                    'region_ids'   => $dfvalue['region_ids'],
+                ];
+            }
 
             // 删除默认值,防止切换其他类型时使用到
             unset($info['attr_values']);

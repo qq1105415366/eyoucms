@@ -33,7 +33,7 @@
             </div>
             <div class="flex-dir-row flex-y-center">
                 {eyou:empty name='$users.mobile' /}
-                <a href="JavaScript:void(0);" onclick="openMobileAction740128('绑定手机号');" class="fc9">请输入手机号码</a>
+                <a href="JavaScript:void(0);" onclick="openMobileAction740128('绑定手机号');" class="fc9">{:foreign_lang('users28')}</a>
                 {eyou:else /}
                 <a href="JavaScript:void(0);" onclick="openMobileAction740128('修改手机号');">{$users.mobile}</a>
                 {/eyou:empty}
@@ -93,7 +93,7 @@
                     var mobile = $("#mobileInput740128").val();
                     if (!mobile) {
                         $("#mobileInput740128").focus();
-                        showLayerMsg('手机号码不能为空');
+                        showLayerMsg(ey_foreign_users28);
                         return false;
                     }
                     // 手机格式不正确
@@ -158,7 +158,7 @@
                     var mobile = $("#mobileInput740128").val();
                     if (!mobile) {
                         $("#mobileInput740128").focus();
-                        showLayerMsg('手机号码不能为空');
+                        showLayerMsg(ey_foreign_users28);
                         return false;
                     }
                     // 手机格式不正确
@@ -170,7 +170,7 @@
                     }
                     var mobile_code = $("#mobileCodeInput740128").val();
                     if(!mobile_code) {
-                        showLayerMsg('验证码不能为空');
+                        showLayerMsg(ey_foreign_users30);
                         $("#mobileCodeInput740128").focus();
                         return false;
                     }
@@ -334,7 +334,7 @@
                 var email_code = $("#emailCodeInput657130").val();
                 if (!email_code) {
                     $("#emailCodeInput657130").focus();
-                    showLayerMsg('验证码不能为空');
+                    showLayerMsg(ey_foreign_users30);
                     return false;
                 }
 
@@ -579,7 +579,7 @@
                         size: {$vo.filesize},
                         done: function(res) {
                             if (res.state == "SUCCESS") {
-                                layer.msg('上传成功!');
+                                layer.msg(ey_foreign_system10);
                                 $("#{$vo.fieldArr}_{$vo.name|default=''}").val(res.url);
                                 $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").css('display','');
                                 $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").attr('href', res.url);

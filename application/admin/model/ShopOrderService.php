@@ -21,8 +21,12 @@ use app\common\logic\ShopCommonLogic;
 /**
  * 商品退换货服务数据模型
  */
+
+load_trait('controller/Jump');
 class ShopOrderService extends Model
 {
+    use \traits\controller\Jump;
+
     //初始化
     protected function initialize()
     {
@@ -55,17 +59,17 @@ class ShopOrderService extends Model
         // 订单号查询
         $order_code = !empty($param['order_code']) ? trim($param['order_code']) : '';
         if (!empty($order_code)) $where['a.order_code|a.product_name|a.refund_code'] = array('LIKE', "%{$order_code}%");
-        
+
         // 支付方式查询
         $pay_name = input('pay_name/s', '');
         $Return['pay_name'] = $pay_name;
-        if (!empty($pay_name)) $where['c.pay_name'] = $pay_name;
+        if (!empty($pay_name)) $where['c.pay_name'] = trim($pay_name);
 
         // 订单下单终端查询
         $order_terminal = input('order_terminal/d', 0);
         $Return['order_terminal'] = $order_terminal;
-        if (!empty($order_terminal)) $where['c.order_terminal'] = $order_terminal;
-        
+        if (!empty($order_terminal)) $where['c.order_terminal'] = intval($order_terminal);
+
         // 查询类型
         $queryStatus = input('queryStatus/d', 0);
         if (!empty($queryStatus) && 1 === intval($queryStatus)) {
@@ -75,10 +79,6 @@ class ShopOrderService extends Model
         } else if (!empty($queryStatus) && 3 === intval($queryStatus)) {
             $where['a.status'] = ['IN', [7]];
         }
-
-        // 商品类型查询
-        // $contains_virtual = input('contains_virtual/d');
-        // if (!empty($contains_virtual)) $where['b.prom_type'] = 10 == $contains_virtual ? 0 : $contains_virtual;
 
         if (!empty($isMerchant)) {
             // 时间检索条件
@@ -166,14 +166,16 @@ class ShopOrderService extends Model
             $Service[$key]['arcurl'] = get_arcurl($Archives[$value['product_id']]);
 
             // 商品规格，组合数据
-            $value['product_spec'] = explode('&lt;br/&gt;', $value['product_spec']);
-            $valueData = '';
-            foreach ($value['product_spec'] as $key_1 => $value_1) {
-                $delimiter = '';//!empty($isMobile) ? '；' : '';
-                if (!empty($value_1)) $valueData .= '<span>' . trim(strrchr($value_1, '：'),'：') . '</span>' . $delimiter;
-            }
-            $Service[$key]['product_spec'] = $valueData;
+            // $value['product_spec'] = !empty($value['product_spec']) ? explode('&lt;br/&gt;', $value['product_spec']) : '';
+            // $value['product_spec'] = empty($value['product_spec']) && !empty($detailsData['spec_value']) ? explode('；', $detailsData['spec_value']) : '';
+            // $valueData = '';
+            // foreach ($value['product_spec'] as $key_1 => $value_1) {
+            //     $delimiter = '';//!empty($isMobile) ? '；' : '';
+            //     if (!empty($value_1)) $valueData .= '<span>' . trim(strrchr($value_1, '：'),'：') . '</span>' . $delimiter;
+            // }
+            // $Service[$key]['product_spec'] = $valueData;
             // $Service[$key]['product_spec'] = rtrim(trim(str_replace("&lt;br/&gt;", " || ", $value['product_spec'])), '||');
+            $Service[$key]['spec_value_list'] = model('ShopPublicHandle')->getOrderGoodsSpecList($value);
 
             /* 计算退还金额 */
             // $DetailsData = $OrderData[$value['details_id']];
@@ -194,7 +196,7 @@ class ShopOrderService extends Model
                 $ProductPrice = 0;
                 if (!empty($value['product_price'])) {
                     $ProductPrice = sprintf("%.2f", ($value['product_price'] * (string)$value['num']) - $ShippingFee);
-                    $Service[$key]['refund_price'] = $ProductPrice;
+                    $Service[$key]['refund_price'] = $value['refund_price'] = $ProductPrice;
                 }
             }
 
@@ -264,17 +266,19 @@ class ShopOrderService extends Model
         $Service['users_delivery'] = !empty($Service['users_delivery']) ? unserialize($Service['users_delivery']) : [];
         $Service['admin_delivery'] = !empty($Service['admin_delivery']) ? unserialize($Service['admin_delivery']) : [];
         if (!empty($Service['admin_delivery']['time'])) $Service['admin_delivery']['time'] = date('Y-m-d H:i:s', $Service['admin_delivery']['time']);
-        $Service['actual_price'] = floatval($Service['actual_price']) > 0 ? floatval($Service['actual_price']) : floatval($Service['refund_price']);
-        $Service['actual_points'] = floatval($Service['actual_points']) > 0 ? floatval($Service['actual_points']) : floatval($Service['refund_price']);
+        $Service['refund_way'] = empty($Service['refund_way']) || 0 === intval($Service['refund_way']) ? 1 : intval($Service['refund_way']);
+        $Service['refund_price'] = floatval($Service['refund_price']) * floatval($Service['product_num']);
+        $Service['actual_price'] = floatval($Service['actual_price']) > 0 ? floatval($Service['actual_price']) : unifyPriceHandle($Service['refund_price']);
+        $Service['actual_points'] = floatval($Service['actual_points']) > 0 ? floatval($Service['actual_points']) : '';
 
         // 商品规格，组合数据
-        $Service['product_spec'] = explode('&lt;br/&gt;', $Service['product_spec']);
-        $valueData = '';
-        foreach ($Service['product_spec'] as $key_1 => $value_1) {
-            $delimiter = '';//!empty($isMobile) ? '；' : '';
-            if (!empty($value_1)) $valueData .= '<span>' . trim(strrchr($value_1, '：'),'：') . '</span>' . $delimiter;
-        }
-        $Service['product_spec'] = $valueData;
+        // $Service['product_spec'] = explode('&lt;br/&gt;', $Service['product_spec']);
+        // $valueData = '';
+        // foreach ($Service['product_spec'] as $key_1 => $value_1) {
+        //     $delimiter = '';//!empty($isMobile) ? '；' : '';
+        //     if (!empty($value_1)) $valueData .= '<span>' . trim(strrchr($value_1, '：'),'：') . '</span>' . $delimiter;
+        // }
+        // $Service['product_spec'] = $valueData;
 
         // 查询订单数据
         $where = [
@@ -290,16 +294,24 @@ class ShopOrderService extends Model
         if (!empty($Order['points_shop_order'])) $Order['prom_type_name'] = '积分订单';
 
         // 订单来源
-        $Order['order_terminal_show'] = '电脑端';
+        $Order['order_terminal_show'] = 'PC';
         if (!empty($Order['order_terminal']) && 2 === intval($Order['order_terminal'])) {
-            $Order['order_terminal_show'] = '手机端';
+            $Order['order_terminal_show'] = 'H5';
         } else if (!empty($Order['order_terminal']) && 3 === intval($Order['order_terminal'])) {
             $Order['order_terminal_show'] = '微信小程序';
+        } else if (!empty($Order['order_terminal']) && 9 === intval($Order['order_terminal'])) {
+            $Order['order_terminal_show'] = '抖音小程序';
+        } else if (!empty($Order['order_terminal']) && 12 === intval($Order['order_terminal'])) {
+            $Order['order_terminal_show'] = '支付宝小程序';
+        } else if (!empty($Order['order_terminal']) && 10 === intval($Order['order_terminal'])) {
+            $Order['order_terminal_show'] = '百度小程序';
         }
         // 收获地址省市区县
         $Order['city'] = get_city_name($Order['city']);
         $Order['district'] = get_area_name($Order['district']);
         $Order['province'] = get_province_name($Order['province']);
+        $Order['shipping_fee'] = unifyPriceHandle($Order['shipping_fee']);
+        $Order['order_amount'] = unifyPriceHandle($Order['order_amount']);
         // 备注条数
         $Order['admin_note_count'] = !empty($Order['admin_note']) ? count(unserialize($Order['admin_note'])) : 0;
         // 获取订单方式名称
@@ -309,7 +321,7 @@ class ShopOrderService extends Model
         $where = [
             'order_id' => $Service['order_id'],
             'details_id' => $Service['details_id'],
-            'apply_service' => 1
+            // 'apply_service' => 1
         ];
         $Details = $this->shop_order_details_db->where($where)->find();
         // 商品类型
@@ -320,23 +332,25 @@ class ShopOrderService extends Model
         } else {
             $Details['prom_type_goods'] = '虚拟商品';
         }
+        $Details['product_price'] = unifyPriceHandle($Details['product_price']);
         $Details['product_img'] = !empty($Details['litpic']) ? get_default_pic($Details['litpic']) : '';
-        $Details['product_subtotal'] = sprintf("%.2f", floatval($Details['product_price']) * floatval($Details['num']));
+        $Details['product_subtotal'] = unifyPriceHandle(floatval($Details['product_price']) * floatval($Details['num']));
         // 规格处理
         $detailsData = !empty($Details['data']) ? unserialize($Details['data']) : [];
         $Details['pointsGoodsBuyField'] = !empty($detailsData['pointsGoodsBuyField']) ? json_decode($detailsData['pointsGoodsBuyField'], true) : [];
-        $productSpec = !empty($detailsData['product_spec']) ? explode('；', $detailsData['product_spec']) : '';
-        $specData = '';
-        foreach ($productSpec as $value) {
-            if (!empty($value)) $specData .= '<span>' . $value . '</span>';
-        }
-        $Details['product_spec'] = $specData;
+        // $productSpec = !empty($detailsData['spec_value']) ? explode('；', $detailsData['spec_value']) : '';
+        // $specData = '';
+        // foreach ($productSpec as $value) {
+        //     if (!empty($value)) $specData .= '<span>' . $value . '</span>';
+        // }
+        // $Details['product_spec'] = $specData;
+        $Details['spec_value_list'] = model('ShopPublicHandle')->getOrderGoodsSpecList($Details);
 
         // 售后订单是否是归属商城订单的最后一个售后订单，1是，0否
         $Service['last_one'] = model('ShopPublicHandle')->isLastOneServiceOrder($Service['users_id'], $Service['order_id'], 1);
 
         // 用户发货后计算退还金额、余额
-        if (5 == $Service['status'] || 7 == $Service['status'] || 2 == $Service['service_type']) {
+        if (5 === intval($Service['status']) || 7 === intval($Service['status']) || in_array($Service['service_type'], [2])) {
             // 订单总数
             // $Order['order_total_num'] = (string)$Order['order_total_num'];
 
@@ -363,9 +377,6 @@ class ShopOrderService extends Model
         $Users = $this->users_db->find($Service['users_id']);
         $Users['nickname'] = empty($Users['nickname']) ? $Users['username'] : $Users['nickname'];
         $Users['head_pic'] = get_head_pic($Users['head_pic'], false, $Users['sex']);
-
-        // 订单是否改价过
-        $Order['is_change_price'] = model('ShopPublicHandle')->is_change_price($Service['order_id']);
 
         // 服务记录表信息
         $Log = $this->shop_order_service_log_db->order('log_id desc')->where('service_id', $Service['service_id'])->select();
@@ -402,6 +413,16 @@ class ShopOrderService extends Model
                 if (isset($Details['pointsGoodsBuyField']['goodsSinglePoints']) > 0) $Service['actual_points'] = intval($Details['pointsGoodsBuyField']['goodsSinglePoints']);
             }
         }
+
+        // 订单是否改价过
+        $Order['is_change_price'] = model('ShopPublicHandle')->is_change_price($Service['order_id']);
+        if (!empty($Order['is_change_price'])) {
+            $Service['actual_price'] = $Service['refund_price'] = unifyPriceHandle($Order['order_amount']);
+            if (floatval($Order['order_amount']) > floatval($Details['product_subtotal'])) {
+                $Service['actual_price'] = $Service['refund_price'] = unifyPriceHandle($Details['product_subtotal']);
+            }
+        }
+
         // 返回
         $Return['Log']     = $Log;
         $Return['Users']   = $Users;
@@ -524,10 +545,35 @@ class ShopOrderService extends Model
         }
         // 存在退款备注则执行
         if (!empty($post['refund_remark'])) $update['refund_remark'] = htmlspecialchars(trim($post['refund_remark']));
+
+        // 退款方式(1:退款到余额; 2:线下退款; 3:原路退回(微信))
+        if (!empty($post['refund_way'])) $update['refund_way'] = intval($post['refund_way']);
+
+        // 微信申请退款
+        $applyResult = [];
+        if (!empty($post['actual_price']) && 7 === intval($post['status']) && 3 === intval($post['refund_way']) && in_array($post['service_type'], [2, 3])) {
+            // 是否允许微信申请退款
+            $applyResult = model('PayApi')->applyWeChatPayOrderRefund($post, 'verify');
+            // 查询售后单当前状态
+            $currentStatus = $this->shop_order_service_db->where($where)->getField('status');
+        }
+
         // 执行更新
         $resultID = $this->shop_order_service_db->where($where)->update($update);
         // 更新后续操作
         if (!empty($resultID)) {
+            if (!empty($applyResult['data'])) {
+                // 微信申请退款
+                $submitResult = model('PayApi')->applyWeChatPayOrderRefund($applyResult['data'], 'submit');
+                // 后续操作
+                if (!empty($submitResult['return_code']) && 'FAIL' == $submitResult['return_code']) {
+                    // 更新售后单回原状态
+                    $this->shop_order_service_db->where($where)->update(['status' => intval($currentStatus), 'update_time' => $times]);
+                    // 申请失败提示
+                    $this->error($submitResult['return_msg']);
+                }
+            }
+
             // 退款到余额
             if (7 === intval($post['status']) && 1 === intval($post['refund_way']) && in_array($post['service_type'], [2, 3])) {
                 // 执行退回余额
@@ -610,4 +656,236 @@ class ShopOrderService extends Model
             return false;
         }
     }
+
+    public function orderActiveRefundHandle($post = [])
+    {
+        if (!empty($post['order_id'])) {
+            $times = getTime();
+            $where = [
+                'users_id' => intval($post['users_id']),
+                'order_id' => intval($post['order_id']),
+                'order_status' => ['IN', [1, 2]]
+            ];
+            // 查询订单信息
+            $orderData = $this->shop_order_db->where($where)->find();
+            // 更新订单为已关闭
+            $update = [
+                'manual_refund' => 1,
+                'order_status' => -1,
+                'update_time' => $times,
+                'refund_note' => $post['refund_remark']
+            ];
+            $resultID = $this->shop_order_db->where($where)->update($update);
+            if (!empty($resultID)) {
+                // 添加订单操作记录
+                $refundWayName = !empty($orderData['points_shop_order']) && 1 === intval($orderData['points_shop_order']) ? '退款到余额(积分)' : '退款到余额';
+                if (!empty($post['refund_way']) && 2 === intval($post['refund_way'])) {
+                    $refundWayName = '线下退款';
+                }
+                else if (!empty($post['refund_way']) && 3 === intval($post['refund_way'])) {
+                    $refundWayName = '原路退回(微信)';
+                }
+                $refundWayName = '管理员主动退款，退款方式: ' . $refundWayName;
+
+                // 加添订单售后信息
+                $result = $this->adminAddOrderService($post, $orderData, $refundWayName);
+                if (empty($result)) {
+                    // 更新订单回原状态
+                    $update = [
+                        'manual_refund' => 0,
+                        'order_status' => intval($post['order_status']),
+                        'update_time' => $times,
+                        'refund_note' => '',
+                    ];
+                    $this->shop_order_db->where($where)->update($update);
+                    $this->error('操作失败，刷新重试~');
+                }
+
+                // 退款到余额
+                if (1 === intval($post['refund_way']) && !empty($post['actual_price'])) {
+                    // 执行退回余额
+                    $where = [
+                        'users_id' => $post['users_id']
+                    ];
+                    $resultID = $this->users_db->where($where)->setInc('users_money', $post['actual_price']);
+                    // 添加余额记录
+                    if (!empty($resultID)) UsersMoneyRecording($post['order_code'], $post, $post['actual_price'], '管理员主动退款');
+                }
+
+                // 执行退回积分
+                if (!empty($post['actual_points'])) {
+                    $insert = [
+                        'type' => 12, // 积分商城订单退回
+                        'users_id' => intval($post['users_id']),
+                        'score' => intval($post['actual_points']),
+                        'info' => '管理员主动退款，积分商城订单退回',
+                        'remark' => '管理员主动退款，积分商城订单退回',
+                    ];
+                    addConsumObtainScores($insert);
+                }
+
+                // 如果安装了秒杀插件则执行，调用秒杀逻辑层方法
+                if (is_dir('./weapp/Seckill/') && !empty($orderData['is_seckill_order']) && 1 === intval($orderData['is_seckill_order'])) {
+                    $seckillRow = model('Weapp')->getWeappList('Seckill');
+                    if (!empty($seckillRow) && 1 === intval($seckillRow['status'])) {
+                        $weappSeckillLogic = new \weapp\Seckill\logic\SeckillLogic;
+                        $weappSeckillLogic->cancelOrderHandle($orderData['order_id'], $orderData['users_id']);
+                    }
+                }
+
+                // 商品库存恢复
+                model('OrderPreHandle')->restoreGoodsStock([$orderData]);
+
+                // 订单操作日志
+                AddOrderAction($post['order_id'], 0, session('admin_id'), -1, 0, 1, '店铺主动退款', $refundWayName);
+
+                // 返回结束
+                $this->success('操作完成');
+            }
+        }
+
+        $this->error('提交的数据缺少订单ID (order_id)');
+    }
+
+    // 加添订单售后信息
+    public function adminAddOrderService($post = [], $orderData = [], $refundWayName = '')
+    {
+        // 添加成功ID组
+        $insertArr = [];
+        // 当前时间戳
+        $times = getTime();
+
+        // 查询订单信息
+        $city = get_city_name($orderData['city']);
+        $district = get_area_name($orderData['district']);
+        $province = get_province_name($orderData['province']);
+        $orderData['address'] = $province . ' ' . $city . ' ' . $district . ' ' . $orderData['address'];
+
+        // 查询订单商品信息
+        $where = [
+            'a.order_id' => intval($orderID),
+            'a.order_id' => intval($post['order_id']),
+        ];
+        $field = 'a.*, b.service_id, b.status as service_status';
+        $details = $this->shop_order_details_db->alias('a')->field($field)->join('__SHOP_ORDER_SERVICE__ b', 'a.details_id = b.details_id', 'LEFT')->where($where)->select();
+        if (!empty($details)) {
+            // 删除已申请但未完成的服务单
+            $where = [
+                'status' => ['NOT IN', [6, 7]],
+                'order_id' => intval($post['order_id']),
+                'details_id' => ['IN', get_arr_column($details, 'details_id')]
+            ];
+            $deleteArr = $this->shop_order_service_db->where($where)->column('service_id');
+            if (!empty($deleteArr)) {
+                $where = [
+                    'order_id' => intval($post['order_id']),
+                    'service_id' => ['IN', $deleteArr]
+                ];
+                $this->shop_order_service_db->where($where)->delete(true);
+                $this->shop_order_service_log_db->where($where)->delete(true);
+            }
+
+            $payApiModel = model('PayApi');
+            // 新增售后服务单
+            foreach ($details as $key => $value) {
+                if (empty($value['service_id']) || !in_array($value['service_status'], [6, 7]))  {
+                    // 商品规格信息
+                    $value['data'] = !empty($value['data']) ? unserialize($value['data']) : [];
+                    $product_spec = '';//!empty($value['data']['spec_value']) ? htmlspecialchars_decode(htmlspecialchars_decode($value['data']['spec_value'])) : '';
+                    // 订单售后信息
+                    $insert = [
+                        'service_type' => 2,
+                        'users_id'     => intval($orderData['users_id']),
+                        'merchant_id'  => intval($orderData['merchant_id']),
+                        'order_id'     => intval($orderData['order_id']),
+                        'order_code'   => strval($orderData['order_code']),
+                        'details_id'   => intval($value['details_id']),
+                        'product_id'   => intval($value['product_id']),
+                        'product_name' => strval($value['product_name']),
+                        'product_spec' => strval($product_spec),
+                        'product_num'  => intval($value['num']),
+                        'product_img'  => strval($value['litpic']),
+                        'content'      => strval($refundWayName),
+                        'address'      => strval($orderData['address']),
+                        'consignee'    => $orderData['consignee'],
+                        'mobile'       => $orderData['mobile'],
+                        'manual_refund'=> 1,
+                        'manual_time'  => $times,
+                        'refund_remark'=> !empty($post['refund_remark']) ? $post['refund_remark'] : $refundWayName,
+                        'refund_note'  => !empty($post['refund_remark']) ? $post['refund_remark'] : $refundWayName,
+                        'refund_price' => unifyPriceHandle($value['product_price']),
+                        'refund_way'   => !empty($post['refund_way']) ? $post['refund_way'] : 0,
+                        'refund_code'  => 'TK' . $times . rand(10, 99),
+                        'status'       => 7,
+                        'add_time'     => $times,
+                        'update_time'  => $times,
+                    ];
+                    // 微信申请退款
+                    $applyResult = [];
+                    if (!empty($insert['refund_price']) && 3 === intval($insert['refund_way'])) {
+                        // 是否允许微信申请退款
+                        $post['refund_code'] = $insert['refund_code'];
+                        $post['actual_price'] = $insert['refund_price'];
+                        $applyResult = $payApiModel->applyWeChatPayOrderRefund($post, 'verify');
+                    }
+                    // 新增售后单
+                    $resultID = $this->shop_order_service_db->insertGetId($insert);
+                    if (!empty($resultID)) {
+                        // 记录添加成功的售后服务ID
+                        array_push($insertArr, $resultID);
+                        // 添加订单售后服务记录
+                        OrderServiceLog($resultID, $orderData['order_id'], 0, session('admin_id'), $refundWayName);
+                        // 微信申请退款
+                        if (!empty($applyResult['data'])) {
+                            $submitResult = $payApiModel->applyWeChatPayOrderRefund($applyResult['data'], 'submit');
+                            // 后续操作
+                            if (!empty($submitResult['return_code']) && 'FAIL' == $submitResult['return_code']) {
+                                // 更新售后单回原状态
+                                $where = [
+                                    'service_id' => intval($resultID)
+                                ];
+                                $this->shop_order_service_db->where($where)->update(['status' => 2, 'update_time' => $times]);
+                                // 添加订单售后服务记录
+                                OrderServiceLog($resultID, $orderData['order_id'], 0, session('admin_id'), '自动申请微信退款失败，请再次执行转账操作');
+                            }
+                        }
+                    }
+                } else {
+                    unset($details[$key]);
+                }
+            }
+        }
+
+        // 默认操作成功
+        $result = true;
+
+        // 如果添加的售后维权记录和订单商品数量不相等则执行
+        if (intval(count($details)) !== intval(count($insertArr))) {
+            // 设置操作失败
+            $result = false;
+            // 删除已添加的售后维权相关记录
+            $where = [
+                'order_id' => intval($post['order_id']),
+                'service_id' => ['IN', $insertArr]
+            ];
+            $this->shop_order_service_db->where($where)->delete(true);
+            $this->shop_order_service_log_db->where($where)->delete(true);
+        } else {
+            // 更新订单明细表中对应商品已申请售后服务
+            $where = [
+                'order_id' => intval($post['order_id']),
+                'details_id' => ['IN', get_arr_column($details, 'details_id')]
+            ];
+            $update = [
+                'apply_service' => 1,
+                'update_time' => $times
+            ];
+            $this->shop_order_details_db->where($where)->update($update);
+        }
+
+        // 返回操作结果
+        return $result;
+    }
+
+
 }

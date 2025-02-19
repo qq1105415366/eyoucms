@@ -300,7 +300,9 @@ function ProductStatus(table,id_name,id_value,field,obj)
             } else {
                 var time = parseFloat(res.wait) * 1000;
                 layer.msg(res.msg, {icon: 2, time: time}, function(){
-                    window.location.reload();
+                    if (res.data && res.data.refresh && 1 == res.data.refresh) {
+                        window.location.reload();
+                    }
                 });  
             }
         }

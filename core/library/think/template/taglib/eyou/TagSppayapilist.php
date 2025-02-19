@@ -293,6 +293,7 @@ class TagSppayapilist extends Base
 <br/>
 EOF;
         }
+        $JsonData['usersTplVersion'] = $this->usersTplVersion;
         $JsonData['usersTpl2xVersion'] = $this->usersTpl2xVersion;
         $JsonData = json_encode($JsonData);
         $version = getCmsVersion();

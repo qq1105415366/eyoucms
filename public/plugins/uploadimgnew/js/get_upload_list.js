@@ -9,6 +9,13 @@ $(function() {
     if (undefined != img_id_upload && img_id_upload.length > 0) {
         arrimg = img_id_upload.split(",");
     }
+    if (arrimg.length == 0) {
+        var select_img = $.cookie('uploadimgnew_select_img');
+        if (undefined != select_img && select_img) {
+            arrimg.push(select_img);
+            $.cookie("img_id_upload", arrimg.join());
+        }
+    }
     var imgname_id_upload = $.cookie("imgname_id_upload");
     if (undefined != imgname_id_upload && imgname_id_upload.length > 0){
         arrimgname = imgname_id_upload.split(",");
@@ -24,12 +31,13 @@ $(function() {
                 }
             }
         });
-        $('.removeall').html('删除选中('+arrimg.length+')');
+        // 选中两张图片或以上才显示删除选中按钮
+        /*$('.removeall').html('删除选中('+arrimg.length+')');
         if (arrimg.length > 1) {
             $('.removeall').show();
         } else {
             $('.removeall').hide();
-        }
+        }*/
     } else {
         $("#file_list li").each(function(index, item) {
             $(item).removeClass('up-over');
@@ -54,12 +62,12 @@ function delimg(obj, img_id) {
         data: {img_id:img_id_arr, _ajax:1},
         dataType: 'json',
         success: function (res) {
-            layer.closeAll();
             if (res.code == 1) {
                 layer.msg(res.msg, {icon: 6, time: 1000}, function() {
                     window.location.reload();
                 });
             } else {
+                layer.closeAll();
                 layer.msg(res.msg, {icon: 5});
             }
         },
@@ -90,7 +98,6 @@ function batch_delimg(obj) {
         data: {img_id: img_id_arr, _ajax: 1},
         dataType: 'json',
         success: function (res) {
-            layer.closeAll();
             if (res.code == 1) {
                 $.cookie("img_id_upload", "");
                 $.cookie("imgname_id_upload", "");
@@ -98,6 +105,7 @@ function batch_delimg(obj) {
                     window.location.reload();
                 });
             } else {
+                layer.closeAll();
                 layer.msg(res.msg, {icon: 5});
             }
         },
@@ -174,7 +182,7 @@ layui.use(function() {
     }
 
     // 点击选中保存图片
-    $(document).on("click", ".image-list li .picbox", function() { 
+    $(document).on("click", ".image-list li .picbox", function() {
         var li = $(this).parent('.image-list li');
         var val = li.attr("data-img");
         var title =  li.attr("data-title");
@@ -208,14 +216,119 @@ layui.use(function() {
         }
         $.cookie("img_id_upload", arrimg.join());
         $.cookie("imgname_id_upload", arrimgname.join());
-        document.querySelector('.removeall').innerText = '删除选中('+arrimg.length+')';
+        // 选中两张图片或以上才显示删除选中按钮
+        /*document.querySelector('.removeall').innerText = '删除选中('+arrimg.length+')';
         if (arrimg.length > 1) {
             $('.removeall').show();
         } else {
             $('.removeall').hide();
-        }
+        }*/
     });
 });
+
+//全选图片/全部取消选择
+function choose_all(obj){
+    var checked_val = $(obj).is(':checked');
+    $("#file_list li").each(function(index, item) {
+        $(item).removeClass('up-over');
+        var val = $(item).attr("data-img");
+        var title = $(item).attr("data-title");
+        if (checked_val) {
+            $(item).addClass('up-over');
+            // if (arrimg[i].indexOf(val) != -1 || val.indexOf(arrimg[i]) != -1) {
+            if ($.inArray(val, arrimg) < 0) {
+                arrimg.push(val);
+                arrimgname.push(title);
+                $.cookie("img_id_upload", arrimg.join());
+                $.cookie("imgname_id_upload", arrimgname.join());
+            }
+        }else{
+            $.cookie("img_id_upload", "");
+            $.cookie("imgname_id_upload", "");
+        }
+    });
+}
+
+//移动
+function moving(){
+    var length = $("#file_list .up-over").length;
+    if (0 == length) {
+        layer.msg('请先至少选择一张图片', {icon: 5,time: 2000});
+        return false;
+    }
+    var img_id_arr = [];
+    $("#file_list .up-over").each(function(index, item) {
+        var up_id = $(item).attr("data-id");
+        img_id_arr.push(up_id);
+    });
+    //获取分类
+    $.ajax({
+        type : 'post',
+        url : UploadTypeListUrl,
+        data : {_ajax:1},
+        dataType : 'json',
+        success : function(res){
+            layer.closeAll();
+            if(res.code == 1){
+                var html = "<div>选择目录: <select class='ey-select' id='upload_type_select'><option value='0'>默认分组</option>";
+                res.data.forEach(function( val, index ) {
+                    var selected = "";
+                    if (type_id == val.id) {
+                        selected = " selected ";
+                    }
+                    html += "<option value='"+val.id+"' "+selected+">"+val.upload_type+"</option> ";
+
+                });
+                html += "</select></div>";
+                layer.confirm(html, {
+                    // shade: layer_shade,
+                    area: ['480px', '220px'],
+                    move: false,
+                    title: '移动',
+                    btnAlign:'r',
+                    closeBtn: 1,
+                    btn: ['确定', '取消'] ,//按钮
+                    success: function () {
+                        $(".layui-layer-content").css('text-align', 'left');
+                    }
+                }, function (index, layero) {
+                    var type_id = $("#upload_type_select").val();
+                    $.ajax({
+                        type : 'post',
+                        url : UpdateTypeIdUrl,
+                        data : {_ajax:1,type_id:type_id,img_id:img_id_arr},
+                        dataType : 'json',
+                        success : function(res){
+                            if(res.code == 1){
+                                layer.msg(res.msg, {time: 1000}, function(){
+                                    $.cookie("img_id_upload", "");
+                                    $.cookie("imgname_id_upload", "");
+                                    $("#file_list li").removeClass('up-over');
+                                    parent.window.location.reload();
+                                });
+                            }else{
+                                layer.closeAll();
+                                layer.msg(res.msg, {icon: 5,time: 2000});
+                            }
+                        },
+                        error: function(e){
+                            layer.closeAll();
+                            layer.alert(e.responseText, {icon: 5, title: false, closeBtn: false});
+                        }
+                    });
+                }, function (index) {
+                    layer.close(index);
+                });
+            }else{
+                layer.msg(res.msg, {icon: 5,time: 2000});
+            }
+        },
+        error: function(e){
+            layer.closeAll();
+            layer.alert(e.responseText, {icon: 5, title: false, closeBtn: false});
+        }
+    });
+}
 
 // 添加文件
 document.querySelector('#topbar .addfile').addEventListener("click", function(){
@@ -366,14 +479,13 @@ function upAllFiles(n) {
                     $('#file_list').prepend(html);
 
                     if (img_len == len) {
-                        layer.closeAll();
                         layer.msg('上传成功', {icon: 6, time: 1000, shade: [0.2]}, function() {
                             window.location.reload();
                         });
                     }
                 } else {
                     layer.closeAll();
-                    layer.msg(res.state, {icon: 5});
+                    layer.alert(res.state, {icon: 5, title: false, closeBtn: false});
                 }
                 n++;
                 upAllFiles(n);

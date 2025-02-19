@@ -87,25 +87,19 @@ final class Image implements ImageInterface {
      *
      * @throws \Exception When unsupported type.
      */
-    public function blob( $type = 'PNG' ) {
-
+   public function blob( $type = 'PNG' ) {
         $type = strtoupper($type);
+    
         if ( ImageType::GIF == $type ) {
-
             imagegif( $this->gd );
-
         } else if ( ImageType::JPEG == $type ) {
-
             imagejpeg( $this->gd );
-
         } else if ( ImageType::PNG == $type ) {
-
             imagepng( $this->gd );
-
         } else if ( ImageType::WBMP == $type ) {
-
             imagewbmp( $this->gd );
-
+        } else if ( ImageType::WEBP == $type ) {  // 处理 WebP 格式
+            imagewebp( $this->gd );
         } else {
             throw new \Exception( sprintf( 'File type "%s" not supported.', $type ) );
         }
@@ -119,28 +113,24 @@ final class Image implements ImageInterface {
      * @return Image
      * @throws \Exception
      */
-    public static function createFromFile( $imageFile ) {
+     public static function createFromFile( $imageFile ) {
         if ( ! file_exists( $imageFile ) ) {
             throw new \Exception( sprintf( 'Could not open "%s". File does not exist.', $imageFile ) );
         }
-
+    
         $type = self::_guessType( $imageFile );
+    
+        // 根据类型处理文件
         if ( ImageType::GIF == $type ) {
-
             return self::_createGif( $imageFile );
-
         } else if ( ImageType::JPEG == $type ) {
-
             return self::_createJpeg( $imageFile );
-
         } else if ( ImageType::PNG == $type ) {
-
             return self::_createPng( $imageFile );
-
         } else if ( ImageType::WBMP == $type ) {
-
             return self::_createWbmp( $imageFile );
-
+        } else if ( ImageType::WEBP == $type ) {  // 处理 WebP 文件
+            return self::_createWebp( $imageFile );
         } else {
             throw new \Exception( sprintf( 'Could not open "%s". File type not supported.', $imageFile ) );
         }
@@ -361,7 +351,17 @@ final class Image implements ImageInterface {
             $animated
         );
     }
-
+    private static function _createWebp( $imageFile ) {
+        // 使用 GD 函数加载 WebP 文件
+        $gd = @imagecreatefromwebp( $imageFile );
+    
+        // 检查图像是否加载成功
+        if ( !$gd ) {
+            throw new \Exception( sprintf('Could not open "%s". Not a valid WebP file.', $imageFile) );
+        }
+    
+        return new self( $gd, $imageFile, imagesx( $gd ), imagesy( $gd ), ImageType::WEBP );
+    }
     /**
      * Load a JPEG image.
      *
@@ -449,6 +449,9 @@ final class Image implements ImageInterface {
         } else if ( 15 == $type) {
 
             return ImageType::WBMP;
+
+        } else if ( 18 == $type) {
+            return ImageType::WEBP;
 
         }
 

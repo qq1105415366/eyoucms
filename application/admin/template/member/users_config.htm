@@ -7,7 +7,7 @@
 #picker {
     /*margin:0;*/
     /*padding:0;*/
-    border:solid 1px {$info.theme_color|default='#ff6565'};
+    border:solid 1px {$usersConfig.theme_color|default='#ff6565'};
     width:70px;
     height:20px;
     border-right:40px solid green;
@@ -61,11 +61,11 @@
                     </dt>
                     <dd class="opt">
                         <label class="curpoin">
-                            <input type="radio" name="users[users_open_register]" value="0" {if condition="!isset($info.users_open_register) || empty($info.users_open_register)"}checked="checked"{/if}/>开启
+                            <input type="radio" name="users[users_open_register]" value="0" {if condition="!isset($usersConfig.users_open_register) || empty($usersConfig.users_open_register)"}checked="checked"{/if}/>开启
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin" title="关闭后将自动隐藏账户注册/登录的入口">
-                            <input type="radio" name="users[users_open_register]" value="1" {if condition="$info.users_open_register == 1"}checked="checked"{/if}/>关闭
+                            <input type="radio" name="users[users_open_register]" value="1" {if condition="$usersConfig.users_open_register == 1"}checked="checked"{/if}/>关闭
                         </label>
                     </dd>
                 </dl>
@@ -76,34 +76,34 @@
                     </dt>
                     <dd class="opt">
                         <label class="curpoin">
-                            <input type="radio" name="users[users_open_reg]" value="0" {if condition="!isset($info.users_open_reg) || empty($info.users_open_reg)"}checked="checked"{/if}/>开启
+                            <input type="radio" name="users[users_open_reg]" value="0" {if condition="!isset($usersConfig.users_open_reg) || empty($usersConfig.users_open_reg)"}checked="checked"{/if}/>开启
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin" title="关闭后将自动隐藏账户注册的入口">
-                            <input type="radio" name="users[users_open_reg]" value="1" {if condition="$info.users_open_reg == 1"}checked="checked"{/if}/>关闭
+                            <input type="radio" name="users[users_open_reg]" value="1" {if condition="$usersConfig.users_open_reg == 1"}checked="checked"{/if}/>关闭
                         </label>
                     </dd>
                 </dl>
 
-                <dl class="row" id="users_verification_dl" {if condition='!empty($info.users_open_reg) && $info.users_open_reg == 1'}style="display: none;"{/if}>
+                <dl class="row" id="users_verification_dl" {if condition='!empty($usersConfig.users_open_reg) && $usersConfig.users_open_reg == 1'}style="display: none;"{/if}>
                     <dt class="tit">
                         <label for="username">注册验证</label>
                     </dt>
                     <dd class="opt" style="line-height: 26px;">
                         <label class="curpoin">
-                            <input type="radio" name="users[users_verification]" value="0" {if condition="!isset($info.users_verification) || empty($info.users_verification)"}checked="checked"{/if}/>不验证
+                            <input type="radio" name="users[users_verification]" value="0" {if condition="!isset($usersConfig.users_verification) || empty($usersConfig.users_verification)"}checked="checked"{/if}/>不验证
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin" title="注册会员后，需后台审核激活后才能登录">
-                            <input type="radio" name="users[users_verification]" value="1" {if condition="$info.users_verification == 1"}checked="checked"{/if}/>后台激活
+                            <input type="radio" name="users[users_verification]" value="1" {if condition="$usersConfig.users_verification == 1"}checked="checked"{/if}/>后台激活
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin" title="注册会员时，发送邮箱验证码校验才能注册">
-                            <input type="radio" name="users[users_verification]" value="2" onclick="email(1);" {if condition="$info.users_verification == 2"}checked="checked"{/if}/>邮件验证
+                            <input type="radio" name="users[users_verification]" value="2" onclick="email(1);" {if condition="$usersConfig.users_verification == 2"}checked="checked"{/if}/>邮件验证
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin" title="注册会员中，发送手机验证码校验才能注册">
-                            <input type="radio" name="users[users_verification]" value="3" onclick="mobile(1);" {if condition="$info.users_verification == 3"}checked="checked"{/if}/>手机验证
+                            <input type="radio" name="users[users_verification]" value="3" onclick="mobile(1);" {if condition="$usersConfig.users_verification == 3"}checked="checked"{/if}/>手机验证
                         </label>
                         <p class="notic">邮件验证和手机验证需要正确配置后才能使用，请去基本信息-接口配置，配置电子邮箱或云短信</p>
                     </dd>
@@ -115,11 +115,11 @@
                     </dt>
                     <dd class="opt" style="line-height: 26px;">
                         <label class="curpoin">
-                            <input type="radio" name="users[users_retrieve_password]" value="1" onclick="email(2, this);" {if condition="isset($info.users_retrieve_password) && $info.users_retrieve_password == 1"}checked="checked"{/if}/>邮件验证
+                            <input type="radio" name="users[users_retrieve_password]" value="1" onclick="email(2, this);" {if condition="isset($usersConfig.users_retrieve_password) && $usersConfig.users_retrieve_password == 1"}checked="checked"{/if}/>邮件验证
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin">
-                            <input type="radio" name="users[users_retrieve_password]" value="2" onclick="mobile(2, this);" {if condition="isset($info.users_retrieve_password) && $info.users_retrieve_password == 2"}checked="checked"{/if}/>手机验证
+                            <input type="radio" name="users[users_retrieve_password]" value="2" onclick="mobile(2, this);" {if condition="isset($usersConfig.users_retrieve_password) && $usersConfig.users_retrieve_password == 2"}checked="checked"{/if}/>手机验证
                         </label>
                         <p class="notic">邮件验证和手机验证需要正确配置后才能使用，请去基本信息-接口配置，配置电子邮箱或云短信</p>
                     </dd>
@@ -130,7 +130,7 @@
                         <label for="username">禁止注册用户名</label>
                     </dt>
                     <dd class="opt" style="line-height: 26px;">
-                        <textarea rows="5" cols="60" name="users[users_reg_notallow]" style="height:60px;">{$info.users_reg_notallow|default='www,bbs,ftp,mail,user,users,admin,administrator,eyoucms'}</textarea>
+                        <textarea rows="5" cols="60" name="users[users_reg_notallow]" style="height:60px;">{$usersConfig.users_reg_notallow|default='www,bbs,ftp,mail,user,users,admin,administrator,eyoucms'}</textarea>
                         <p class="notic">前台注册时禁止注册的用户名列表，以逗号(,)分隔开</p>
                     </dd>
                 </dl>
@@ -154,15 +154,14 @@
                     </table>
                 </div>
             </div>
-
             <div class="ncap-form-default">
                 <dl class="row">
                     <dt class="tit">
                         <label for="users_login_expiretime">前台登录超时</label>
                     </dt>
                     <dd class="opt">
-                        <input id="users_login_expiretime" name="users[users_login_expiretime]" value="{$info.users_login_expiretime|default=config('login_expire')}" autocomplete="off" type="text" style="width: 200px;" />&nbsp;(秒)
-                        <input type="hidden" name="users[login_expiretime_old]" value="{$info.users_login_expiretime|default=0}">
+                        <input id="users_login_expiretime" name="users[users_login_expiretime]" value="{$usersConfig.users_login_expiretime|default=config('login_expire')}" autocomplete="off" type="text" style="width: 200px;" />&nbsp;(秒)
+                        <input type="hidden" name="users[login_expiretime_old]" value="{$usersConfig.users_login_expiretime|default=0}">
                         <p class="notic">默认3600秒等于1小时，最多不超过1个月（2592000秒）</p>
                         <p class="notic2 none red" id="tips_users_login_expiretime"></p>
                     </dd>
@@ -173,35 +172,35 @@
                     </dt>
                     <dd class="opt" style="line-height: 26px;">
                         <label class="curpoin">
-                            <input type="radio" name="users[users_login_jump_type]" value="1" onclick="$('#login_jump_url_dl').hide();" {if condition="!empty($info.users_login_jump_type) && $info.users_login_jump_type == 1"}checked="checked"{/if}/>首页
+                            <input type="radio" name="users[users_login_jump_type]" value="1" onclick="$('#login_jump_url_dl').hide();" {if condition="!empty($usersConfig.users_login_jump_type) && $usersConfig.users_login_jump_type == 1"}checked="checked"{/if}/>首页
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin">
-                            <input type="radio" name="users[users_login_jump_type]" value="2" onclick="$('#login_jump_url_dl').hide();" {if condition="!isset($info.users_login_jump_type) || $info.users_login_jump_type == 2"}checked="checked"{/if}/>当前页
+                            <input type="radio" name="users[users_login_jump_type]" value="2" onclick="$('#login_jump_url_dl').hide();" {if condition="!isset($usersConfig.users_login_jump_type) || $usersConfig.users_login_jump_type == 2"}checked="checked"{/if}/>当前页
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin">
-                            <input type="radio" name="users[users_login_jump_type]" value="3" onclick="$('#login_jump_url_dl').hide();" {if condition="!empty($info.users_login_jump_type) && $info.users_login_jump_type == 3"}checked="checked"{/if}/>会员中心
+                            <input type="radio" name="users[users_login_jump_type]" value="3" onclick="$('#login_jump_url_dl').hide();" {if condition="!empty($usersConfig.users_login_jump_type) && $usersConfig.users_login_jump_type == 3"}checked="checked"{/if}/>会员中心
                         </label>
                         &nbsp;&nbsp;&nbsp;
                         <label class="curpoin">
-                            <input type="radio" name="users[users_login_jump_type]" value="4" onclick="$('#login_jump_url_dl').show();" {if condition="!empty($info.users_login_jump_type) && $info.users_login_jump_type == 4"}checked="checked"{/if}/>自定义链接
+                            <input type="radio" name="users[users_login_jump_type]" value="4" onclick="$('#login_jump_url_dl').show();" {if condition="!empty($usersConfig.users_login_jump_type) && $usersConfig.users_login_jump_type == 4"}checked="checked"{/if}/>自定义链接
                         </label>
                     </dd>
                 </dl>
-                <dl class="row {neq name='$info.users_login_jump_type' value='4'}none{/neq}" id="login_jump_url_dl">
+                <dl class="row {neq name='$usersConfig.users_login_jump_type' value='4'}none{/neq}" id="login_jump_url_dl">
                     <dt class="tit">
                         <label></label>
                     </dt>
                     <dd class="opt">
-                        <input name="users[users_login_jump_url]" value="{$info.users_login_jump_url|default=''}" autocomplete="off" placeholder="http://" type="text" class="input-txt"/>
+                        <input name="users[users_login_jump_url]" value="{$usersConfig.users_login_jump_url|default=''}" autocomplete="off" placeholder="http://" type="text" class="input-txt"/>
                         <p class="notic">请填写完整的链接</p>
                     </dd>
                 </dl>
             </div>
             <!-- config/theme -->
             {eq name="'UsersRelease@conf'|is_check_access" value="1"}
-                {if condition="1 == $userConfig.users_open_release"}
+                {if condition="1 == $usersConfig.users_open_release"}
                     <div class="hDiv htitx">
                         <div class="hDivBox">
                             <table cellspacing="0" cellpadding="0" style="width: 100%">
@@ -235,11 +234,11 @@
                             </dt>
                             <dd class="opt" style="line-height: 26px;">
                                 <label class="curpoin">
-                                    <input type="radio" name="users[is_automatic_review]" value="1" {if condition="isset($info.is_automatic_review) && $info.is_automatic_review == 1"}checked="checked"{/if}/>开启
+                                    <input type="radio" name="users[is_automatic_review]" value="1" {if condition="isset($usersConfig.is_automatic_review) && $usersConfig.is_automatic_review == 1"}checked="checked"{/if}/>开启
                                 </label>
                                 &nbsp;&nbsp;&nbsp;
                                 <label class="curpoin" title="关闭后将自动隐藏账户注册/登录的入口">
-                                    <input type="radio" name="users[is_automatic_review]" value="0" {if condition="!isset($info.is_automatic_review) || empty($info.is_automatic_review)"}checked="checked"{/if}/>关闭
+                                    <input type="radio" name="users[is_automatic_review]" value="0" {if condition="!isset($usersConfig.is_automatic_review) || empty($usersConfig.is_automatic_review)"}checked="checked"{/if}/>关闭
                                 </label>
                                 <p class="notic">开启后会员投稿将直接展示到前台文档列表</p>
                             </dd>
@@ -251,13 +250,13 @@
                             </dt>
                             <dd class="opt">
                                 <label class="curpoin">
-                                    <input name="users[is_open_posts_count]" value="1" type="radio"  {if condition="isset($info.is_open_posts_count) && $info.is_open_posts_count == 1"} checked="checked"{/if}>开启
+                                    <input name="users[is_open_posts_count]" value="1" type="radio"  {if condition="isset($usersConfig.is_open_posts_count) && $usersConfig.is_open_posts_count == 1"} checked="checked"{/if}>开启
                                 </label>
                                 <label class="curpoin">
                                 &nbsp;&nbsp;&nbsp;
-                                    <input name="users[is_open_posts_count]" value="0" type="radio" {if condition="!isset($info.is_open_posts_count) || empty($info.is_open_posts_count)"} checked="checked" {/if}>关闭
+                                    <input name="users[is_open_posts_count]" value="0" type="radio" {if condition="!isset($usersConfig.is_open_posts_count) || empty($usersConfig.is_open_posts_count)"} checked="checked" {/if}>关闭
                                 </label>
-                                <a {if condition='!isset($info.is_open_posts_count) || empty($info.is_open_posts_count)'}style="display: none;"{/if} id='UpUsersLevelBout' href="javascript:void(0);" onclick="UpUsersLevelBout();" class="ml10 ncap-btn ncap-btn-green">设置次数</a>
+                                <a {if condition='!isset($usersConfig.is_open_posts_count) || empty($usersConfig.is_open_posts_count)'}style="display: none;"{/if} id='UpUsersLevelBout' href="javascript:void(0);" onclick="UpUsersLevelBout();" class="ml10 ncap-btn ncap-btn-green">设置次数</a>
                                 <p class="notic">开启后可设置会员每日的投搞数量</p>
                             </dd>
                         </dl>
@@ -277,15 +276,6 @@
                     </div>
                     <script type="text/javascript">
                         $(function(){
-                            //关闭注册隐藏注册验证
-                            $('input[name="users[users_open_reg]"]').click(function(){
-                                var users_open_reg = $(this).val();
-                                if (1 == users_open_reg) {
-                                    $('#users_verification_dl').hide();
-                                } else {
-                                    $('#users_verification_dl').show();
-                                }
-                            });
                             $('input[name="users[is_open_posts_count]"]').click(function(){
                                 var is_open_posts_count = $(this).val();
                                 if (1 == is_open_posts_count) {
@@ -345,7 +335,7 @@
                 {neq name='$usersTplVersion' value='v3'}
                 <dl class="row">
                     <dt class="tit">
-                        <label for="uname">{eq name='$usersTplVersion' value='v2'}PC左侧菜单{else /}左侧菜单{/eq}</label>
+                        <label for="uname">{if condition="in_array($usersTplVersion, ['v2','v5'])"}PC左侧菜单{else /}左侧菜单{/if}</label>
                     </dt>
                     <dd class="opt">
                         <a href="javascript:void(0);" onclick="menu_index();" class="ncap-btn ncap-btn-green">管理</a>
@@ -353,7 +343,7 @@
                 </dl>
                 {/neq}
 
-                {eq name='$usersTplVersion' value='v2'}
+                {if condition="in_array($usersTplVersion, ['v2','v5'])"}
                 <dl class="row">
                     <dt class="tit">
                         <label for="uname">WAP底部菜单</label>
@@ -362,13 +352,13 @@
                         <a href="javascript:void(0);" onclick="bottom_menu_index();" class="ncap-btn ncap-btn-green">管理</a>
                     </dd>
                 </dl>
-                {/eq}
+                {/if}
                 <dl class="row">
                     <dt class="tit">
                         <label for="uname">主题颜色</label>
                     </dt>
                     <dd class="opt">
-                        <input type="text" name="theme[theme_color]" value="{$info.theme_color|default='#ff6565'}" id="picker" style="border-color: {$info.theme_color|default='#ff6565'};" />
+                        <input type="text" name="theme[theme_color]" value="{$usersConfig.theme_color|default='#ff6565'}" id="picker" style="border-color: {$usersConfig.theme_color|default='#ff6565'};" />
                     </dd>
                 </dl>
                 <dl class="row">
@@ -380,7 +370,7 @@
                             <option value="">默认风格</option>
                             {volist name='$tpl_theme_list' id='vo'}
                                 {notin name="$vo" value="users"}
-                                <option value="{$vo}" {eq name='$web_users_tpl_theme' value='$vo'}selected{/eq}>{$vo}</option>
+                                <option value="{$vo}" {if condition="!empty($usersConfig['web_users_tpl_theme']) && $usersConfig['web_users_tpl_theme'] == $vo"}selected{/if}>{$vo}</option>
                                 {/notin}
                             {/volist}
                         </select>
@@ -397,7 +387,6 @@
                     </div>
                 </dl>
             </div>
-
         </form>
     </div>
 </div>
@@ -408,9 +397,16 @@
             $(this).toggleClass('trSelected');
         });
 
-        // 点击刷新数据
-        $('.fa-refresh').click(function(){
-            location.href = location.href;
+        $(function(){
+            //关闭注册隐藏注册验证
+            $('input[name="users[users_open_reg]"]').click(function(){
+                var users_open_reg = $(this).val();
+                if (1 == users_open_reg) {
+                    $('#users_verification_dl').hide();
+                } else {
+                    $('#users_verification_dl').show();
+                }
+            });
         });
 
         // 颜色选择
@@ -574,7 +570,7 @@
     }
 
     function usersset(){
-        var users_open_release = {$userConfig.users_open_release|default=0};
+        var users_open_release = {$usersConfig.users_open_release|default=0};
 
         // 前台登录超时
         var users_login_expiretime_obj = $('#users_login_expiretime');

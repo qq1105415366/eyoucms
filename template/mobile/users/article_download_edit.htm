@@ -112,7 +112,7 @@
         }
         return num;
     }
-    function judgeExt(ext) {
+    function judgeExtDownload(ext) {
         var extArr = [];
         extArr = type20210507.split("|");
         var ext = ext.replace(".","");
@@ -127,7 +127,7 @@
             var file = cosFileObj[i];
             var fileName = file.name;
             var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
-            var ext = judgeExt(fileExt);
+            var ext = judgeExtDownload(fileExt);
             if (ext > -1) {
                 // 追加显示在页面上
                 var timestamp = new Date().getTime() + '-' + Math.ceil(Math.random()*100);
@@ -158,6 +158,7 @@
                 formData.append('file_tdid_' + [i], "#upload-" + timestamp);
             } else {
                 showErrorMsg('不支持选中的文件格式，仅支持' + type20210507);
+                return false;
             }
         }
         // 上传提示
@@ -196,7 +197,7 @@
                             html += '<input type="hidden" name="fileupload[file_name][]" value="'+ res.data.file_name[i] +'">';
                             html += '<input type="hidden" name="fileupload[file_size][]" value="'+ res.data.file_size[i] +'">';
                             html += '<input type="hidden" name="fileupload[file_ext][]" value="'+ res.data.file_ext[i] +'">';
-                            $(res.data.file_tdid[i]).html('<span style="color: #5FB878;">上传成功</span>' + html);
+                            $(res.data.file_tdid[i]).html('<span style="color: #5FB878;">'+ey_foreign_system10+'</span>' + html);
                         });
                     } else {
                         showErrorAlert('接口超时，部分上传腾讯云失败，请移除未上传成功的文件重新上传。');
@@ -215,7 +216,7 @@
             file=document.getElementById("qnyFile").files[i];
             var fileName = file.name;
             var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
-            var ext = judgeExt(fileExt);
+            var ext = judgeExtDownload(fileExt);
             if (ext>-1) {
                 var timestamp = new Date().getTime()+'-'+ Math.ceil(Math.random()*100);
                 arr[i] = timestamp;
@@ -238,6 +239,7 @@
                 $("#demoList").append(append_html);
             }else{
                 showErrorMsg('不支持选中的文件格式,仅支持'+type20210507);
+                return false;
             }
         }
 
@@ -307,7 +309,7 @@
                                     html += '<input type="hidden" name="fileupload[file_size][]" value="'+ file_size +'">';
 
                                     var tds = tr.children();
-                                    tds.eq(3).html('<span style="color: #5FB878;">上传成功</span>');
+                                    tds.eq(3).html('<span style="color: #5FB878;">'+ey_foreign_system10+'</span>');
                                     tds.eq(4).html('<span class="layui-btn layui-btn-xs layui-btn-danger" style="line-height:unset;height: unset;" onclick="DeleteFile(this);">移除</span>'+html);
 
                                 },
@@ -336,7 +338,7 @@
 
             var fileName = file.name;
             var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
-            var ext = judgeExt(fileExt);
+            var ext = judgeExtDownload(fileExt);
             if (ext>-1) {
                 //此时取出这个文件进行处理，这里只是显示文件名
                 var timestamp = new Date().getTime() + '-' + Math.ceil(Math.random()*100);
@@ -360,6 +362,7 @@
                 $("#demoList").append(append_html);
             }else{
                 showErrorMsg('不支持选中的文件格式,仅支持'+type20210507);
+                return false;
             }
         }
         var date = new Date();
@@ -440,7 +443,7 @@
                                         html += '<input type="hidden" name="fileupload[file_size][]" value="' + file_size + '">';
 
                                         var tds = tr.children();
-                                        tds.eq(3).html('<span style="color: #5FB878;">上传成功</span>');
+                                        tds.eq(3).html('<span style="color: #5FB878;">'+ey_foreign_system10+'</span>');
                                         tds.eq(4).html('<span class="layui-btn layui-btn-xs layui-btn-danger" style="line-height:unset;height: unset;" onclick="DeleteFile(this);">移除</span>' + html);
                                     }
 
@@ -458,6 +461,97 @@
             },
             error: function(e){
                 showErrorMsg(e.responseText);
+            }
+        });
+    }
+    function aws_download__upload() {
+        var awsFileObj = document.getElementById("awsFile").files;
+        var formData = new FormData();
+        formData.append('file_num', awsFileObj.length);
+        for (var i = 0; i < awsFileObj.length; i++) {
+            var file = awsFileObj[i];
+            var fileName = file.name;
+            var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
+            var ext = judgeExtDownload(fileExt);
+            if (ext > -1) {
+                // 追加显示在页面上
+                var timestamp = new Date().getTime() + '-' + Math.ceil(Math.random()*100);
+                var append_html = '';
+                append_html += '<tr>';
+                append_html += '<td>'+ file.name +'</td>';
+                if (1 == servername_use20210507){
+                    append_html += '<td class="th_server_name">';
+                } else {
+                    append_html += '<td class="th_server_name" style="display: none;">';
+                }
+                append_html += '<input type="text" name="fileupload[server_name][]" value="亚马逊S3服务器" id="severname_qiniuyun_'+i+'" onclick="searchServername(this);" autocomplete="off">';
+                append_html += '<div class="help-hot-list" style="display: none;" id="search_keywords_list_severname_qiniuyun_'+i+'"></div>';
+                append_html += '</td>';
+                append_html += '<td class="th_server_size">'+ (file.size/1014).toFixed(1) +' KB</td>';
+                append_html += '<td class="th_server_state" id="upload-'+ timestamp +'">上传亚马逊S3…请稍等</td>';
+                append_html += '<td><button class="layui-btn layui-btn-xs layui-btn-danger demo-delete" style="line-height:unset;height: unset;" onclick="DeleteFile(this);">移除</button>';
+                append_html += '</td>';
+                append_html += '</tr>';
+                $("#demoList").append(append_html);
+
+                // 表单提交数据
+                formData.append('file_' + [i], awsFileObj[i]);
+                formData.append('file_mime_' + [i], file.type);
+                formData.append('file_name_' + [i], file.name);
+                formData.append('file_size_' + [i], file.size);
+                formData.append('file_ext_'  + [i], fileExt);
+                formData.append('file_tdid_' + [i], "#upload-" + timestamp);
+            } else {
+                showErrorMsg('不支持选中的文件格式，仅支持' + type20210507);
+                return false;
+            }
+        }
+        // 上传提示
+        layer.msg('上传亚马逊S3……&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font id="upgrade_backup_speed">0.01</font>%，请勿刷新', {icon: 1, time: 3600000, shade: [0.2]});
+        layer.load(3, {shade: [0.1,'#fff']});
+        $.ajax({
+            type: 'post',
+            url : "{:url('plugins/Aws/aws_multiple_upload')}",
+            data: formData,
+            contentType: false,
+            processData: false,
+            dataType: 'json',
+            xhr: function () {
+                myXhr = $.ajaxSettings.xhr();
+                if (myXhr.upload) {
+                    myXhr.upload.addEventListener('progress', function(e) {
+                        var curr = e.loaded;
+                        var total = e.total;
+                        var process = parseInt(curr / total * 100);
+                        process = 100 == process ? 99 : process;
+                        $('#upgrade_backup_speed').html(process);
+
+                    });
+                }
+                return myXhr;
+            },
+            success: function(res) {
+                layer.closeAll();
+                try {
+                    if (1 == res.code) {
+                        var file_url = res.data.file_url;
+                        $.each(file_url, function(i, item) {
+                            var html = '';
+                            html += '<input type="hidden" name="fileupload[file_url][]" value="'+ file_url[i] +'">';
+                            html += '<input type="hidden" name="fileupload[file_mime][]" value="'+ res.data.file_mime[i] +'">';
+                            html += '<input type="hidden" name="fileupload[file_name][]" value="'+ res.data.file_name[i] +'">';
+                            html += '<input type="hidden" name="fileupload[file_size][]" value="'+ res.data.file_size[i] +'">';
+                            html += '<input type="hidden" name="fileupload[file_ext][]" value="'+ res.data.file_ext[i] +'">';
+                            $(res.data.file_tdid[i]).html('<span style="color: #5FB878;">'+ey_foreign_system10+'</span>' + html);
+                        });
+                    } else {
+                        showErrorAlert('接口超时，部分上传腾讯云失败，请移除未上传成功的文件重新上传。');
+                    }
+                } catch(e) {}
+            },
+            error: function(e){
+                layer.closeAll();
+                showErrorAlert(e.responseText);
             }
         });
     }
@@ -529,6 +623,8 @@
                 url = "{:url('plugins/AliyunOss/deleteOss')}";
             }else if ('cos' == type20210507) {
                 url = "{:url('plugins/Cos/deleteCos')}";
+            }else if ('aws' == type20210507) {
+                url = "{:url('plugins/Aws/deleteAws')}";
             }else{
                 url = "{:url('user/Uploadify/del_local')}";
             }

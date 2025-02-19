@@ -446,12 +446,34 @@ class Shop extends UserBase
                 if (empty($value['prom_type'])) $GlobalInfo['PromType'] = 0;
             }
 
+            // 如果安装了核销插件则执行
+            $verify_open = 0;
+            if (is_dir('./weapp/Verify/')) {
+                // 核销插件数据信息
+                $verifyInfo = model('Weapp')->getWeappList('Verify');
+                if (!empty($verifyInfo['status']) && !empty($verifyInfo['data']['openVerify'])) {
+                    $verify_open = 1;
+                }
+            }
+
             // 仅到店核销
-            if ('2' === $value['logistics_type']) $GlobalInfo['onlyVerify'] = true;
+            if ('2' === $value['logistics_type']) {
+                if (!empty($verify_open)) {
+                    $GlobalInfo['onlyVerify'] = true;
+                }
+            }
             // 仅物流配送
-            if ('1' === $value['logistics_type']) $GlobalInfo['onlyDelivery'] = true;
+            if ('1' === $value['logistics_type']) {
+                $GlobalInfo['onlyDelivery'] = true;
+            }
             // 物流配送 和 到店核销 都支持
-            if ('1,2' === $value['logistics_type']) $GlobalInfo['allLogisticsType'] = true;
+            if ('1,2' === $value['logistics_type']) {
+                if (!empty($verify_open)) {
+                    $GlobalInfo['allLogisticsType'] = true;
+                } else {
+                    $GlobalInfo['onlyDelivery'] = true;
+                }
+            }
         }
         /* END */
 
@@ -745,7 +767,11 @@ class Shop extends UserBase
 
         // 应付总金额
         $PayAmount = $GlobalInfo['PayTotalAmount'];
-
+        if(self::$provider == 'alipay') {
+            $providerStatus = 12;
+        } else{
+             $providerStatus =3;
+        }
         // 添加到订单主表
         $time      = getTime();
         $OrderData = [
@@ -757,7 +783,7 @@ class Shop extends UserBase
             'pay_time'           => 0,
             'pay_name'           => 'wechat',
             'wechat_pay_type'    => 'WeChatAppletsPay',
-            'order_terminal'     => 3,
+            'order_terminal'     => $providerStatus,
             'pay_details'        => '',
             'order_total_amount' => $GlobalInfo['PayTotalAmount'],
             'order_amount'       => $PayAmount,
@@ -786,6 +812,11 @@ class Shop extends UserBase
         // 抖音支付时更新订单支付类型
         else if (9 === intval($post['pay_type'])) {
             $OrderData['pay_name'] = 'tikTokPay';
+            $OrderData['wechat_pay_type'] = '';
+        }
+         // 支付宝支付时更新订单支付类型
+        else if (12 === intval($post['pay_type'])) {
+            $OrderData['pay_name'] = 'aliPay';
             $OrderData['wechat_pay_type'] = '';
         }
         // 百度支付时更新订单支付类型
@@ -1043,6 +1074,31 @@ class Shop extends UserBase
                     // 返回提示
                     $this->success('正在支付', null, $result);
                 }
+                // 支付宝支付
+                 else if (12 === intval($post['pay_type'])) {
+                     $openid = Db::name('wx_users')->where('wxuser_id', $post['users_id'])->value('openid');
+                   
+                    $aliPay = model('AliPay')->getAlipayAppletsPay($OrderId, $OrderData['order_code'], $OrderData['order_amount'],2,$openid);
+                     
+                    $result = [
+                        'aliPay' => $aliPay,
+                        'OrderData' => [
+                            'order_id'   => $OrderId,
+                            'order_code' => $OrderData['order_code']
+                        ]
+                    ];
+                    // 已开启的微信订阅消息模板
+                    // $where = [
+                    //    'is_open' => 1,
+                    //    'send_scene' => ['IN', [7]],
+                    //    'template_code' => ['GT', 0],
+                    // ];
+                    // $tmplData = Db::name('applets_template')->where($where)->order('send_scene asc')->getAllWithIndex('template_id');
+                    // $result['tmplData'] = $tmplData;
+                    $result['tmplData'] = [];
+                    // 返回提示
+                    $this->success('正在支付', null, $result);
+                }
                 // 百度支付
                 else if (10 === intval($post['pay_type'])) {
                     $baiduPay = model('BaiduPay')->getBaiDuAppletsPay($OrderId, $OrderData['order_code'], $OrderData['order_amount']);
@@ -1114,6 +1170,10 @@ class Shop extends UserBase
             if (9 === intval($PostData['pay_type'])) {
                 model('TikTok')->tikTokAppletsPayDealWith($order);
             }
+             // 支付宝支付
+            else if (12 === intval($PostData['pay_type'])) {
+                model('AliPay')->aliPayAppletsPayDealWith($order);
+            }
             // 百度支付
             else if (10 === intval($PostData['pay_type'])) {
                 model('BaiduPay')->baiDuAppletsPayDealWith($order);
@@ -1142,6 +1202,18 @@ class Shop extends UserBase
                     $tikTokPay = model('TikTok')->getTikTokAppletsPay($post['order_id'], $post['order_code'], $Result['order_amount'], $this->usersConfig['order_unpay_close_time']);
                     $resultData = [
                         'tikTokPay' => $tikTokPay,
+                        'OrderData' => [
+                            'order_id'   => $post['order_id'],
+                            'order_code' => $post['order_code']
+                        ]
+                    ];
+                }
+                // 支付宝支付
+                else if (12 === intval($post['pay_type'])) {
+                    $openid = Db::name('wx_users')->where('wxuser_id', $post['users_id'])->value('openid');
+                    $aliPay = model('AliPay')->getAlipayAppletsPay($post['order_id'], $post['order_code'], $Result['order_amount'],'',$openid);;
+                    $resultData = [
+                        'aliPay' => $aliPay,
                         'OrderData' => [
                             'order_id'   => $post['order_id'],
                             'order_code' => $post['order_code']
@@ -3835,6 +3907,7 @@ class Shop extends UserBase
         $payName = 'wechat' == $param['pay_type'] ? '微信' : $payName;
         $payName = 'baiduPay' == $param['pay_type'] ? '百度' : $payName;
         $payName = 'tikTokPay' == $param['pay_type'] ? '抖音' : $payName;
+        $payName = 'aliPay' == $param['pay_type'] ? '支付宝' : $payName;
         // 支付详情
         $payDetails = "会员当前级别为【{$users['level_name']}】，使用{$payName}支付【{$usersTypeManage['type_name']}】，支付金额为{$usersTypeManage['price']}";
         // 记录数据
@@ -3878,6 +3951,20 @@ class Shop extends UserBase
                 $tikTokPay = model('TikTok')->getTikTokAppletsPay($insertID, $orderNumber, $usersTypeManage['price'], 30, 'users_money', 3);
                 $resultData = [
                     'tikTokPay' => $tikTokPay,
+                    'OrderData' => [
+                        'moneyid' => $insertID,
+                        'order_number' => $orderNumber
+                    ]
+                ];
+                // 返回提示
+                $this->success('正在支付', null, $resultData);
+            }
+             // 支付宝支付
+            else if ('aliPay' == $param['pay_type']) {
+                 $openid = Db::name('wx_users')->where('wxuser_id', intval($this->users_id))->value('openid');
+                $aliPay = model('AliPay')->getAlipayAppletsPay($insertID, $orderNumber, $usersTypeManage['price'], 30, 'users_money', 3,$openid);
+                $resultData = [
+                    'aliPay' => $aliPay,
                     'OrderData' => [
                         'moneyid' => $insertID,
                         'order_number' => $orderNumber
@@ -3945,6 +4032,10 @@ class Shop extends UserBase
         // 抖音支付后续处理
         else if ('tikTokPay' == $usersMoney['pay_method']) {
             model('TikTok')->tikTokAppletsPayDealWith($usersMoney, false, 'users_money');
+        }
+         // 支付宝支付后续处理
+        else if ('aliPay' == $usersMoney['pay_method']) {
+            model('AliPay') -> aliPayAppletsPayDealWith($usersMoney, false, 'users_money');
         }
         // 百度支付后续处理
         else if ('baiduPay' == $usersMoney['pay_method']) {

@@ -51,7 +51,7 @@
 <script type="text/javascript" src="__PUBLIC__/plugins/layer-v3.1.0/layer.js?v={$version}"></script>
 <script type="text/javascript" src="__SKIN__/js/dialog/dialog.js?v={$version}" id="dialog_js"></script>
 <script src="__SKIN__/js/upgrade.js?v={$version}"></script>
-<script src="__SKIN__/js/global.js?v={$version}"></script>
+<script src="__SKIN__/js/global.js?v={$version}0"></script>
 </head>
 <body>
 {include file="public/menubox" /}
@@ -154,7 +154,7 @@
                 <div id="upgrade_filelist" style="display:none;"></div> 
                 <div id="upgrade_intro" style="display:none;"></div> 
                 <div id="upgrade_notice" style="display:none;"></div> 
-                <a class="btn btn-default dropdown-toggle" style="display: none;color:#F00;" title="不升级可能有安全隐患" href="javascript:void(0);" id="a_upgrade" data-version="" data-max_version="" data-iframe="parent" data-tips_url="{:url('Upgrade/setPopupUpgrade')}" data-upgrade_url="{:url('Upgrade/OneKeyUpgrade')}" data-check_authority="{:url('Upgrade/check_authority')}" data-php_servicemeal="{$php_servicemeal|default=0}">
+                <a class="btn btn-default dropdown-toggle" style="display: none;color:#F00;" title="不升级可能有安全隐患" href="javascript:void(0);" id="a_upgrade" data-version="" data-max_version="" data-curent_version="{$version|default='v1.0'}" data-iframe="parent" data-tips_url="{:url('Upgrade/setPopupUpgrade')}" data-upgrade_url="{:url('Upgrade/OneKeyUpgrade')}" data-check_authority="{:url('Upgrade/check_authority')}" data-php_servicemeal="{$php_servicemeal|default=0}">
                   <i class="fa fa-info-circle"></i>
                   <span class="hidden-xs">系统更新</span>
                 </a>
@@ -240,9 +240,9 @@
       function UpdateSitemap1647228884(){
           $.ajax({
               url: "__ROOT_DIR__/index.php?m=api&c=Sitemap&a=ajax_update_sitemap_html&lang="+__lang__,
-              type: 'get',
-              data: {},
-              dataType: 'JSON',
+              type: "POST",
+              dataType: "json",
+              data: {is_auto:'off', _ajax:1},
               success: function(res) {
 
               }
@@ -250,6 +250,7 @@
       }
       var sitemap_html = {$global['sitemap_html']|default=0};
       if (1 == sitemap_html) {
+          UpdateSitemap1647228884();
           window.setInterval(UpdateSitemap1647228884, 2*60*1000);
       }
 

@@ -20,8 +20,6 @@ use app\common\logic\ShopCommonLogic;
 
 class ShopService extends Base {
 
-    private $UsersConfigData = [];
-
     /**
      * 构造方法
      */
@@ -39,10 +37,6 @@ class ShopService extends Base {
 
         // common商城业务层，前后台共用
         $this->shop_common = new ShopCommonLogic();
-
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig', $this->UsersConfigData);
         
         // 模型是否开启
         $channeltype_row = \think\Cache::get('extra_global_channeltype');
@@ -80,7 +74,7 @@ class ShopService extends Base {
 
         // 是否开启货到付款
         $shopOpenOffline = 1;
-        if (0 === intval($this->UsersConfigData['shop_open_offline']) || !isset($this->UsersConfigData['shop_open_offline'])) {
+        if (0 === intval($this->usersConfig['shop_open_offline']) || !isset($this->usersConfig['shop_open_offline'])) {
             $shopOpenOffline = 0;
         }
         $this->assign('shopOpenOffline', $shopOpenOffline);
@@ -184,6 +178,28 @@ class ShopService extends Base {
         $this->assign($result);
 
         return $this->fetch();
+    }
+
+    // 退款查询(微信原路退回\...)
+    public function after_service_inquire()
+    {
+        // 查询维权订单信息
+        $service_id = input('param.service_id/d', 0);
+        $where = [
+            'status' => 7,
+            'refund_way' => 3,
+            'service_id' => intval($service_id),
+        ];
+        $service = $this->shop_order_service_db->field('refund_code, refund_remark, update_time')->where($where)->find();
+        if (empty($service)) $this->error('维权订单不存在');
+
+        // 查询微信退款信息
+        $orderTerminal = input('param.order_terminal/d', 0);
+        $result = model('PayApi')->inquireWeChatPayOrderRefund($service, $orderTerminal);
+        $this->assign('result', $result);
+
+        // 加载页面
+        return $this->fetch('after_service_inquire');
     }
 
     // 维权订单重新发货
@@ -339,7 +355,7 @@ class ShopService extends Base {
 
         // 是否开启货到付款
         $shopOpenOffline = 1;
-        if (0 === intval($this->UsersConfigData['shop_open_offline']) || !isset($this->UsersConfigData['shop_open_offline'])) {
+        if (0 === intval($this->usersConfig['shop_open_offline']) || !isset($this->usersConfig['shop_open_offline'])) {
             $shopOpenOffline = 0;
         }
         $this->assign('shopOpenOffline', $shopOpenOffline);

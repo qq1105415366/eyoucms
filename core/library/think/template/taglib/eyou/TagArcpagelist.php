@@ -44,14 +44,12 @@ class TagArcpagelist extends Base
         empty($tips) && $tips = '没有数据了';
 
         $tagidmd5 = $tagid.'_'.md5(serialize($arclistTag));
-
+        $arcmulti_db = Db::name('arcmulti');
         if (empty($pagesize)) {
-            $arcmulti_db = Db::name('arcmulti');
             $arcmultiRow = $arcmulti_db->field('pagesize')->where(['tagid'=>$tagidmd5])->find();
             $pagesize = $arcmultiRow['pagesize'];
         }
 
-        $arcmulti_db = Db::name('arcmulti');
         $arcmultiRow = $arcmulti_db->field('attstr,querysql')->where(['tagid'=>$tagidmd5])->find();
         if (empty($arcmultiRow)) {
             return [];

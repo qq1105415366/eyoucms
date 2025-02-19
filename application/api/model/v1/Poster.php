@@ -57,26 +57,23 @@ class Poster extends Base
         $this->aid = $post['aid'];
         // 商品栏目ID
         $this->typeid = $post['typeid'];
-        //版本
-        if(!empty($post['version'])) $this->version = $post['version'];
+        // 会员ID
+        $this->users_id = !empty($post['mid']) ? $post['mid'] : 0;
+        // 分销商会员ID
+        $this->usersID = !empty($post['users_id']) ? intval($post['users_id']) : 0;
+        // 分销商ID
+        $this->dealerID = !empty($post['dealer_id']) ? intval($post['dealer_id']) : 0;
         // 图片、海报保存目录
         $this->posterPath = UPLOAD_PATH . 'tmp/poster_' . $this->typeid . '_' . $this->aid . '/';
         // 存在 分销商会员ID 和 分销商ID 则执行
         if (!empty($this->usersID) && !empty($this->dealerID)) {
             $this->posterPath = UPLOAD_PATH . 'tmp/poster_' . $this->typeid . '_' . $this->aid . '_' . $this->usersID . '_' . $this->dealerID . '/';
         }
-        // 会员ID
-        $this->users_id = !empty($post['mid']) ? $post['mid'] :0;
-        if ('v2' == $this->version){
-            $this->users = $this->getUsersInfo();
-        }
-        // 分销商会员ID
-        $this->usersID = !empty($post['users_id']) ? intval($post['users_id']) : 0;
-        // 分销商ID
-        $this->dealerID = !empty($post['dealer_id']) ? intval($post['dealer_id']) : 0;
+        // 版本
+        if (!empty($post['version'])) $this->version = $post['version'];
+        if ('v2' == $this->version) $this->users = $this->getUsersInfo();
         // 模型ID
         $this->channel = intval($channel);
-
         // 背景图片处理
         if (1 == $this->channel) {
             $this->posterImage = './public/static/common/images/article-bg.png';
@@ -117,6 +114,10 @@ class Poster extends Base
             }
             if (!empty($post['seckill_goods_id'])) {
                 $scene = 'gid=' . $post['seckill_goods_id'];
+            }
+            // 存在 分销商会员ID 和 分销商ID 则执行
+            if (!empty($this->usersID) && !empty($this->dealerID)) {
+                $scene .= '&u_id=' . $this->usersID . '&d_id=' . $this->dealerID;
             }
             $width = '430';
             $this->postData = compact('page', 'scene', 'width');

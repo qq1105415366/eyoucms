@@ -37,9 +37,9 @@ class ProductSpecValueHandle extends Model
             $saveAll = $insertAll = [];
             $keys = rand(1, 9);
             foreach ($post['spec_price'] as $kkk => $vvv) {
-                if (!empty($post['value_ids'][$kkk]['value_id'])) {
+                if (!empty($post['handle_ids'][$kkk]['handle_id'])) {
                     $saveAll[] = [
-                        'value_id'      => intval($post['value_ids'][$kkk]['value_id']),
+                        'handle_id'      => intval($post['handle_ids'][$kkk]['handle_id']),
                         'aid'           => $aid,
                         'spec_value_id' => $kkk,
                         'spec_price'    => !empty($vvv['users_price']) ? $vvv['users_price'] : 0,

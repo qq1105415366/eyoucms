@@ -1,4 +1,4 @@
 <IfModule mod_rewrite.c>
     RewriteCond % !^$
-    RewriteRule ^.*\.(php|php3|php4|php5|php6|php7|php8|pht|phtml|asp|aspx|jsp|exe|js|perl|cgi|asa|sql) - [F]
+    RewriteRule ^.*\.(php|php3|php4|php5|php6|php7|php8|pht|phtml|asp|aspx|jsp|exe|htm|html|js|perl|cgi|asa|sql) - [F]
 </IfModule>

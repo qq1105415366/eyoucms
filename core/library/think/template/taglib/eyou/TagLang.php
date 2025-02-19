@@ -80,7 +80,7 @@ class TagLang extends Base
                 ->cache(true, 0, 'language')
                 ->find();
             $arr['title']   = $langInfo['title'];
-            $arr['logo']   = get_default_pic("/public/static/common/images/language/{$langInfo['mark']}.gif");
+            $arr['logo']   = ROOT_DIR . "/public/static/common/images/language/{$langInfo['mark']}.gif";
             $data[$home_lang] = $arr;
         }
         if (preg_match('/^([^a-z0-9]*)mark$/i', $const, $match)) {

@@ -118,12 +118,9 @@ if ($main_lang == $admin_lang) {
 /*--end*/
 
 /*回收站URl*/
-$recyclebin_index_arr = array();
-if ($main_lang == $admin_lang) {
-    $recyclebin_index_arr = array(
-        'is_menu' => 1,
-    );
-}
+$recyclebin_index_arr = array(
+    'is_menu' => 1,
+);
 /*--end*/
 
 /*插件应用URl*/
@@ -877,7 +874,7 @@ return  array(
                         'action'=>'index',
                         'url'=>'', 
                         'target'=>'workspace',
-                        'icon'=>'iconfont e-anquanshezhi',
+                        'icon'=>'iconfont e-anquan',
                         'grade'=>2,
                         'is_menu'=>0,
                         'is_modules'=>1,

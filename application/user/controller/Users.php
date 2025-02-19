@@ -67,11 +67,10 @@ class Users extends Base
 
         $isCount = Db::name('users_menu')->where([
             'mca'   => 'plugins/PointsShop/index',
-            'lang'  => 'cn',
         ])->count();
         if (empty($isCount)) {
             Db::name('users_menu')->add([
-                'title'         => '积分兑换',
+                'title'         => '积分商城',
                 'mca'           => 'plugins/PointsShop/index',
                 'is_userpage'   => 0,
                 'sort_order'    => 100,
@@ -168,6 +167,7 @@ class Users extends Base
         // 多语言
         $condition_bottom['a.status'] = array('eq', 1);
         $condition_bottom['a.display'] = array('eq', 1);
+        $condition_bottom['a.lang'] = $this->home_lang;
         $bottom_menu_list = Db::name('users_bottom_menu')->field('a.*')
             ->alias('a')
             ->where($condition_bottom)
@@ -575,10 +575,8 @@ EOF;
             if (empty($eyou_referurl)) {
                 $eyou_referurl = url('user/Users/index', '', true, true);
             }
-            session('users_id', $Users['users_id']);
-            session('users', $Users);
+            // 登录后的业务逻辑
             session('eyou_referurl', '');
-            cookie('users_id', $Users['users_id']);
             model('EyouUsers')->loginAfter($Users);
             $this->redirect($eyou_referurl);
         } else {
@@ -634,11 +632,9 @@ EOF;
                 if (empty($eyou_referurl)) {
                     $eyou_referurl = url('user/Users/index', '', true, true);
                 }
-                $GetUsers = $this->users_db->where('users_id', $users_id)->find();
-                session('users_id', $GetUsers['users_id']);
-                session('users', $GetUsers);
+                // 登录后的业务逻辑
                 session('eyou_referurl', '');
-                cookie('users_id', $GetUsers['users_id']);
+                $GetUsers = $this->users_db->where('users_id', $users_id)->find();
                 model('EyouUsers')->loginAfter($GetUsers);
                 $this->redirect($eyou_referurl);
             } else {
@@ -794,12 +790,10 @@ EOF;
         /*微信登录插件 - 判断是否显示微信登录按钮*/
         $weapp_wxlogin = 0;
         if (is_dir('./weapp/WxLogin/')) {
-            $wx         = Db::name('weapp')->field('data,status,config')->where(['code' => 'WxLogin'])->find();
-            if ($wx) {
-                $wx['data'] = unserialize($wx['data']);
-                if ($wx['status'] == 1 && $wx['data']['login_show'] == 1) {
-                    $weapp_wxlogin = 1;
-                }
+            $wx = Db::name('weapp')->field('data, status, config')->where(['code' => 'WxLogin'])->find();
+            if (!empty($wx)) {
+                $wx['data'] = !empty($wx['data']) ? unserialize($wx['data']) : [];
+                if ($wx['status'] == 1 && !empty($wx['data']['login_show']) && $wx['data']['login_show'] == 1) $weapp_wxlogin = 1;
                 // 使用场景 0 PC+手机 1 手机 2 PC
                 $wx['config'] = json_decode($wx['config'], true);
                 if (isMobile() && !in_array($wx['config']['scene'], [0,1])) {
@@ -811,16 +805,35 @@ EOF;
         }
         $this->assign('weapp_wxlogin', $weapp_wxlogin);
         /*end*/
+        
+        /*谷歌登录插件 - 判断是否显示谷歌登录按钮*/
+        $googledata = [];
+        $weapp_googlelogin = 0;
+        if (is_dir('./weapp/GoogleLogin/')) {
+            $googledata         = Db::name('weapp')->field('data,status,config')->where(['code' => 'GoogleLogin'])->find();
+            if (!empty($googledata)) {
+                $googledata['data'] = !empty($googledata['data']) ? unserialize($googledata['data']) : [];
+                if ($googledata['status'] == 1 && !empty($googledata['data']['login_show']) && $googledata['data']['login_show'] == 1) $weapp_googlelogin = 1;
+                // 使用场景 0 PC+手机 1 手机 2 PC
+                $googledata['config'] = json_decode($googledata['config'], true);
+                if (isMobile() && !in_array($googledata['config']['scene'], [0,1])) {
+                    $weapp_googlelogin = 0;
+                } else if (!isMobile() && !in_array($googledata['config']['scene'], [0,2])) {
+                    $weapp_googlelogin = 0;
+                }
+            }
+        }
+        $this->assign('googledata', $googledata);
+        $this->assign('weapp_googlelogin', $weapp_googlelogin);
+        /*end*/
 
         /*QQ登录插件 - 判断是否显示QQ登录按钮*/
         $weapp_qqlogin = 0;
         if (is_dir('./weapp/QqLogin/')) {
             $qq         = Db::name('weapp')->field('data,status,config')->where(['code' => 'QqLogin'])->find();
             if (!empty($qq)) {
-                $qq['data'] = unserialize($qq['data']);
-                if ($qq['status'] == 1 && $qq['data']['login_show'] == 1) {
-                    $weapp_qqlogin = 1;
-                }
+                $qq['data'] = !empty($qq['data']) ? unserialize($qq['data']) : [];
+                if ($qq['status'] == 1 && !empty($qq['data']['login_show']) && $qq['data']['login_show'] == 1) $weapp_qqlogin = 1;
                 // 使用场景 0 PC+手机 1 手机 2 PC
                 $qq['config'] = json_decode($qq['config'], true);
                 if (isMobile() && !in_array($qq['config']['scene'], [0,1])) {
@@ -838,10 +851,8 @@ EOF;
         if (is_dir('./weapp/Wblogin/')) {
             $wb         = Db::name('weapp')->field('data,status,config')->where(['code' => 'Wblogin'])->find();
             if (!empty($wb)) {
-                $wb['data'] = unserialize($wb['data']);
-                if ($wb['status'] == 1 && $wb['data']['login_show'] == 1) {
-                    $weapp_wblogin = 1;
-                }
+                $wb['data'] = !empty($wb['data']) ? unserialize($wb['data']) : [];
+                if ($wb['status'] == 1 && !empty($wb['data']['login_show']) && $wb['data']['login_show'] == 1) $weapp_wblogin = 1;
                 // 使用场景 0 PC+手机 1 手机 2 PC
                 $wb['config'] = json_decode($wb['config'], true);
                 if (isMobile() && !in_array($wb['config']['scene'], [0,1])) {
@@ -1248,7 +1259,8 @@ EOF;
 
                 session('users_id', $users_id);
                 if (session('users_id')) {
-                    cookie('users_id', $users_id);
+                    // 注册成功后的业务逻辑
+                    model('EyouUsers')->regAfter($users_id);
                     if (empty($users_verification)) {
                         // 无需审核，直接登陆
                         $url = !empty($referurl) ? $referurl : url('user/Users/centre');
@@ -1318,6 +1330,27 @@ EOF;
         }
         $this->assign('weapp_wxlogin', $weapp_wxlogin);
         /*end*/
+        
+        /*谷歌登录插件 - 判断是否显示谷歌登录按钮*/
+        $googledata = [];
+        $weapp_googlelogin = 0;
+        if (is_dir('./weapp/GoogleLogin/')) {
+            $googledata         = Db::name('weapp')->field('data,status,config')->where(['code' => 'GoogleLogin'])->find();
+            if (!empty($googledata)) {
+                $googledata['data'] = !empty($googledata['data']) ? unserialize($googledata['data']) : [];
+                if ($googledata['status'] == 1 && !empty($googledata['data']['login_show']) && $googledata['data']['login_show'] == 1) $weapp_googlelogin = 1;
+                // 使用场景 0 PC+手机 1 手机 2 PC
+                $googledata['config'] = json_decode($googledata['config'], true);
+                if (isMobile() && !in_array($googledata['config']['scene'], [0,1])) {
+                    $weapp_googlelogin = 0;
+                } else if (!isMobile() && !in_array($googledata['config']['scene'], [0,2])) {
+                    $weapp_googlelogin = 0;
+                }
+            }
+        }
+        $this->assign('googledata', $googledata);
+        $this->assign('weapp_googlelogin', $weapp_googlelogin);
+        /*end*/
 
         /*QQ登录插件 - 判断是否显示QQ登录按钮*/
         $weapp_qqlogin = 0;
@@ -1356,6 +1389,12 @@ EOF;
         }
         $this->assign('weapp_wblogin', $weapp_wblogin);
         /*end*/
+
+        // $rand_token_name = '__token__reg_'.get_rand_str(32, 0, 1);
+        // $rand_token_value = request()->token($rand_token_name);
+        // session(md5('users_mobile_reg_token'), $rand_token_name);
+        // $this->assign('rand_token_name', $rand_token_name);
+        // $this->assign('rand_token_value', $rand_token_value);
 
         /*等保密码复杂度验证 start*/
         $pwdJsCode = '';
@@ -1480,7 +1519,8 @@ EOF;
                 session('users_id', $users_id);
 
                 if (session('users_id')) {
-                    cookie('users_id', $users_id);
+                    // 注册成功后的业务逻辑
+                    model('EyouUsers')->regAfter($users_id);
                     if (empty($users_verification)) {
                         // 无需审核，直接登陆
                         $url = !empty($referurl) ? $referurl : url('user/Users/centre');
@@ -1649,7 +1689,7 @@ EOF;
             } else if (empty($post['password']) || !trim($post['password'])) {
                 $this->error(foreign_lang('users44', $this->home_lang));
             } else if ($post['password'] != $post['password2']) {
-                $this->error('重复密码与新密码不一致！');
+                $this->error(show_foreign_lang('重复密码与新密码不一致！'));
             }
 
             $users = $this->users_db->field('password')->where([
@@ -1658,7 +1698,7 @@ EOF;
             if (!empty($users)) {
                 $encry_password = func_encrypt($post['oldpassword'], false, pwd_encry_type($users['password']));
                 if (strval($users['password']) !== strval($encry_password)) {
-                    $this->error('原密码错误，请重新输入！');
+                    $this->error(show_foreign_lang('原密码错误，请重新输入！'));
                 }
 
                 $r = $this->users_db->where([
@@ -1668,11 +1708,11 @@ EOF;
                     'update_time' => getTime(),
                 ]);
                 if ($r) {
-                    $this->success('修改成功');
+                    $this->success(show_foreign_lang('操作成功'));
                 }
-                $this->error('修改失败');
+                $this->error(show_foreign_lang('操作失败'));
             }
-            $this->error('登录失效，请重新登录！');
+            $this->error(show_foreign_lang('登录失效，请重新登录！'));
         }
 
         return $this->fetch('users_change_pwd');
@@ -2061,12 +2101,12 @@ EOF;
                 if (is_http_url($head_pic_url)) {
                     $data = getWeappObjectBucket();
                     if (!empty($data['domain']) && !stristr($head_pic_url, "//{$data['domain']}/")) {
-                        $this->error('上传失败');
+                        $this->error(show_foreign_lang('上传失败'));
                     }
                 } else {
                     $head_pic = handle_subdir_pic($head_pic_url, 'img', false, true);
                     if (!is_http_url($head_pic) && !file_exists('.'.$head_pic)) {
-                        $this->error('上传失败');
+                        $this->error(show_foreign_lang('上传失败'));
                     }
                 }
                 
@@ -2098,11 +2138,11 @@ EOF;
                         $head_pic_url = func_thumb_img($head_pic_url, 250, 250);
                     }
 
-                    $this->success('上传成功', null, ['head_pic'=>$head_pic_url]);
+                    $this->success(show_foreign_lang('上传成功'), null, ['head_pic'=>$head_pic_url]);
                 }
             }
         }
-        $this->error('上传失败');
+        $this->error(show_foreign_lang('上传失败'));
     }
 
     //绑定邮箱
@@ -2314,6 +2354,12 @@ EOF;
 
         $title = input('param.title/s');
         $this->assign('title', $title);
+
+        // $rand_token_name = '__token__bind_'.get_rand_str(32, 0, 1);
+        // $rand_token_value = request()->token($rand_token_name);
+        // session(md5('bind_token'), $rand_token_name);
+        // $this->assign('rand_token_name', $rand_token_name);
+        // $this->assign('rand_token_value', $rand_token_value);
         
         return $this->fetch();
     }
@@ -2321,8 +2367,8 @@ EOF;
     // 退出登陆
     public function logout()
     {
-        // 清除微信授权 Cookie
-        model('ShopPublicHandle')->weChatauthorizeCookie($this->users_id, 'del');
+        // 退出之前的业务逻辑
+        model('EyouUsers')->logoutAfter($this->users_id);
 
         // 清除登录信息
         session('users_id', null);

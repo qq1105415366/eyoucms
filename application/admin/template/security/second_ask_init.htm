@@ -3,12 +3,6 @@
 <div id="toolTipLayer" style="position: absolute; z-index: 9999; display: none; visibility: visible; left: 95px; top: 573px;"></div>
 <div id="append_parent"></div>
 <div id="ajaxwaitid"></div>
-<style type="text/css">
-    #layerid_1645756024 textarea
-    {
-        height: 220px;
-    }
-</style>
 <div class="page" style="min-width:auto; ">
     <div class="flexigrid htitx">
         <form class="form-horizontal" id="handlepost" method="post" enctype="multipart/form-data">
@@ -122,6 +116,10 @@
                                         _parent.newtpl('lists');
                                     } else if ('arctype_view' == source) {
                                         _parent.newtpl('view');
+                                    } else if ('theme_login' == source) {
+                                        _parent.login_tplname_add();
+                                    } else if ('theme_welcome' == source) {
+                                        _parent.welcome_tplname_add();
                                     }
                                     _parent.layer.close(parentObj);
                                 }

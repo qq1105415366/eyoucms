@@ -50,6 +50,7 @@ class TagTag extends Base
                 ->alias('a')
                 ->field('a.*, a.tid AS tagid')
                 ->where($condition)
+                ->order('a.update_time asc')
                 ->limit($row)
                 ->select();
 

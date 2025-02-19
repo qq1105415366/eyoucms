@@ -210,7 +210,7 @@ return array (
   'shipping_fee' => 
   array (
     'name' => 'shipping_fee',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -219,7 +219,7 @@ return array (
   'order_total_amount' => 
   array (
     'name' => 'order_total_amount',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -228,7 +228,7 @@ return array (
   'order_amount' => 
   array (
     'name' => 'order_amount',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -310,6 +310,15 @@ return array (
   array (
     'name' => 'prom_type',
     'type' => 'tinyint(1) unsigned',
+    'notnull' => false,
+    'default' => '0',
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'waybill_type' => 
+  array (
+    'name' => 'waybill_type',
+    'type' => 'tinyint(1)',
     'notnull' => false,
     'default' => '0',
     'primary' => false,
@@ -435,7 +444,7 @@ return array (
   'coupon_price' => 
   array (
     'name' => 'coupon_price',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,

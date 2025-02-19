@@ -51,20 +51,15 @@
                                                 <div class="user-info">
                                                     <span class="user-name">{$users.nickname}</span>
                                                     {switch name="$users.level" }
-                                                    {case value="1"} <img
-                                                        src="{eyou:static file='users/skin/images/person-vip1.png' /}">
+                                                    {case value="1"} <img src="{eyou:static file='users/skin/images/person-vip1.png' /}">
                                                     {/case}
-                                                    {case value="2"} <img
-                                                        src="{eyou:static file='users/skin/images/person-vip2.png' /}">
+                                                    {case value="2"} <img src="{eyou:static file='users/skin/images/person-vip2.png' /}">
                                                     {/case}
-                                                    {case value="3"} <img
-                                                        src="{eyou:static file='users/skin/images/person-vip3.png' /}">
+                                                    {case value="3"} <img src="{eyou:static file='users/skin/images/person-vip3.png' /}">
                                                     {/case}
                                                     {/switch}
                                                 </div>
-                                                <div class="user-tips">{$users.level_name}&emsp;&emsp;{eyou:neq
-                                                    name='$users.level' value='1'} 剩余会员天数：<span
-                                                        class="red">{$users.maturity_date}</span> {/eyou:neq}</div>
+                                                <div class="user-tips"><span>{$users.level_name}</span>&emsp;{eyou:neq name='$users.level' value='1'} 会员剩余天数：{$users.maturity_date} {/eyou:neq}</div>
                                             </div>
                                         </div>
                                         <form name='theForm' id="theForm">
@@ -80,14 +75,9 @@
                                                             {notempty name='$vo.activity'}
                                                             <i class="icon-recomd">{$vo.activity}</i>
                                                             {/notempty}
-                                                            <input type="radio" style="display: none;" {eyou:eq
-                                                                name='$key' value='0' } checked {/eyou:eq}
-                                                                name="type_id" value="{$vo.type_id}" />
+                                                            <input type="radio" style="display: none;" {eyou:eq name='$key' value='0' } checked {/eyou:eq} name="type_id" value="{$vo.type_id}" />
                                                             <div class="pc-vip-name">{$vo.type_name}</div>
-                                                            <div class="money">
-                                                                {$vo.price}<em class="money-rmb-yj">元</em>
-                                                                <span class="money-rmb-yj">/
-                                                                    {$member_limit_arr[$vo['limit_id']]|default=''}</span>
+                                                            <div class="money">{$vo.price}<em class="money-rmb-yj">元</em><span class="money-rmb-yj">/ {$member_limit_arr[$vo['limit_id']]|default=''}</span>
                                                             </div>
                                                         </div>
                                                         {/eyou:volist}
@@ -99,12 +89,8 @@
                                                 <div class="el-form level-row">
                                                     {eyou:eq name="$eyou.field.pay_balance_open" value="1"}
                                                     <label class="radio-label">
-                                                        <span class="hint hint-top"
-                                                            data-hint="拥有余额：￥{$users.users_money}"><img
-                                                                src="{eyou:static file='users/skin/images/pay_yiyou.png' /}"
-                                                                alt="余额支付"></span>
-                                                        <input class="radio" type="radio" name='pay_id' value="0"
-                                                            id="balance_pay_id">
+                                                        <span class="hint hint-top" data-hint="拥有余额：￥{$users.users_money}"><img src="{eyou:static file='users/skin/images/pay_yiyou.png' /}" alt="余额支付"></span>
+                                                        <input class="radio" type="radio" name='pay_id' value="0" id="balance_pay_id">
                                                         <span class="check-mark"></span>
                                                         <input type="hidden" name='pay_mark[0]' value="balance">
                                                     </label>
@@ -114,12 +100,9 @@
                                                     {eyou:notempty name="$vo.pay_id"}
                                                     <label class="radio-label">
                                                         <span><img src="{$vo.pay_img}" alt="{$vo.pay_name}"></span>
-                                                        <input class="radio" type="radio" name='pay_id'
-                                                            value="{$vo.pay_id}" {eyou:eq name="$key" value="0" }
-                                                            checked {/eyou:eq}>
+                                                        <input class="radio" type="radio" name='pay_id' value="{$vo.pay_id}" {eyou:eq name="$key" value="0" } checked {/eyou:eq}>
                                                         <span class="check-mark"></span>
-                                                        <input type="hidden" name='pay_mark[{$vo.pay_id}]'
-                                                            value="{$vo.pay_mark}">
+                                                        <input type="hidden" name='pay_mark[{$vo.pay_id}]' value="{$vo.pay_mark}">
                                                     </label>
                                                     {/eyou:notempty}
                                                     {$vo.hidden}
@@ -131,10 +114,8 @@
                                                 </div>
                                             </div>
                                             <div class="el-row mt40 ">
-                                                <input type="hidden" name='order_number' id="UnifiedNumber"
-                                                    value="{$OrderNumber}">
-                                                <a href="JavaScript:void(0);" id='Pay' onclick="UsersUpgradePay(this);"
-                                                    class="button3 el-button--primary">
+                                                <input type="hidden" name='order_number' id="UnifiedNumber" value="{$OrderNumber}">
+                                                <a href="JavaScript:void(0);" id='Pay' onclick="UsersUpgradePay(this);" class="button3 el-button--primary">
                                                     立即支付
                                                 </a>
                                             </div>
@@ -145,8 +126,7 @@
                                             <p><strong>1.</strong>会员服务为虚拟产品，购买后不支持退款，请您理解。</p>
                                             <p><strong>2.</strong>在会员有效期内，用户可以免费下载VIP对应级别产品。</p>
                                             <p><strong>3.</strong>重复购买会员服务，会员有效期将在原有基础上顺延。</p>
-                                            <p><strong>4.</strong>禁止用户使用任何方式，利用本站资源，为他人提供有偿服务，一经发现，本站有权查封该账号，并追究法律责任。
-                                            </p>
+                                            <p><strong>4.</strong>禁止用户使用任何方式，利用本站资源，为他人提供有偿服务，一经发现，本站有权查封该账号，并追究法律责任。 </p>
                                         </div>
                                         <!-- 开通注意事项 End -->
                                     </div>

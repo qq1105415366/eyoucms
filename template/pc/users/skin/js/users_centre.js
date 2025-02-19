@@ -18,7 +18,7 @@ function uploadHeadPicFile(obj) {
         success: function (res) {
             layer.closeAll();
             if (res.state == 'SUCCESS') {
-                showSuccessMsg('上传成功');
+                showSuccessMsg(ey_foreign_system10);
                 $('#uploadHeadPicDdit').val(1);
                 $('#uploadHeadPic').val(res.url);
                 $('#uploadHeadPicImg').attr('src', res.url);

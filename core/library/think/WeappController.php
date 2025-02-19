@@ -126,6 +126,11 @@ class WeappController
             }
         }
 
+        /*多语言*/
+        $this->home_lang = get_home_lang();
+        $this->admin_lang = get_admin_lang();
+        $this->main_lang = get_main_lang();
+        // 系统版本号
         null === $this->version && $this->version = getCmsVersion();
         null === $this->is_mobile && $this->is_mobile = isMobile() ? 1 : 0;
 
@@ -144,12 +149,12 @@ class WeappController
 
         $class = get_class($this); // 返回对象的类名
         $wmcArr = explode('\\', $class);
-        $this->weapp_module_name = $this->request->param('sm')?:$wmcArr[1]; // 当前插件模块名称
-        $this->weapp_controller_name = $this->request->param('sc')?:$wmcArr[3]; // 当前插件控制器名称
-        $this->weapp_action_name = $this->request->param('sa')?:'index'; // 当前插件操作名称是
-        !defined('WEAPP_MODULE_NAME') && define('WEAPP_MODULE_NAME',$this->weapp_module_name);  // 当前模块名称是
-        !defined('WEAPP_CONTROLLER_NAME') && define('WEAPP_CONTROLLER_NAME',$this->weapp_controller_name); // 当前控制器名称
-        !defined('WEAPP_ACTION_NAME') && define('WEAPP_ACTION_NAME',$this->weapp_action_name); // 当前操作名称是
+        $this->weapp_module_name = $this->request->param('sm') ? $this->request->param('sm') : $wmcArr[1]; // 当前插件模块名称
+        $this->weapp_controller_name = $this->request->param('sc') ? $this->request->param('sc') : $wmcArr[3]; // 当前插件控制器名称
+        $this->weapp_action_name = $this->request->param('sa') ? $this->request->param('sa') : 'index'; // 当前插件操作名称是
+        !defined('WEAPP_MODULE_NAME') && define('WEAPP_MODULE_NAME', $this->weapp_module_name);  // 当前模块名称是
+        !defined('WEAPP_CONTROLLER_NAME') && define('WEAPP_CONTROLLER_NAME', $this->weapp_controller_name); // 当前控制器名称
+        !defined('WEAPP_ACTION_NAME') && define('WEAPP_ACTION_NAME', $this->weapp_action_name); // 当前操作名称是
         !defined('PREFIX') && define('PREFIX',Config::get('database.prefix')); // 数据库表前缀
         !defined('SYSTEM_ADMIN_LANG') && define('SYSTEM_ADMIN_LANG', Config::get('global.admin_lang')); // 后台语言变量
         !defined('SYSTEM_HOME_LANG') && define('SYSTEM_HOME_LANG', Config::get('global.home_lang')); // 前台语言变量
@@ -161,9 +166,6 @@ class WeappController
 
         $this->view    = View::instance($template);
 
-        $this->home_lang = get_home_lang();
-        $this->admin_lang = get_admin_lang();
-        $this->main_lang = get_main_lang();
         $this->assign('home_lang', $this->home_lang);
         $this->assign('admin_lang', $this->admin_lang);
         $this->assign('main_lang', $this->main_lang);

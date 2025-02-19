@@ -30,8 +30,9 @@ if (!function_exists('security_verify_func'))
         }
 
         $security = tpSetting('security');
-        $security_verifyfunc = !empty($security['security_verifyfunc']) ? json_decode($security['security_verifyfunc'], true) : ['Filemanager@*','Arctype@ajax_newtpl','Archives@ajax_newtpl'];
-        if (in_array($ctl_act, ['Filemanager@*','Arctype@ajax_newtpl','Archives@ajax_newtpl'])) {
+        $ctl_act_arr = ['Filemanager@*','Arctype@ajax_newtpl','Archives@ajax_newtpl','Index@ajax_theme_tplfile_add','Index@ajax_theme_tplfile_edit'];
+        $security_verifyfunc = !empty($security['security_verifyfunc']) ? json_decode($security['security_verifyfunc'], true) : $ctl_act_arr;
+        if (in_array($ctl_act, $ctl_act_arr)) {
             return true;
         } else {
             if (!empty($security['security_ask_open'])) {
@@ -117,23 +118,6 @@ if (!function_exists('del_html_dirpath')){
         }
 
         return $data;
-    }
-}
-
-if (!function_exists('is_adminlogin')) 
-{
-    /**
-     * 检验登陆
-     * @param
-     * @return bool
-     */
-    function is_adminlogin(){
-        $admin_id = session('admin_id');
-        if(isset($admin_id) && $admin_id > 0){
-            return $admin_id;
-        }else{
-            return false;
-        }
     }
 }
 
@@ -812,12 +796,18 @@ if (!function_exists('schemaAllTable'))
      */
     function schemaAllTable()
     {
-        $dbtables = \think\Db::query('SHOW TABLE STATUS');
+        $db_type = config('database.type');
+        if ($db_type == 'dm') { // 达梦优化
+            $dbtables = \think\Db::query('SELECT TABLE_NAME FROM USER_TABLES');
+        } else {
+            $dbtables = \think\Db::query('SHOW TABLE STATUS');
+        }
         $tableList = [];
         foreach ($dbtables as $k => $v) {
-            if (preg_match('/^'.PREFIX.'/i', $v['Name'])) {
+            $tablename = ($db_type == 'dm') ? $v['TABLE_NAME'] : $v['Name'];
+            if (preg_match('/^'.PREFIX.'/i', $tablename)) {
                 /*调用命令行的指令*/
-                \think\Console::call('optimize:schema', ['--table', $v['Name']]);
+                \think\Console::call('optimize:schema', ['--table', $tablename]);
                 /*--end*/
             }
         }
@@ -1403,118 +1393,5 @@ if (!function_exists('handle_weapp_url'))
         }
 
         return $str_url;
-    }
-}
-
-if (!function_exists('double_login_open')) {
-    /**
-     * 判断是否自动开启登录两步验证
-     */
-    function double_login_open()
-    {
-        return false;
-        
-        $double_open = false;
-        $sms_info = \think\Db::name('sms_template')->field('sms_sign,sms_tpl_code,tpl_content')->where(["send_scene"=>2,"sms_type"=>1,'lang'=>get_admin_lang()])->find();
-        if (!empty($sms_info)) {
-            $sms_open = true;
-            foreach ($sms_info as $key => $val) {
-                if (empty($val)) {
-                    $sms_open = false;
-                    break;
-                }
-            }
-            if (!empty($sms_open)) {
-                $list = \think\Db::name('admin')->field('mobile')->where(['status'=>1])->select();
-                foreach ($list as $key => $val) {
-                    if (!empty($val['mobile'])) {
-                        $double_open = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return $double_open;
-    }
-}
-
-if (!function_exists('double_login_logic')) {
-    /**
-     * 两步登录验证逻辑
-     */
-    function double_login_logic($type = '', $vars = [])
-    {
-        $redata = [];
-        if ('login_view' == $type) {
-            $double_check = input('param.double_check/d', 0);
-            if (1 == $double_check) {
-                $admin_login_double_check = session('admin_login_double_check');
-                if (!empty($admin_login_double_check)) {
-                    $assign_data['double_check'] = $double_check;
-                    $assign_data['admin_info'] = \think\Db::name('admin')->field('password', true)->where(['user_name'=>$admin_login_double_check])->find();
-                    $redata['assign_data'] = $assign_data;
-                    $redata['viewfile'] = 'admin/login_double';
-                }
-            } else {
-                session('admin_login_double_check', null);
-            }
-        }
-        else if ('login_action_begin' == $type) {
-            if (empty($vars['mobile'])) {
-                $redata['code'] = 0;
-                $redata['msg'] = '拒绝登录，当前管理员没有手机号码！';
-            } else {
-                session('isset_author', null); // 内置勿动
-                session('admin_login_double_check', $vars['user_name']);
-                $redata['url'] = url('Admin/login', ['double_check'=>1]);
-            }
-        }
-
-        return $redata;
-    }
-}
-
-if (!function_exists('login_double')) {
-    /**
-     * 两步验证
-     */
-    function login_double()
-    {
-        $post = input('post.');
-        if (empty($post['double_code'])) {
-            return ['code'=>0, 'msg'=>'请输入短信验证码'];
-        }
-        $admin_info = \think\Db::name('admin')->where(['user_name'=>session('admin_login_double_check')])->find();
-        if (!empty($admin_info)) {
-            // 验证短信验证码
-            $RecordWhere = [
-                'source' => 2,
-                'mobile' => $admin_info['mobile'],
-                'code' => $post['double_code'],
-                'is_use' => 0,
-                'lang'   => get_admin_lang(),
-            ];
-            $is_verify = \think\Db::name('sms_log')->where($RecordWhere)->find();
-            if (!empty($is_verify)){
-                $RecordData  = [
-                    'is_use' => 1,
-                    'update_time' => getTime()
-                ];
-                // 更新数据
-                \think\Db::name('sms_log')->where($RecordWhere)->update($RecordData);
-            }else{
-                return ['code'=>0, 'msg'=>'短信验证码已失效'];
-            }
-
-            $admin_info = adminLoginAfter($admin_info['admin_id'], session_id());
-
-            adminLog('后台登录');
-            session('admin_login_double_check', null);
-            $url = request()->baseFile();
-            return ['code'=>1, 'msg'=>'登录成功', 'url'=>$url];
-        } else {
-            $url = request()->baseFile();
-            return ['code'=>0, 'msg'=>'页面失效，返回登录', 'url'=>$url];
-        }
     }
 }

@@ -33,7 +33,7 @@ class Guestbook extends Model
      * 自定义的一个函数 用于数据删除后做的相应处理操作, 使用时手动调用
      * @param int $aid
      */
-    public function afterDel($aidArr = array())
+    public function afterDel($aidArr = array(), $form_type = 0)
     {
         if (is_string($aidArr)) {
             $aidArr = explode(',', $aidArr);
@@ -42,7 +42,7 @@ class Guestbook extends Model
         // 同时删除属性内容
         Db::name('guestbook_attr')->where([
                 'aid'   => ['IN', $aidArr],
-                'form_type' => 0,
+                'form_type' => $form_type,
             ])->delete();
     }
 }

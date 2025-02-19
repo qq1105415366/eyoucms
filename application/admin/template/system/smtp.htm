@@ -63,7 +63,7 @@
                 </dd>
             </dl>
             <dl class="row">
-                <dt class="tit"><em>*</em>管理员邮箱账号</dt>
+                <dt class="tit"><em>*</em>管理员邮箱</dt>
                 <dd class="opt">
                     <input value="{$smtp.smtp_from_eamil|default=''}" name="smtp_from_eamil" id="smtp_from_eamil" placeholder="多个邮箱可以用逗号隔开" class="input-txt" type="text" onkeyup="this.value=this.value.replace(/，/g,',');" onpaste="this.value=this.value.replace(/，/g,',')" autocomplete="off">
                     <input value="测试发送" class="input-btn" onclick="sendEmail();" type="button">
@@ -104,12 +104,12 @@
 
         if (smtp_server != '' || smtp_user != '' || smtp_pwd != '' || smtp_from_eamil != '') {
             if (smtp_server == '') {
-                showErrorMsg('邮件发送服务器不能为空！');
+                showErrorMsg('SMTP地址不能为空！');
                 $('input[name=smtp_server]').focus();
                 return false;
             }
             if (smtp_user == '' || !checkEmail(smtp_user)) {
-                showErrorMsg('邮箱账号的格式不正确！');
+                showErrorMsg('发信邮箱账号的格式不正确！');
                 $('input[name=smtp_user]').focus();
                 return false;
             }
@@ -119,7 +119,7 @@
                 return false;
             }
             if (smtp_from_eamil == '') {
-                showErrorMsg('接收的邮件地址不能为空！');
+                showErrorMsg('管理员邮箱不能为空！');
                 $('input[name=smtp_from_eamil]').focus();
                 return false;
             }
@@ -158,7 +158,7 @@
     function sendEmail() {
         var email = $('#smtp_from_eamil').val();
         if (email == '') {
-            showErrorMsg('接收的邮件地址不能为空！');
+            showErrorMsg('管理员邮箱不能为空！');
             $('input[name=smtp_from_eamil]').focus();
             return false;
         } else {

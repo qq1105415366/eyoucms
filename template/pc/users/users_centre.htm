@@ -71,6 +71,16 @@
                                                     </span>
                                                 </div>
                                             </div>
+                                            {eyou:neq name='$users.level' value='1'}
+                                            <div class="item-from-row">
+                                                <div class="from-row-l">会员天数：</div>
+                                                <div class="from-row-r">
+                                                    <span class="">
+                                                        <a href="{eyou:url link='user/Level/level_centre'/}">{$users.maturity_date}</a>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {/eyou:neq}
 
                                             <!-- 更多资料中的会员属性 -->
                                             {eyou:include file="users/users_centre_field.htm" /}

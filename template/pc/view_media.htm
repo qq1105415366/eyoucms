@@ -33,21 +33,21 @@
         <div class="line bg-main">
             <div class="xl12 xs12 xm9 bm9">
                 <div class="jw-video">
-                    <!--  视频 begin -->
-                    {eyou:videoplay aid='$eyou.field.aid' autoplay='off' id='video'}
-                        <video {$video.id} loop='loop' controls='true' preload="auto" controlslist='nodownload' ref='video' oncontextmenu="return false">
-                            <source src="{$video.file_url}" type="video/mp4">
+                    <!--  视频 begin-->
+                    {eyou:videoplay aid='$eyou.field.aid' autoplay='off' id='video' }
+                        <video {$video.id} width="100%" height="586px" controls='true' preload="none" controlslist='nodownload' ref='video' oncontextmenu="return false" poster="{$eyou.field.litpic}" src="{$video.file_url}" >
                         </video>
                         {$video.hidden}
                     {/eyou:videoplay}
-                    <!--  视频 end -->
+                    <!--  视频 end-->
                 </div>
                 <!-- 播放权限遮罩 begin -->
-                <div class="jw-video-expense text-center" id="VideoDiv13579" style="display: none;">
+                <div class="jw-video-expense text-center"  id="VideoDiv13579" style="display: none;">
+                    <img class="video-cover-img" alt="{$eyou.field.title}" src="{$eyou.field.litpic}">
                     <div class="apply text-center">
-                        <p class="text-middle text-white" id="MsgTitle13579"></p>
+                        <p class="text-middle bg-yellow text-white" id="MsgTitle13579" style="padding: 2px 5px;"></p>
                         <div class="blank-middle"></div>
-                        <div class="button button-big bg-yellow text-center radius-rounded text-middle" id="MsgOnclick13579"></div>
+                        <div class="video-play" id="MsgOnclick13579"></div>
                     </div>
                 </div>
                 <!-- 播放权限遮罩 end -->
@@ -58,9 +58,9 @@
                     <span class="margin-left margin-right text-gray">{$eyou.field.total_video}课时</span>
                     <span class="text-gray">总时长：{$eyou.field.total_duration}</span>
                 </div>
-                <!-- 课程目录 begin -->
+                <!-- 课程目录 -->
                 <ul class="video-period-list">
-                {eyou:videolist aid='$eyou.field.aid' id='video'}
+                {eyou:videolist aid='$eyou.field.aid' id='video' autoplay='off'}
                 <li>
                     <a href="javascript:;" {$video.onclick}>
                         <p title="{$video.file_title}">{$i}.{$video.file_title}</p>

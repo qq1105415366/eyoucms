@@ -45,7 +45,6 @@
 							{empty name="$eyou.field.data"}
 								<div class="cell null-data pt100 tc">
 								   <span class="mb10"><img id='litpic_img'  src="{eyou:static file='users/skin/images/null-data.png' /}"/></span>
-								   <p>当前暂无消息通知哦~</p>
 								 </div>
 							{else/}
 								{eyou:volist name="$eyou.field.data" id="vo"}
@@ -54,9 +53,10 @@
                                             <label class="checkbox-label release-checkbox">
                                                 <span> &nbsp; </span>
                                                 <input class="checkbox" type="checkbox" name="ids[]" value="{$vo.id}">
-                                                <span class="check-mark"></span>
+                                                <span class="check-mark top7"></span>
                                             </label>
-                                            <span class="read-state_n"></span>
+                                            <span class="read-state_y">[已读]</span>
+                                            <span class="read-state_w">[未读]</span>
                                             <a href="javascript:void(0);" data-id="{$vo.id}" data-title="{$vo.title}" data-content="{$vo.remark}" class="open-content">
                                                 {$vo.title}
                                             </a>
@@ -92,7 +92,7 @@
 					<div style="text-align: center;">
 						{$page}
 						{eyou:if condition="!empty($pager->totalRows)"}
-						<div class="fytotal">共{$pager->totalRows}条记录</div>
+						<div class="fytotal">{:sprintf(foreign_lang('page5'), $pager->totalPages, $pager->totalRows)}</div>
 						{/eyou:if}
 					</div>
                     {/notempty}
@@ -211,13 +211,13 @@
             }
         })
         if(a.length == 0){
-            showErrorAlert('请至少选择一项！');
+            showErrorAlert(ey_foreign_system7);
             return;
         }
         // 删除按钮
         layer.confirm('确认批量删除消息？', {
             title: false,
-            btn: ['确定', '取消'] //按钮
+            btn: [ey_foreign_system2, ey_foreign_system3] //按钮
         }, function () {
             layer_loading('正在处理');
             $.ajax({
@@ -258,13 +258,13 @@
             }
         })
         if(a.length == 0){
-            showErrorAlert('请至少选择一项！');
+            showErrorAlert(ey_foreign_system7);
             return;
         }
 
         layer.confirm('确认批量标记已读？', {
             title: false,
-            btn: ['确定', '取消'] //按钮
+            btn: [ey_foreign_system2, ey_foreign_system3] //按钮
         }, function () {
             layer_loading('正在处理');
             $.ajax({
@@ -296,7 +296,7 @@
     function ReadAllData(obj, name) {
         layer.confirm('确认全部标记已读？', {
             title: false,
-            btn: ['确定', '取消'] //按钮
+            btn: [ey_foreign_system2, ey_foreign_system3] //按钮
         }, function () {
             layer_loading('正在处理');
             $.ajax({
@@ -328,7 +328,7 @@
         // 删除按钮
         layer.confirm('确认删除所有消息？', {
             title: false,
-            btn: ['确定', '取消'] //按钮
+            btn: [ey_foreign_system2, ey_foreign_system3] //按钮
         }, function () {
             layer_loading('正在处理');
             $.ajax({

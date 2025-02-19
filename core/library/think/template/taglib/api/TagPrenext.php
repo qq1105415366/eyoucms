@@ -43,7 +43,7 @@ class TagPrenext extends Base
 
         $result = [];
         if ($get == 'pre' || $get == 'all') { // 上一篇
-            $detail = Db::name('archives')->field('a.aid, a.typeid, a.title, a.litpic, a.click, a.channel')
+            $detail = Db::name('archives')->field('a.aid, a.typeid, a.title, a.litpic, a.add_time, a.channel')
                 ->alias('a')
                 ->where([
                     'a.typeid'  => $this->tid,
@@ -55,16 +55,16 @@ class TagPrenext extends Base
                 ])
                 ->order('a.aid desc')
                 ->find();
+               
             if (!empty($detail)) {
                 $detail['title'] = text_msubstr($detail['title'], 0, $titlelen, false);
                 $detail['litpic'] = $this->get_default_pic($detail['litpic']);
-                // $detail['arcurl'] = '/pages/article/view?aid='.$detail['aid'];
-                // $detail['typeurl'] = '/pages/article/list?typeid='.$detail['typeid'];
+                $detail['add_time_format'] =  $this->time_format($detail['add_time']);
                 $result['preDetail'] = $detail;
             }
         }
         if ($get == 'next' || $get == 'all') { // 下一篇
-            $detail = Db::name('archives')->field('a.aid, a.typeid, a.title, a.litpic, a.click, a.channel')
+            $detail = Db::name('archives')->field('a.aid, a.typeid, a.title, a.litpic,a.add_time, a.click, a.channel')
                 ->alias('a')
                 ->where([
                     'a.typeid'  => $this->tid,
@@ -79,7 +79,7 @@ class TagPrenext extends Base
             if (!empty($detail)) {
                 $detail['title'] = text_msubstr($detail['title'], 0, $titlelen, false);
                 $detail['litpic'] = $this->get_default_pic($detail['litpic']);
-                // $detail['arcurl'] = '/pages/article/view?aid='.$detail['aid'];
+                $detail['add_time_format'] =  $this->time_format($detail['add_time']);;
                 // $detail['typeurl'] = '/pages/article/list?typeid='.$detail['typeid'];
                 $result['nextDetail'] = $detail;
             }

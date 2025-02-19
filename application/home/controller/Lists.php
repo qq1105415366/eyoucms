@@ -41,10 +41,10 @@ class Lists extends Base
             abort(404, '页面不存在');
         }
 
+        $seo_pseudo = config('ey_config.seo_pseudo');
         $map = [];
         /*URL上参数的校验*/
-/*        $seo_pseudo = config('ey_config.seo_pseudo');
-        $url_screen_var = config('global.url_screen_var');
+/*      $url_screen_var = config('global.url_screen_var');
         if (!isset($param[$url_screen_var]) && 3 == $seo_pseudo)
         {
             if (stristr($this->request->url(), '&c=Lists&a=index&')) {
@@ -88,6 +88,24 @@ class Lists extends Base
         /*--end*/
 
         $result = $this->logic($tid); // 模型对应逻辑
+
+        /*URL上参数的校验*/
+        if (3 == $seo_pseudo) {
+            $current_url = $this->request->url(true);
+            $current_url = rtrim($current_url, '/')."/";
+            if ('single' == $result['nid'] && $result['pageurl'] != $result['typeurl']) {
+                $url_query = $result['typeurl'];
+            } else {
+                $url_query = $result['pageurl'];
+            }
+            $url_query = preg_replace('/^(http(s)?:)?(\/\/)?([^\/\:]*)(.*)$/i', '${5}', $url_query);
+            $url_query = "/".trim($url_query, '/')."/";
+            if (!stristr($current_url, $url_query) && !preg_match('/(\?|&)(c=Lists|a=index)/i', $current_url)) {
+                abort(404, '页面不存在');
+            }
+        }
+        /*--end*/
+
         $eyou       = array(
             'field' => $result,
         );
@@ -274,6 +292,8 @@ class Lists extends Base
 
         // seo
         $result['seo_title'] = set_typeseotitle($result['typename'], $result['seo_title'], $this->eyou['site']);
+        $result['seo_keywords'] = site_seo_handle($result['seo_keywords'], $this->eyou['site']);
+        $result['seo_description'] = site_seo_handle($result['seo_description'], $this->eyou['site']);
 
         $result['pageurl'] = typeurl('home/'.$result['ctl_name'].'/lists', $result, true, true);
         $result['pageurl'] = get_list_only_pageurl($result['pageurl'], $result['typeid'], $result['rulelist']);
@@ -306,10 +326,10 @@ class Lists extends Base
             $form_type = input('post.form_type/d', 0);
             $channel_guestbook_gourl = tpSetting('channel_guestbook.channel_guestbook_gourl');
             if (!empty($channel_guestbook_gourl)) {
-                $gourl = $channel_guestbook_gourl;
+                $gourl = trim($channel_guestbook_gourl);
             } else {
                 $gourl = input('post.gourl/s');
-                $gourl = urldecode($gourl);
+                $gourl = urldecode(trim($gourl));
                 $gourl = str_replace(['"',"'",';'], '', $gourl);
             }
             $post = input('post.');
@@ -390,8 +410,7 @@ class Lists extends Base
                                     $this->error($msg);
                                 }
                             } elseif ($ga_data['validate_type'] == 7) {
-                                $pattern  = "/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/i";
-                                if (preg_match($pattern, $value) == false) {
+                                if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
                                     $msg = sprintf(foreign_lang('gbook4', $this->home_lang), $ga_data['attr_name']);
                                     $this->error($msg);
                                 }
@@ -587,43 +606,51 @@ class Lists extends Base
         // $post = input("post.");
         $image_type_list = explode('|', tpCache('global.image_type'));
         /*上传图片或附件*/
-        foreach ($_FILES as $fileElementId => $file) {
-            try {
-                if (is_array($file['name'])) {
-                    $files = $this->request->file($fileElementId);
-                    foreach ($files as $key => $value) {
-                        $ext = pathinfo($value->getInfo('name'), PATHINFO_EXTENSION);
-                        if (in_array($ext, $image_type_list)) {
-                            $uplaod_data = func_common($fileElementId, 'allimg', '', $value);
-                        } else {
-                            $uplaod_data = func_common_doc($fileElementId, 'files', '', $value);
+        $where = [
+            'is_del' => 0,
+            'typeid' => intval($typeid),
+            'attr_input_type' => ['IN', [5, 8, 11]]
+        ];
+        $attr_input_type = Db::name('guestbook_attribute')->where($where)->column('attr_input_type');
+        if (!empty($attr_input_type)) {
+            foreach ($_FILES as $fileElementId => $file) {
+                try {
+                    if (is_array($file['name'])) {
+                        $files = $this->request->file($fileElementId);
+                        foreach ($files as $key => $value) {
+                            $ext = pathinfo($value->getInfo('name'), PATHINFO_EXTENSION);
+                            if (in_array($ext, $image_type_list) && (in_array(5, $attr_input_type) || in_array(11, $attr_input_type))) {
+                                $uplaod_data = func_common($fileElementId, 'allimg', '', $value);
+                            } else if (in_array(8, $attr_input_type)) {
+                                $uplaod_data = func_common_doc($fileElementId, 'files', '', $value);
+                            }
+                            if (0 == $uplaod_data['errcode']) {
+                                if (empty($post[$fileElementId])) {
+                                    $post[$fileElementId] = $uplaod_data['img_url'];
+                                } else {
+                                    $post[$fileElementId] .= ',' . $uplaod_data['img_url'];
+                                }
+                            } else {
+                                return $uplaod_data['errmsg'];
+                            }
                         }
-                        if (0 == $uplaod_data['errcode']) {
-                            if (empty($post[$fileElementId])) {
+                    } else {
+                        if (!empty($file['name']) && !is_array($file['name'])) {
+                            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                            if (in_array($ext, $image_type_list) && (in_array(5, $attr_input_type) || in_array(11, $attr_input_type))) {
+                                $uplaod_data = func_common($fileElementId, 'allimg');
+                            } else if (in_array(8, $attr_input_type)) {
+                                $uplaod_data = func_common_doc($fileElementId, 'files');
+                            }
+                            if (0 == $uplaod_data['errcode']) {
                                 $post[$fileElementId] = $uplaod_data['img_url'];
                             } else {
-                                $post[$fileElementId] .= ',' . $uplaod_data['img_url'];
+                                return $uplaod_data['errmsg'];
                             }
-                        } else {
-                            return $uplaod_data['errmsg'];
                         }
                     }
-                } else {
-                    if (!empty($file['name']) && !is_array($file['name'])) {
-                        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                        if (in_array($ext, $image_type_list)) {
-                            $uplaod_data = func_common($fileElementId, 'allimg');
-                        } else {
-                            $uplaod_data = func_common_doc($fileElementId, 'files');
-                        }
-                        if (0 == $uplaod_data['errcode']) {
-                            $post[$fileElementId] = $uplaod_data['img_url'];
-                        } else {
-                            return $uplaod_data['errmsg'];
-                        }
-                    }
-                }
-            } catch (\Exception $e) {}
+                } catch (\Exception $e) {}
+            }
         }
 
         $attrArr = [];

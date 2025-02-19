@@ -374,36 +374,45 @@ class Language extends Model
             Db::name('channelfield_bind')->where("typeid",'IN',$typeids)->delete(); // 栏目与自定义字段绑定表
             $aids = Db::name('archives')->where("typeid",'IN',$typeids)->column('aid');
             //待删除文档ID集合
-            Db::name('archives')->where("aid",'IN',$aids)->delete(); // 文档主表
+            Db::name('archives')->where("lang",'IN',$lang_list)->delete(); // 文档主表
             Db::name('article_content')->where("aid",'IN',$aids)->delete(); // 文章内容表
+            Db::name('article_order')->where("lang",'IN',$lang_list)->delete(); // 文章订单表
+            Db::name('article_pay')->where("aid",'IN',$aids)->delete(); // 文章付费预览表
             Db::name('download_content')->where("aid",'IN',$aids)->delete(); // 软件内容表
             Db::name('download_file')->where("aid",'IN',$aids)->delete(); // 软件附件表
-            Db::name('guestbook')->where("aid",'IN',$aids)->delete(); // 留言主表
-            Db::name('guestbook_attr')->where("aid",'IN',$aids)->delete(); // 留言内容表
+            Db::name('download_log')->where("aid",'IN',$aids)->delete(); // 下载记录表
+            Db::name('download_order')->where("lang",'IN',$lang_list)->delete(); // 下载订单表
+            Db::name('guestbook')->where("lang",'IN',$lang_list)->delete(); // 留言主表
+            Db::name('guestbook_attr')->where("lang",'IN',$lang_list)->delete(); // 留言内容表
+            Db::name('guestbook_attribute')->where("lang",'IN',$lang_list)->delete(); // 留言表单属性
             Db::name('images_content')->where("aid",'IN',$aids)->delete(); // 图集内容表
             Db::name('images_upload')->where("aid",'IN',$aids)->delete(); // 图集图片表
-            Db::name('product_content')->where("aid",'IN',$aids)->delete(); // 产品内容表
-            Db::name('product_img')->where("aid",'IN',$aids)->delete(); // 产品图集表
-            Db::name('single_content')->where("aid",'IN',$aids)->delete(); // 单页内容表
-
             Db::name('media_content')->where("aid",'IN',$aids)->delete(); // 视频内容表
             Db::name('media_file')->where("aid",'IN',$aids)->delete(); // 视频文件表
-            Db::name('media_play_record')->where("aid",'IN',$aids)->delete(); // 视频播放记录表
             Db::name('media_log')->where("aid",'IN',$aids)->delete(); // 视频日志表
             Db::name('media_order')->where("lang",'IN',$lang_list)->delete(); // 视频订单表
-
+            Db::name('media_play_record')->where("aid",'IN',$aids)->delete(); // 视频播放记录表
+            Db::name('product_attr')->where("aid",'IN',$aids)->delete(); // 产品表单属性值
+            Db::name('product_attribute')->where("lang",'IN',$lang_list)->delete(); // 产品表单属性表
+            Db::name('product_content')->where("aid",'IN',$aids)->delete(); // 产品内容表
+            Db::name('product_custom_param')->where("aid",'IN',$aids)->delete(); // 产品自定义参数表
+            Db::name('product_img')->where("aid",'IN',$aids)->delete(); // 产品图集表
+            Db::name('product_netdisk')->where("lang",'IN',$lang_list)->delete(); // 产品虚拟表
+            Db::name('product_spec_data')->where("lang",'IN',$lang_list)->delete(); // 产品规格数据表
+            Db::name('product_spec_data_handle')->where("lang",'IN',$lang_list)->delete(); // 商品规格表(product_spec_data)预处理规格数据表
+            Db::name('product_spec_preset')->where("lang",'IN',$lang_list)->delete(); // 产品规格预设表
+            Db::name('product_spec_value')->where("lang",'IN',$lang_list)->delete(); // 产品多规格组装表
+            Db::name('product_spec_value_handle')->where("lang",'IN',$lang_list)->delete(); // 商品规格价格表(product_spec_value)预处理规格价格表
+            Db::name('product_users_discount')->where("aid",'IN',$aids)->delete(); // 产品指定会员等级折扣列表
+            Db::name('shop_goods_label_bind')->where("aid",'IN',$aids)->delete(); // 商城商品服务标签与商品ID关联绑定表
+            Db::name('shop_product_attr')->where("aid",'IN',$aids)->delete(); // 
+            Db::name('shop_product_attribute')->where("lang",'IN',$lang_list)->delete(); // 同步删除新产品参数表数据
+            Db::name('shop_product_attrlist')->where("lang",'IN',$lang_list)->delete(); // 同步删除新产品参数分组表数据
+            Db::name('single_content')->where("aid",'IN',$aids)->delete(); // 单页内容表
             Db::name('special_content')->where("aid",'IN',$aids)->delete(); // 专题内容表
             Db::name('special_node')->where("lang",'IN',$lang_list)->delete(); // 专题节点表
             /*同步删除表单表数据*/
             Db::name('form')->where("lang",'IN',$lang_list)->delete();
-            /*同步删除产品属性表数据*/
-            Db::name('product_attribute')->where("lang",'IN',$lang_list)->delete();
-            /*同步删除新产品参数分组表数据*/
-            Db::name('shop_product_attrlist')->where("lang",'IN',$lang_list)->delete();
-            /*同步删除新产品参数表数据*/
-            Db::name('shop_product_attribute')->where("lang",'IN',$lang_list)->delete();
-            /*同步删除留言属性表数据*/
-            Db::name('guestbook_attribute')->where("lang",'IN',$lang_list)->delete();
             /*同步删除广告表数据*/
             Db::name('ad')->where("lang",'IN',$lang_list)->delete();
             /*同步删除广告位置表数据*/
@@ -432,6 +441,8 @@ class Language extends Model
             Db::name('users_notice_tpl_content')->where("lang",'IN',$lang_list)->delete();
             /*会员中心移动端底部菜单表*/
             Db::name('users_bottom_menu')->where("lang",'IN',$lang_list)->delete();
+            /*同步文档日志*/
+            Db::name('language_archives_copy_log')->where("lang",'IN',$lang_list)->delete();
             \think\Cache::clear();
         }
     }
@@ -482,6 +493,11 @@ class Language extends Model
         $gbookAttributeRow = group_same_key($gbookAttributeRow, 'typeid');
         /*--end*/
 
+        $channelfield_bind_list = Db::name('channelfield_bind')->where(['typeid'=>['gt', 0]])->select();
+        if (!empty($channelfield_bind_list)) {
+            $channelfield_bind_list = group_same_key($channelfield_bind_list, 'typeid');
+        }
+
         /*复制栏目表数据*/
         $arctype_M = model('Arctype');
         foreach ($arctypeList as $key => $val) {
@@ -493,14 +509,13 @@ class Language extends Model
             $data['parent_id'] = !empty($bindArctypeArr[$val['parent_id']]) ? $bindArctypeArr[$val['parent_id']] : 0;
             $data['total_arc'] = 0;
             $typeid = $arctype_M->addData($data);
-            if (empty($typeid)) {
+            if ($typeid === false) {
                 return false; // 同步失败
             }
             /*复制栏目与自定义字段绑定表*/
-            $channelfield_bind_list = Db::name('channelfield_bind')->where('typeid',$typeid_old)->select();
-            if (!empty($channelfield_bind_list)){
+            if (!empty($channelfield_bind_list[$typeid_old])){
                 $channelfield_bind_insert = [];
-                foreach ($channelfield_bind_list as $k => $v) {
+                foreach ($channelfield_bind_list[$typeid_old] as $k => $v) {
                     $channelfield_bind_insert[] = [
                         'typeid' => $typeid,
                         'field_id' => $v['field_id'],
@@ -522,7 +537,7 @@ class Language extends Model
                     unset($proArr['attr_id']);
                     $proArr['attr_name'] = $mark.$proArr['attr_name']; // 临时测试
                     $new_attr_id = $product_attribute_db->insertGetId($proArr);
-                    if (empty($new_attr_id)) {
+                    if ($new_attr_id === false) {
                         return false; // 同步失败
                     }
                     $bindProductAttributeArr[$v2['attr_id']] = $new_attr_id;
@@ -538,7 +553,7 @@ class Language extends Model
                     unset($gbArr['attr_id']);
                     $gbArr['attr_name'] = $mark.$gbArr['attr_name']; // 临时测试
                     $new_attr_id = $guestbook_attribute_db->insertGetId($gbArr);
-                    if (empty($new_attr_id)) {
+                    if ($new_attr_id ===  false) {
                         return false; // 同步失败
                     }
                     $bindgbookAttributeArr[$v2['attr_id']] = $new_attr_id;
@@ -643,7 +658,7 @@ class Language extends Model
             $data['lang'] = $mark;
             $data['title'] = $mark.$data['title']; // 临时测试
             $pid = $ad_position_db->insertGetId($data);
-            if (empty($pid)) {
+            if ($pid === false) {
                 return false; // 同步失败
             }
             $bindAdpositionArr[$val['id']] = $pid;
@@ -656,7 +671,7 @@ class Language extends Model
                     unset($adArr['id']);
                     $adArr['title'] = $mark.$adArr['title']; // 临时测试
                     $new_ad_id = $ad_db->insertGetId($adArr);
-                    if (empty($new_ad_id)) {
+                    if ($new_ad_id === false) {
                         return false; // 同步失败
                     }
                     $bindAdArr[$v2['id']] = $new_ad_id;
@@ -749,7 +764,7 @@ class Language extends Model
             $data['lang'] = $mark;
             // $data['list_name'] = $mark.$data['list_name']; // 临时测试
             $list_id = $attrlist_db->insertGetId($data);
-            if (empty($list_id)) {
+            if ($list_id === false) {
                 return false; // 同步失败
             }
             $bindAttrlistArr[$val['list_id']] = $list_id;
@@ -762,7 +777,7 @@ class Language extends Model
                     unset($attributeArr['attr_id']);
                     // $attributeArr['attr_name'] = $mark.$attributeArr['attr_name']; // 临时测试
                     $new_attr_id = $attribute_db->insertGetId($attributeArr);
-                    if (empty($new_attr_id)) {
+                    if ($new_attr_id === false) {
                         return false; // 同步失败
                     }
                     $bindAttributeArr[$v2['attr_id']] = $new_attr_id;
@@ -794,6 +809,7 @@ class Language extends Model
             }
         }
         /*--end*/
+
         /*新增新产品参数ID与源新产品参数ID的绑定*/
         $main_attribute = Db::name('language_attr')->where(['attr_group'=>'shop_product_attribute','lang'=>$copy_lang])->select();
         foreach ($bindAttributeArr as $key => $val) {
@@ -870,7 +886,7 @@ class Language extends Model
             $data['lang'] = $mark;
             $data['group_name'] = $mark.$data['group_name']; // 临时测试
             $groupid = $links_group_db->insertGetId($data);
-            if (empty($groupid)) {
+            if ($groupid === false) {
                 return false; // 同步失败
             }
             $bindLinksGroupArr[$val['id']] = $groupid;
@@ -883,7 +899,7 @@ class Language extends Model
                     unset($linksArr['id']);
                     $linksArr['title'] = $mark.$linksArr['title']; // 临时测试
                     $new_links_id = $links_db->insertGetId($linksArr);
-                    if (empty($new_links_id)) {
+                    if ($new_links_id === false) {
                         return false; // 同步失败
                     }
                 }
@@ -984,7 +1000,7 @@ class Language extends Model
             $data['lang'] = $mark;
             $data['form_name'] = $mark.$data['form_name']; // 临时测试
             $form_id = $form_db->insertGetId($data);
-            if (empty($form_id)) {
+            if ($form_id === false) {
                 return false; // 同步失败
             }
             $bindFormArr[$val['form_id']] = $form_id;
@@ -998,7 +1014,7 @@ class Language extends Model
                     unset($formArr['attr_id']);
                     $formArr['attr_name'] = $mark.$formArr['attr_name']; // 临时测试
                     $new_attr_id = $guestbook_attribute_db->insertGetId($formArr);
-                    if (empty($new_attr_id)) {
+                    if ($new_attr_id === false) {
                         return false; // 同步失败
                     }
                     $bindformAttributeArr[$_v['attr_id']] = $new_attr_id;

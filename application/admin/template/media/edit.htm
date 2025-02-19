@@ -16,19 +16,28 @@
 <div id="page_div" class="page min-hg-c mb-20" style="min-width:auto;box-shadow:none;">
     <div class="fixed-bar">
         <div class="item-title">
-            {include file="public/callback_page_1" /}<!-- 返回箭头 -->
-            <a class="back_sz" href="javascript:void(0);"  data-href="{:url('Media/help')}" onclick="openHelpframe(this, '设置与帮助', '500px', '100%', 'r');" title="设置与帮助"><i class="iconfont e-shezhi-tongyong"></i></a>
-            <div class="subject">
-                <h3>编辑文档</h3>
-                <h5></h5>
+            <div class="item-title-lr">
+                <div class="item-title-l">
+                    {include file="public/callback_page_1" /}<!-- 返回箭头 -->
+                    <div class="subject">
+                        <h3>编辑文档</h3>
+                        <h5></h5>
+                    </div>
+                    <ul class="tab-base nc-row">
+                        <li><a href="javascript:void(0);" data-index='1' class="tab current"><span>基础内容</span></a></li>
+                        <li><a href="javascript:void(0);" data-index='2' class="tab"><span>SEO优化</span></a></li>
+                        <li><a href="javascript:void(0);" data-index='3' class="tab"><span>更多设置</span></a></li>
+                        <!-- #weapp_demontrate_li# -->
+                        <!-- #weapp_li# -->
+                    </ul>
+                </div>
+                <div class="item-title-r">
+                    {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/archives/ai_tab_base.htm')" /}
+                        {include file="/weapp/Ai/template/archives/ai_tab_base.htm" /}
+                    {/if}
+                    <a class="back_sz" href="javascript:void(0);"  data-href="{:url('Media/help')}" onclick="openHelpframe(this, '设置与帮助', '500px', '100%', 'r');" title="设置与帮助"><i class="iconfont e-shezhi-tongyong"></i></a>
+                </div>
             </div>
-            <ul class="tab-base nc-row">
-                <li><a href="javascript:void(0);" data-index='1' class="tab current"><span>基础内容</span></a></li>
-                <li><a href="javascript:void(0);" data-index='2' class="tab"><span>SEO优化</span></a></li>
-                <li><a href="javascript:void(0);" data-index='3' class="tab"><span>更多设置</span></a></li>
-                <!-- #weapp_demontrate_li# -->
-                <!-- #weapp_li# -->
-            </ul>
         </div>
     </div>
     <form class="form-horizontal" id="post_form" action="{:url('Media/edit')}" method="post">
@@ -136,24 +145,25 @@
                   <label>封面图片</label>
                 </dt>
                 <dd class="opt">
-                    <div class="input-file-show div_litpic_local" {neq name="$field.is_remote" value="0"}style="display: none;"{/neq}>
+                    <div class="input-file-show div_litpic">
                         <span class="show">
-                            <a id="img_a" target="_blank" class="nyroModal" rel="gal" href="{$field.litpic_local|default='javascript:void(0);'}">
-                                <i id="img_i" class="fa fa-picture-o" {notempty name="$field.litpic_local"}onmouseover="layer_tips=layer.tips('<img src={$field.litpic_local} class=\'layer_tips_img\'>',this,{tips: [1, '#fff']});"{/notempty} onmouseout="layer.close(layer_tips);"></i>
+                            <a id="img_a" target="_blank" class="nyroModal" rel="gal" href="{$field.litpic|default='javascript:void(0);'}">
+                                <i id="img_i" class="fa fa-picture-o" {notempty name="$field.litpic"}onmouseover="layer_tips=layer.tips('<img src={$field.litpic} class=\'layer_tips_img\'>',this,{tips: [1, '#fff']});"{/notempty} onmouseout="layer.close(layer_tips);"></i>
                             </a>
                         </span>
                         <span class="type-file-box">
-                            <input type="text" id="litpic_local" name="litpic_local" value="{$field.litpic_local|default=''}" class="type-file-text" autocomplete="off">
+                            <input type="text" id="litpic" name="litpic" value="{$field.litpic|default=''}" class="type-file-text" autocomplete="off">
                             <input type="button" name="button" id="button1" value="选择上传..." class="type-file-button">
                             <input class="type-file-file" onClick="GetUploadify(1,'','allimg','img_call_back')" size="30" hidefocus="true" nc_type="change_site_logo"
                                  title="点击前方预览图可查看大图，点击按钮选择文件并提交表单后上传生效">
                         </span>
                     </div>
-                    <input type="text" id="litpic_remote" name="litpic_remote" value="{$field.litpic_remote|default=''}" placeholder="http://" class="input-txt" onKeyup="keyupRemote(this, 'litpic');" {neq name="$field.is_remote" value="1"}style="display: none;"{/neq}>
-                    &nbsp;
-                    <label><input type="checkbox" name="is_remote" id="is_remote" value="1" {eq name="$field.is_remote" value="1"}checked="checked"{/eq} onClick="clickRemote(this, 'litpic');">远程图片</label>
+                    &nbsp;&nbsp;
+                    {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/archives/ai_uploads_btn.htm')" /}
+                        {include file="/weapp/Ai/template/archives/ai_uploads_btn.htm" /}
+                    {/if}
                     <span class="err"></span>
-                    <p class="notic">当没有手动上传图片时候，会自动提取正文的第一张图片作为缩略图</p>
+                    <p class="notic"></p>
                 </dd>
             </dl>
             <dl class="row">
@@ -245,7 +255,7 @@
                 </dt>
                 <dd class="opt">
                     <input type="text" value="{$field.seo_title}" name="seo_title" id="seo_title" class="input-txt">
-                    <p class="notic">一般不超过80个字符，为空时系统自动构成，可以到 <a href="{:url('Seo/index', array('inc_type'=>'seo'))}">SEO设置 - SEO基础</a> 中设置构成规则。</p>
+                    <p class="notic">建议80个字符以内，不填写则使用 {$global['seo_viewtitle_msg']} 在前端展示</p>
                 </dd>
             </dl>
             <dl class="row">
@@ -265,7 +275,7 @@
                 <dd class="opt">          
                     <textarea rows="5" cols="60" id="seo_description" name="seo_description" style="height:54px;" class="keywordsTextarea" onkeyup="monitorInputStr();" onkeypress="monitorInputStr();">{$field.seo_description}</textarea>
                     <span class="err"></span>
-                    <p class="notic">一般不超过100个字符，不填写时系统自动提取正文的前100个字符</p>
+                    <p class="notic">一般不超过{$global['seo_description_length']|default=config('global.arc_seo_description_length')}个字符，不填写时系统自动提取正文的前{$global['seo_description_length']|default=config('global.arc_seo_description_length')}个字符</p>
                     <p class="notic2 {empty name='$field.seo_description'}none{/empty}" id="beenWritten">你已输入<span id="beenWrittenStr">0</span>个字符</p>
                     <p><label><input type="checkbox" name="basic_update_seo_description" value="1" {if condition="!empty($global['basic_update_seo_description'])"} checked="checked" {/if}>勾选后SEO描述将随正文内容更新</label></p>
                 </dd>
@@ -281,8 +291,9 @@
                 <dd class="opt origin-hot">
                     <input type="hidden" value="{$field.users_id}" name="users_id" class="input-txt">
                     <input type="text" value="{$field.author}" name="author" id="author" class="input-txt">
+                    <span class="setting" onclick="set_author('{$Think.session.admin_info.pen_name|default='小编'}');">设置</span>
 					<span class="err"></span>
-                    <p class="notic">设置作者默认名称（将同步至管理员笔名）</p>
+                    <p class="notic">发布时将显示默认名称（当前管理员笔名），点击设置可修改默认名称</p>
                 </dd>
             </dl>
             <dl class="row dl_origin">
@@ -574,7 +585,7 @@
 
     function img_call_back(fileurl_tmp)
     {
-        $("#litpic_local").val(fileurl_tmp);
+        $("#litpic").val(fileurl_tmp);
         $("#img_a").attr('href', fileurl_tmp);
         $("#img_i").attr('onmouseover', "layer_tips=layer.tips('<img src="+fileurl_tmp+" class=\\'layer_tips_img\\'>',this,{tips: [1, '#fff']});");
         $("input[name=is_litpic]").attr('checked', true); // 自动勾选属性[图片]
@@ -616,9 +627,9 @@
         //upload_box_group_?  用来做展开收缩的
         html += "<div id='num_upload_box_sys' class='media_del_1586481014_"+num+" upload_box_group_"+group_id+"' data-num='"+num+"'  style='margin-bottom: 10px;'>\n" +
             "                            <span>&nbsp;链接地址:</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_" + num + "\" style=\"width: 300px !important;\" >\n" +
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_" + num + "\" style=\"width: 300px !important;\" >&nbsp;&nbsp;\n" +
             "                            <span>&nbsp;选集名称:</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_" + num + "\" style=\"width: 150px !important;\">\n";
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_" + num + "\" style=\"width: 150px !important;\">&nbsp;&nbsp;\n";
         // 视频章节分组插件
         var is_open_videogroup = {$is_open_videogroup|default=0};
         if (is_open_videogroup == 1) {
@@ -638,11 +649,11 @@
                     html += "                    <option value=\""+item.group_id+"\" "+selected+">"+item.group_name+"</option>\n";
                 });
             }
-            html += "                    </select>\n";
+            html += "                    </select>&nbsp;&nbsp;\n";
         }
 
-        html += "                        <span>&nbsp;时长(秒):</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_" + num + "\" style=\"width: 50px !important;\">\n" +
+        html += "                        <span>&nbsp;选集时长:</span>\n" +
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_" + num + "\" style=\"width: 50px !important;\">(秒)&nbsp;&nbsp;\n" +
             "                            <span>&nbsp;排序:</span>\n" +
             "                            <input type=\"text\" class=\"input-txt\" id=\"video_sort_order_"+num+"\" value=\"100\" style=\"width: 50px !important;\">\n" +
             "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_size_sys_"+num+"\">" +
@@ -750,9 +761,9 @@
 
             html += "<div id=\"num_upload_box_sys\" class='"+class_none+" media_del_1586481014_"+num+" upload_box_group_"+v.video_group_id+"' data-num='"+num+"' style='margin-bottom: 10px;'>\n" +
                 "                            <span>&nbsp;链接地址:</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_"+num+"\" value=\""+v.file_url+"\" style=\"width: 300px !important;\" >\n" +
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_"+num+"\" value=\""+v.file_url+"\" style=\"width: 300px !important;\" >&nbsp;&nbsp;\n" +
                 "                            <span>&nbsp;选集名称:</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_"+num+"\" value=\""+v.file_title+"\" style=\"width: 150px !important;\">\n";
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_"+num+"\" value=\""+v.file_title+"\" style=\"width: 150px !important;\">&nbsp;&nbsp;\n";
             // 视频章节分组插件
             if (is_open_videogroup == 1) {
                 html += "                    <span>&nbsp;所在章节:</span>\n";
@@ -769,11 +780,11 @@
                         html += "                    >"+item.group_name+"</option>\n";
                     });
                 }
-                html += "                    </select>\n";
+                html += "                    </select>&nbsp;&nbsp;\n";
             }
 
-            html += "                        <span>&nbsp;时长(秒):</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_"+num+"\" value=\""+v.file_time+"\" style=\"width: 50px !important;\">\n" +
+            html += "                        <span>&nbsp;选集时长:</span>\n" +
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_"+num+"\" value=\""+v.file_time+"\" style=\"width: 50px !important;\">(秒)&nbsp;&nbsp;\n" +
                 "                        <span>&nbsp;排序:</span>\n" +
                 "                            <input type=\"text\" class=\"input-txt\" id=\"video_sort_order_"+num+"\" value=\""+v.sort_order+"\" style=\"width: 50px !important;\">\n" +
                 "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_size_sys_"+num+"\" value=\""+v.file_size+"\">" +
@@ -813,9 +824,9 @@
             var html = "";
             html += "<div id=\"num_upload_box_sys\" class='media_del_1586481014_"+num+"' data-num='"+num+"'  style='margin-bottom: 10px;'>\n" +
                 "                            <span>&nbsp;链接地址:</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_" + num + "\" style=\"width: 300px !important;\" >\n" +
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_" + num + "\" style=\"width: 300px !important;\" >&nbsp;&nbsp;\n" +
                 "                            <span>&nbsp;选集名称:</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_" + num + "\" style=\"width: 150px !important;\">\n";
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_" + num + "\" style=\"width: 150px !important;\">&nbsp;&nbsp;\n";
             // 视频章节分组插件
             var is_open_videogroup = {$is_open_videogroup|default=0};
             if (is_open_videogroup == 1) {
@@ -829,13 +840,13 @@
                         html += "                    <option value=\""+item.group_id+"\">"+item.group_name+"</option>\n";
                     });
                 }
-                html += "                    </select>\n";
+                html += "                    </select>&nbsp;&nbsp;\n";
             }
 
-            html += "                        <span>&nbsp;时长(秒):</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_" + num + "\" style=\"width: 50px !important;\">\n" +
+            html += "                        <span>&nbsp;选集时长:</span>\n" +
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_" + num + "\" style=\"width: 50px !important;\">(秒)&nbsp;&nbsp;\n" +
                 "                            <span>&nbsp;排序:</span>\n" +
-                "                            <input type=\"text\" class=\"input-txt\" id=\"video_sort_order_"+num+"\" value=\"100\" style=\"width: 50px !important;\">\n" +
+                "                            <input type=\"text\" class=\"input-txt\" id=\"video_sort_order_"+num+"\" value=\"100\" style=\"width: 50px !important;\">&nbsp;&nbsp;\n" +
                 "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_size_sys_"+num+"\">" +
                 "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_mime_sys_"+num+"\">" +
                 "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_name_sys_"+num+"\">" +
@@ -1683,13 +1694,13 @@
         layer.prompt({
             formType: 2,
             shade: layer_shade,
-            value: '参考格式：链接地址$选集名称$时长(秒)$试看(是/否)\r\n示例如下：\r\nhttp://www.xxx.com/1.mp4$名称1$30$是\r\nhttp://www.xxx.com/2.mp4$名称2$50$否',
+            value: '参考格式：链接地址$选集名称$选集时长(秒)$试看(是/否)\r\n示例如下：\r\nhttp://www.xxx.com/1.mp4$名称1$30$是\r\nhttp://www.xxx.com/2.mp4$名称2$50$否',
             title: '批量导入视频链接',
             area: ['800px', '250px'] //自定义文本域宽高
             ,id: 'ey_batch_links'
             ,maxlength: 60000
             ,success: function(layero, index){
-                $("#ey_batch_links").find('textarea').attr('placeholder', '参考格式：链接地址$选集名称$时长(秒)$试看(是/否)\r\n示例如下：\r\nhttp://www.xxx.com/1.mp4$名称1$30$是\r\nhttp://www.xxx.com/2.mp4$名称2$50$否');
+                $("#ey_batch_links").find('textarea').attr('placeholder', '参考格式：链接地址$选集名称$选集时长(秒)$试看(是/否)\r\n示例如下：\r\nhttp://www.xxx.com/1.mp4$名称1$30$是\r\nhttp://www.xxx.com/2.mp4$名称2$50$否');
             }
         }, function(value, index, elem){
             let code = value.split(/[(\r\n)\r\n]+/); // 根据换行或者回车进行识别
@@ -1738,9 +1749,9 @@
         var html = "";
         html += "<div id=\"num_upload_box_sys\"  class='media_del_1586481014_"+num+"' data-num='"+num+"' style='margin-bottom: 10px;'>\n" +
             "                            <span>&nbsp;链接地址:</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_"+num+"\" value='"+url+"' style=\"width: 300px !important;\" >\n" +
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_url_sys_"+num+"\" value='"+url+"' style=\"width: 300px !important;\" >&nbsp;&nbsp;\n" +
             "                            <span>&nbsp;选集名称:</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_"+num+"\" value='"+name+"' style=\"width: 150px !important;\">\n";
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_title_sys_"+num+"\" value='"+name+"' style=\"width: 150px !important;\">&nbsp;&nbsp;\n";
         // 视频章节分组插件
         var is_open_videogroup = {$is_open_videogroup|default=0};
         if (is_open_videogroup == 1) {
@@ -1755,13 +1766,13 @@
                     html += "                    >"+item.group_name+"</option>\n";
                 });
             }
-            html += "                    </select>\n";
+            html += "                    </select>&nbsp;&nbsp;\n";
         }
 
-        html += "                        <span>&nbsp;时长(秒):</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_"+num+"\" value='"+time+"' style=\"width: 50px !important;\">\n" +
+        html += "                        <span>&nbsp;选集时长:</span>\n" +
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_time_sys_"+num+"\" value='"+time+"' style=\"width: 50px !important;\">(秒)&nbsp;&nbsp;\n" +
             "                        <span>&nbsp;排序:</span>\n" +
-            "                            <input type=\"text\" class=\"input-txt\" id=\"video_sort_order_"+num+"\" value='100' style=\"width: 50px !important;\">\n" +
+            "                            <input type=\"text\" class=\"input-txt\" id=\"video_sort_order_"+num+"\" value='100' style=\"width: 50px !important;\">&nbsp;&nbsp;\n" +
             "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_size_sys_"+num+"\">" +
             "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_mime_sys_"+num+"\">" +
             "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_name_sys_"+num+"\">" +

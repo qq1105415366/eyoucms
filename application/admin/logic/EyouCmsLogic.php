@@ -308,8 +308,15 @@ class EyouCmsLogic extends Model
         $sys_info['domain']         = request()->host();
         $sys_info['memory_limit']   = ini_get('memory_limit');
         $sys_info['version']        = file_get_contents(DATA_PATH.'conf/version.txt');
-        $mysqlinfo = Db::query("SELECT VERSION() as version");
-        $sys_info['mysql_version']  = $mysqlinfo[0]['version'];
+        if (config('database.type') == 'dm') { //达梦优化
+            $mysqlinfo = Db::query('select * from "v$version"');
+            $sys_info['mysql_version']  = $mysqlinfo[0]['BANNER'];
+            $sys_info['dbtype'] ='Dm(达梦)';
+        } else {
+            $mysqlinfo = Db::query("SELECT VERSION() as version");
+            $sys_info['mysql_version']  = $mysqlinfo[0]['version'];
+            $sys_info['dbtype'] ='Mysql';
+        }
         if(function_exists("gd_info")){
             $gd = gd_info();
             $sys_info['gdinfo']     = $gd['GD Version'];
@@ -492,17 +499,22 @@ class EyouCmsLogic extends Model
         $now_day = strtotime(date("Y-m-d"));
         $min_time = $now_day - (6*86400);
         $dataNum = $dataAmount = [];
-        $statistics_data = Db::name('statistics_data')->field('date,num,total')->where([
-                'type'=>2,
+        $statistics_data = Db::name('statistics_data')->field('type,date,num,total')->where([
+                'type'=>['IN', [2,3]],
                 'date'=>['egt', $min_time],
                 'lang'=>$this->admin_lang,
-            ])->order('date desc')->getAllWithIndex('date');
+            ])->order('type asc, date desc')->select();
+        $arr = [];
+        foreach ($statistics_data as $key => $val) {
+            $arr[$val['type']][$val['date']] = $val;
+        }
+        $statistics_data = $arr;
         for ($i = 0;$i<7;$i++){
             $time = $now_day - $i*86400;
             //成交量
-            $dataNum[$i] = empty($statistics_data[$time]) ? 0 : $statistics_data[$time]['num'];
+            $dataNum[$i] = empty($statistics_data[2][$time]) ? 0 : $statistics_data[2][$time]['num'];
             //成交额
-            $dataAmount[$i] = empty($statistics_data[$time]) ? 0 : $statistics_data[$time]['total'];
+            $dataAmount[$i] = empty($statistics_data[3][$time]) ? 0 : $statistics_data[3][$time]['total'];
         }
         $dataNum = array_reverse($dataNum);
         $dataAmount = array_reverse($dataAmount);
@@ -518,16 +530,27 @@ class EyouCmsLogic extends Model
         $inletStr = '/index.php';
         $seo_inlet = config('ey_config.seo_inlet');
         1 == intval($seo_inlet) && $inletStr = '';
-        // --end
+
+        $web_basehost = preg_replace('/^(([^\:\.]+):)?(\/\/)?([^\/\:]*)(.*)$/i', '${4}', config('tpcache.web_basehost'));
+        if (!empty($web_basehost)) {
+            $host_port = !stristr($website_host, ':') ? '' : $this->request->port();
+            $website_host = $web_basehost;
+            if (!empty($host_port) && !stristr($website_host, ':')) {
+                $website_host .= ":{$host_port}";
+            }
+            $website_host = $this->request->scheme() . '://' . $website_host;
+        } else {
+            $website_host = $this->request->domain();
+        }
+        $home_url = $website_host.ROOT_DIR.'/index.php';  // 支持子目录
         $home_default_lang = config('ey_config.system_home_default_lang');
-        $home_url = $this->request->domain().ROOT_DIR.'/index.php';  // 支持子目录
         //默认前台语言，链接中不需要带语言参数；非默认前台语言，链接中需要带语言参数
         if ($home_default_lang != $this->admin_lang) {
             $home_url = Db::name('language')->where(['mark'=>$this->admin_lang])->getField('url');
             if (empty($home_url)) {
                 $seo_pseudo = !empty($globalConfig['seo_pseudo']) ? $globalConfig['seo_pseudo'] : config('ey_config.seo_pseudo');
                 if (1 == $seo_pseudo) {
-                    $home_url = $this->request->domain().ROOT_DIR.$inletStr; // 支持子目录
+                    $home_url = $website_host.ROOT_DIR.$inletStr; // 支持子目录
                     if (!empty($inletStr)) {
                         $home_url .= '?';
                     } else {
@@ -535,7 +558,7 @@ class EyouCmsLogic extends Model
                     }
                     $home_url .= http_build_query(['lang'=>$this->admin_lang]);
                 } else {
-                    $home_url = $this->request->domain().ROOT_DIR.$inletStr.'/'.$this->admin_lang; // 支持子目录
+                    $home_url = $website_host.ROOT_DIR.$inletStr.'/'.$this->admin_lang; // 支持子目录
                 }
             }
         }

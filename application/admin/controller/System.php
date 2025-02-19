@@ -120,6 +120,11 @@ class System extends Base
             $param['web_recordnum'] = preg_replace('/<script([^\>]*)>([\s\S]+)<\/script>/i', '', $param['web_recordnum']);
             $param['web_garecordnum'] = preg_replace('/<script([^\>]*)>([\s\S]+)<\/script>/i', '', $param['web_garecordnum']);
 
+            if (function_exists('is_template_opt') && is_template_opt()) {
+                $param['web_thirdcode_pc'] = str_replace('ｓｃｒｉｐｔ', 'script', $param['web_thirdcode_pc']);
+                $param['web_thirdcode_wap'] = str_replace('ｓｃｒｉｐｔ', 'script', $param['web_thirdcode_wap']);
+            }
+
             tpCache($inc_type, $param);
             write_global_params($this->admin_lang); // 写入全局内置参数
 
@@ -148,7 +153,7 @@ class System extends Base
         /*--end*/
 
         /*自定义变量*/
-        $eyou_row = Db::name('config_attribute')->field('a.attr_id, a.attr_name, a.attr_var_name, a.attr_input_type, b.value, b.id, b.name')
+        /*$eyou_row = Db::name('config_attribute')->field('a.attr_id, a.attr_name, a.attr_var_name, a.attr_input_type, b.value, b.id, b.name')
             ->alias('a')
             ->join('__CONFIG__ b', 'b.name = a.attr_var_name AND b.lang = a.lang', 'LEFT')
             ->where([
@@ -163,7 +168,7 @@ class System extends Base
             $val['value'] = handle_subdir_pic($val['value']); // 支持子目录
             $eyou_row[$key] = $val;
         }
-        $this->assign('eyou_row',$eyou_row);
+        $this->assign('eyou_row',$eyou_row);*/
         /*--end*/
 
         // 站点状态关闭时，所关闭的终端口(pc、mobile)
@@ -271,11 +276,9 @@ class System extends Base
             $seo_pseudo = tpCache('global.seo_pseudo');
             /*多语言*/
             if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
+                $langRow = \think\Db::name('language')->order('id asc')->select();
                 foreach ($langRow as $key => $val) {
-                    tpCache($inc_type,$param,$val['mark']);
+                    tpCache($inc_type, $param, $val['mark']);
                     write_global_params($val['mark']); // 写入全局内置参数
                     // if (!empty($param['web_citysite_open']) && 2 == $seo_pseudo) {
                     //     tpCache('seo', ['seo_pseudo'=>1, 'seo_dynamic_format'=>1], $val['mark']);
@@ -293,6 +296,9 @@ class System extends Base
                 tpCache('other', ['other_pcwapjs'=>$other_pcwapjs]);
             }
             /*--end*/
+
+            // URL启用/关闭https
+            $this->setWebHttpsFilter($param['web_is_https']);
 
             // 开发模式，清掉缓存
             if (2 == $param['web_cmsmode']) {
@@ -368,6 +374,26 @@ class System extends Base
         $this->assign('other_pcwapjs', $other_pcwapjs);
 
         return $this->fetch();
+    }
+
+    /**
+     * URL启用/关闭https
+     */
+    private function setWebHttpsFilter($web_is_https = 0)
+    {
+        $tfile = DATA_PATH.'conf'.DS.'https_service.txt';
+        if (!empty($web_is_https)) {
+            $fp = @fopen($tfile,'w');
+            if(!$fp) {
+                @file_put_contents($tfile, $web_is_https);
+            }
+            else {
+                fwrite($fp, $web_is_https);
+                fclose($fp);
+            }
+        } else {
+            @unlink($tfile);
+        }
     }
 
     /**
@@ -862,15 +888,28 @@ class System extends Base
         if (IS_POST) {
             $goback = input('param.goback/s');
             $param = input('post.');
+
             if (!empty($param['tpl_id'])){
                 $open_send_scene = Db::name('smtp_tpl')->where('tpl_id','in',$param['tpl_id'])->column('send_scene');
                 Db::name('smtp_tpl')->where('send_scene','in',$open_send_scene)->update(['is_open'=>1,'update_time'=>getTime()]);
-                $close_send_scene = Db::name('smtp_tpl')->where('tpl_id','not in',$param['tpl_id'])->column('send_scene');
-                Db::name('smtp_tpl')->where('send_scene','not in',$close_send_scene)->update(['is_open'=>0,'update_time'=>getTime()]);
+                Db::name('smtp_tpl')->where('send_scene','not in',$open_send_scene)->update(['is_open'=>0,'update_time'=>getTime()]);
             }else{
-                Db::name('smtp_tpl')->where('tpl_id','>',0)->update(['is_open'=>0,'update_time'=>getTime()]);
+                Db::name('smtp_tpl')->where('is_open',1)->update(['is_open'=>0,'update_time'=>getTime()]);
             }
             if (isset($param['tpl_id'])) unset($param['tpl_id']);
+            
+            $smtp_from_eamil = str_replace('，', ',', trim($param['smtp_from_eamil']));
+            if (!empty($smtp_from_eamil)) {
+                $test_email_arr = explode(',', $smtp_from_eamil);
+                foreach ($test_email_arr as $key => $val) {
+                    $val = trim($val);
+                    if (!check_email($val)) {
+                        unset($test_email_arr[$key]);
+                    }
+                }
+                $smtp_from_eamil = implode(',', $test_email_arr);
+            }
+            $param['smtp_from_eamil'] = $smtp_from_eamil;
             
             /*多语言*/
             if (is_language()) {
@@ -894,7 +933,7 @@ class System extends Base
         $goback = input('param.goback/s');
         $this->assign('goback', $goback);
 
-        $tpl_list = Db::name('smtp_tpl')->where('lang', $this->admin_lang)->order('tpl_id asc')->select();
+        $tpl_list = Db::name('smtp_tpl')->where(['send_scene'=>['neq',30], 'lang'=>$this->admin_lang])->order('tpl_id asc')->select();
         $this->assign('tpl_list', $tpl_list);
 
         return $this->fetch();
@@ -995,12 +1034,13 @@ class System extends Base
         $assign_data['sms'] = $sms;
 
         $map = [
+            'send_scene'=>['neq',30],
             'lang' => $this->admin_lang,
         ];
         $map['sms_type'] = 1;
-        $assign_data['sms_list1'] = Db::name('sms_template')->where($map)->order('send_scene asc')->select();
+        $assign_data['sms_list1'] = Db::name('sms_template')->where($map)->order('tpl_id asc')->select();
         $map['sms_type'] = 2;
-        $assign_data['sms_list2'] = Db::name('sms_template')->where($map)->order('send_scene asc')->select();
+        $assign_data['sms_list2'] = Db::name('sms_template')->where($map)->order('tpl_id asc')->select();
 
         // ToSms短信通知插件内置代码 start
         if (file_exists('./weapp/ToSms/model/ToSmsModel.php')) {
@@ -1052,13 +1092,15 @@ class System extends Base
         foreach ($sms_config as $key => $val) {
             $sms_arr[$key] = $val;
         }
-        foreach (['sms_appkey','sms_secretkey','sms_appkey_tx','sms_appid_tx'] as $key => $val) {
-            if (2 == $sms_type) {
-                if (preg_match('/^sms_(.*)_tx$/i', $val) && isset($sms_arr[$val]) && empty($sms_arr[$val])) {
+        if (2 == $sms_type) {
+            foreach (['sms_appkey_tx','sms_appid_tx'] as $key => $val) {
+                if (isset($sms_arr[$val]) && empty($sms_arr[$val])) {
                     $is_conf = 0;
                 }
-            } else {
-                if (preg_match('/^sms_/i', $val) && isset($sms_arr[$val]) && empty($sms_arr[$val])) {
+            }
+        } else {
+            foreach (['sms_appkey','sms_secretkey'] as $key => $val) {
+                if (isset($sms_arr[$val]) && empty($sms_arr[$val])) {
                     $is_conf = 0;
                 }
             }
@@ -1271,6 +1313,12 @@ class System extends Base
                 }
             }
             /*--end*/
+            //重新统计栏目文档
+            //如果 ey_archives 主表的数据大于20万，就不执行统计
+            $arc_count = Db::name('archives')->count('aid');
+            if ($arc_count < 200000){
+                model('Arctype')->hand_type_count();
+            }
 
             $request = Request::instance();
             $gourl = $request->baseFile();
@@ -1457,7 +1505,7 @@ class System extends Base
 
         try {
             /*清除大数据缓存表 -- 陈风任*/
-            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
             /* END */
         } catch (\Exception $e) {}
@@ -1518,9 +1566,25 @@ class System extends Base
     public function send_email()
     {
         $param = $smtp_config = input('post.');
+        // 收件人邮箱
+        $smtp_from_eamil = str_replace('，', ',', trim($param['smtp_from_eamil']));
+        if (!empty($smtp_from_eamil)) {
+            $test_email_arr = explode(',', $smtp_from_eamil);
+            foreach ($test_email_arr as $key => $val) {
+                $val = trim($val);
+                if (!check_email($val)) {
+                    unset($test_email_arr[$key]);
+                }
+            }
+            $smtp_from_eamil = implode(',', $test_email_arr);
+        }
+        if (empty($smtp_from_eamil)) {
+            $this->error('管理员邮箱格式不正确');
+        }
+
         $title = '演示标题';
         $content = '演示一串随机数字：' . mt_rand(1000,9999);
-        $res = send_email($param['smtp_from_eamil'], $title, $content, 0, $smtp_config);
+        $res = send_email($smtp_from_eamil, $title, $content, 0, $smtp_config);
         if (intval($res['code']) == 1) {
             unset($smtp_config['tpl_id']);
             /*多语言*/
@@ -1949,7 +2013,7 @@ class System extends Base
             }else{
                 $r = Db::name('config')->where('name', $attr_var_name)->update(array('is_del'=>1, 'update_time'=>getTime()));
             }
-            if($r){
+            if($r !== false){
                 if ('del' == $deltype){
                     Db::name('config_attribute')->where('attr_var_name', $attr_var_name)->delete();
                 }else{

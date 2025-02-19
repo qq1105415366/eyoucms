@@ -220,6 +220,10 @@ class Ueditor extends Base
     
     //上传文件
     private function upFile($fieldName) {
+        if (!IS_POST) {
+            return json_encode(['state' =>'非法上传']);
+        }
+
         $file = request()->file($fieldName);
         if (empty($file)) $file = request()->file('upfile');
         if (empty($file)) $file = request()->file('upload');
@@ -235,6 +239,7 @@ class Ueditor extends Base
         if(!empty($error)){
             return json_encode(['state' =>$error]);
         }
+        $original = $file->getInfo('name');
 
         $max_file_size = intval(tpCache('basic.file_size') * 1024 * 1024);
         $fileExt = '';
@@ -251,6 +256,16 @@ class Ueditor extends Base
             ['file'=>'fileSize:'.$max_file_size.'|fileExt:'.$fileExt],
             ['file.fileSize' => '上传文件过大','file.fileExt'=>'上传文件后缀名必须为'.$fileExt]
         );
+        // 文件后缀名
+        $file_ext = pathinfo($original, PATHINFO_EXTENSION);
+        /*验证图片一句话木马*/
+        if (in_array($file_ext, explode('|', $image_type))) {
+            if (false === check_illegal($file->getInfo('tmp_name'), false, $file_ext)) {
+                $result = '疑似木马图片！';
+            }
+        }
+        /*--end*/
+        
         if (true !== $result || empty($file)) {
             $state = "ERROR" . $result;
             return json_encode(['state' =>$state]);
@@ -259,9 +274,15 @@ class Ueditor extends Base
         // 移动到框架应用根目录/public/uploads/ 目录下
         $this->savePath = $this->savePath.date('Ymd/');
         // 使用自定义的文件保存规则
-        $info = $file->rule(function ($file) {
-            return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999));
-        })->move(UPLOAD_PATH.$this->savePath);
+        $file_uploadname_open = (int)tpCache('global.file_uploadname_open');
+        if ($file_uploadname_open == 1) { // by 小秋
+            $SaveName = substr(str_shuffle('abcdefgAhijklRmnopqGrstuvwxyz'), 0, 1).mt_rand(1,9999).'-'.$original;
+            $info = $file->move(UPLOAD_PATH.$this->savePath,$SaveName);
+        } else {
+            $info = $file->rule(function ($file) {
+                return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
+            })->move(UPLOAD_PATH.$this->savePath);
+        }
 
         if (!empty($info)) {
             $file_ext = pathinfo($file->getInfo('name'), PATHINFO_EXTENSION);
@@ -270,7 +291,7 @@ class Ueditor extends Base
                 'state' => 'SUCCESS',
                 'url' => ROOT_DIR.$return_url,
                 'title' => '',//$info->getSaveName(),
-                'original' => $file->getInfo('name'),
+                'original' => ($file_uploadname_open == 1) ? $info->getSaveName() : $file->getInfo('name'),
                 'time' => date("Y-m-d H:i:s"),
                 'type' => '.' . $info->getExtension(),
                 'size' => $info->getSize(),
@@ -538,6 +559,10 @@ class Ueditor extends Base
      * 例如：涂鸦图片上传
     */
     private function upBase64($config,$fieldName){
+        if (!IS_POST) {
+            return json_encode(['state' =>'非法上传']);
+        }
+
         $base64Data = $_POST[$fieldName];
         $img = base64_decode($base64Data);
 
@@ -614,23 +639,29 @@ class Ueditor extends Base
             respose($return_data,'json');
         }
         $original = $file->getInfo('name');
+        // 图片后缀名
+        $file_ext = pathinfo($original, PATHINFO_EXTENSION);
         // ico图片文件不进行验证
-        if (pathinfo($original, PATHINFO_EXTENSION) != 'ico') {
-            $result = $this->validate(
-                ['file' => $file], 
-                ['file' => 'image|fileSize:' . $max_file_size . '|fileExt:' . $this->image_type],
-                [
-                    'file.image'    => '上传文件必须为图片',
-                    'file.fileSize' => '上传图片过大',
-                    'file.fileExt'  => '上传图片后缀名必须为' . $this->image_type
-                ]
-            );
+        if ($file_ext != 'ico') {
+            if('webp' == $file_ext && version_compare(PHP_VERSION,'7.1.0','<')) {
+                $result = "php7.1.0或以上版本才支持上传{$file_ext}";
+            } else {
+                $result = $this->validate(
+                    ['file' => $file], 
+                    ['file' => 'image|fileSize:' . $max_file_size . '|fileExt:' . $this->image_type],
+                    [
+                        'file.image'    => '上传文件必须为图片',
+                        'file.fileSize' => '上传图片过大',
+                        'file.fileExt'  => '上传图片后缀名必须为' . $this->image_type
+                    ]
+                );
+            }
         } else {
             $result = true;
         }
 
         /*验证图片一句话木马*/
-        if (false === check_illegal($file->getInfo('tmp_name'))) {
+        if (false === check_illegal($file->getInfo('tmp_name'), false, $file_ext)) {
             $result = '疑似木马图片！';
         }
         /*--end*/
@@ -650,10 +681,16 @@ class Ueditor extends Base
                 $savePath = UPLOAD_PATH . $this->savePath . date('Ymd/');
             }
             // 移动到框架应用根目录/public/uploads/ 目录下
-            $info = $file->rule(function ($file) {
-                // return  md5(mt_rand()); // 使用自定义的文件保存规则
-                return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
-            })->move($savePath);
+            $file_uploadname_open = (int)tpCache('global.file_uploadname_open');
+            if ($file_uploadname_open == 1) { // by 小秋
+                $SaveName = substr(str_shuffle('abcdefgAhijklRmnopqGrstuvwxyz'), 0, 1).mt_rand(1,9999).'-'.$original;
+                $info = $file->move($savePath,$SaveName);
+            } else {
+                $info = $file->rule(function ($file) {
+                    return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
+                })->move($savePath);
+            }
+
             if ($info) {
                 $state = "SUCCESS";
             } else {
@@ -737,7 +774,12 @@ class Ueditor extends Base
      * app文件上传
      */
     public function appFileUp()
-    {      
+    {
+        if (!IS_POST) {
+            $return_data['state'] = '非法上传';
+            respose($return_data);
+        }
+
         $max_file_size = intval(tpCache('basic.file_size') * 1024 * 1024);
         $path = UPLOAD_PATH.'soft/'.date('Ymd/');
         if (!file_exists($path)) {
@@ -759,9 +801,18 @@ class Ueditor extends Base
         if (true !== $result || empty($file)) {            
             $state = "ERROR" . $result;
         } else {
-            $info = $file->rule(function ($file) {    
-                return date('YmdHis_').input('Filename'); // 使用自定义的文件保存规则
-            })->move($path);
+            $original = $file->getInfo('name');
+            // 使用自定义的文件保存规则
+            $file_uploadname_open = (int)tpCache('global.file_uploadname_open');
+            if ($file_uploadname_open == 1) { // by 小秋
+                $SaveName = substr(str_shuffle('abcdefgAhijklRmnopqGrstuvwxyz'), 0, 1).mt_rand(1,9999).'-'.$original;
+                $info = $file->move($path,$SaveName);
+            } else {
+                $info = $file->rule(function ($file) {
+                    return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
+                })->move($path);
+            }
+
             if ($info) {
                 $state = "SUCCESS";                         
             } else {
@@ -794,6 +845,10 @@ class Ueditor extends Base
 
     //上传文件
     public function DownloadUploadFile(){
+        if (!IS_POST) {
+            echo json_encode(['msg' => '非法上传']);exit;
+        }
+
         header('Content-Type: text/html; charset=utf-8');
         // 获取定义的上传最大参数
         $max_file_size = intval(tpCache('basic.file_size') * 1024 * 1024);
@@ -840,33 +895,44 @@ class Ueditor extends Base
         $this->fileName = iconv("utf-8","gb2312//IGNORE",$fileName);
 
         // 使用自定义的文件保存规则
-        $info = $file->rule(function ($file) {
-            // return  $this->fileName;
-            return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
-        })->move(UPLOAD_PATH.$this->savePath);
+        $file_uploadname_open = (int)tpCache('global.file_uploadname_open');
+        if ($file_uploadname_open == 1) { // by 小秋
+            $SaveName = substr(str_shuffle('abcdefgAhijklRmnopqGrstuvwxyz'), 0, 1).mt_rand(1,9999).'-'.$fileName;
+            $info = $file->move(UPLOAD_PATH.$this->savePath,$SaveName);
+        } else {
+            $info = $file->rule(function ($file) {
+                return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
+            })->move(UPLOAD_PATH.$this->savePath);
+        }
+        
         if($info){
             // 拼装数据存入session
             $file_path = UPLOAD_PATH.$this->savePath.$info->getSaveName();
-            $return = array(
+            $return_data = array(
                 'code'      => 1,
                 'msg'       => '上传成功',
                 'file_url'  => '/' . UPLOAD_PATH.$this->savePath.$info->getSaveName(),
                 'file_mime' => $file->getInfo('type'),
-                'file_name' => $fileName,
+                'file_name' => ($file_uploadname_open == 1) ? $info->getSaveName() : $fileName,
                 'file_ext'  => '.' . $file_ext,
                 'file_size' => $info->getSize(),
                 'uhash'     => $this->uhash($file_path),
                 'md5file'   => md5_file($file_path),
             );
         }else{
-            $return = array('msg' => $info->getError());
+            $return_data = array('msg' => $info->getError());
         }
-        echo json_encode($return);
+        echo json_encode($return_data);
     }
 
     //上传文件
     public function DownloadUploadFileAjax()
     {
+        if (!IS_POST) {
+            $res = ['code' => 0, 'msg' => '非法上传'];
+            respose($res);
+        }
+
         // 获取上传的文件信息
         $file = request()->file('file');
         /*判断上传文件是否存在错误*/
@@ -904,9 +970,15 @@ class Ueditor extends Base
         $file_ext = pathinfo($fileName, PATHINFO_EXTENSION);
 
         // 使用自定义的文件保存规则
-        $info = $file->rule(function ($file) {
-            return $this->admin_id . '-' . dd2char(date("ymdHis") . mt_rand(100, 999));
-        })->move(UPLOAD_PATH . $this->savePath);
+        $file_uploadname_open = (int)tpCache('global.file_uploadname_open');
+        if ($file_uploadname_open == 1) { // by 小秋
+            $SaveName = substr(str_shuffle('abcdefgAhijklRmnopqGrstuvwxyz'), 0, 1).mt_rand(1,9999).'-'.$fileName;
+            $info = $file->move(UPLOAD_PATH.$this->savePath,$SaveName);
+        } else {
+            $info = $file->rule(function ($file) {
+                return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
+            })->move(UPLOAD_PATH.$this->savePath);
+        }
         if ($info) {
             // 拼装数据存入session
             $file_path = UPLOAD_PATH . $this->savePath . $info->getSaveName();
@@ -915,7 +987,7 @@ class Ueditor extends Base
                 'msg'       => '上传成功',
                 'file_url'  => ROOT_DIR.'/' . UPLOAD_PATH . $this->savePath . $info->getSaveName(),
                 'file_mime' => $file->getInfo('type'),
-                'file_name' => $fileName,
+                'file_name' => ($file_uploadname_open == 1) ? $info->getSaveName() : $fileName,
                 'file_ext'  => '.' . $file_ext,
                 'file_size' => $info->getSize(),
                 'uhash'     => $this->uhash($file_path),
@@ -930,6 +1002,10 @@ class Ueditor extends Base
     // 上传视频
     public function upVideo()
     {
+        if (!IS_POST) {
+            return json_encode(['state' => '非法上传']);
+        }
+
         $file     = request()->file('file');
         if (empty($file)) {
             if (!@ini_get('file_uploads')) {
@@ -960,7 +1036,12 @@ class Ueditor extends Base
             $state = "ERROR" . $result;
             return json_encode(['state' => $state]);
         }
-
+        // 定义文件名
+        $fileName    = $file->getInfo('name');
+        // 提取出文件名，不包括扩展名
+        $newfileName = preg_replace('/\.([^\.]+)$/', '', $fileName);
+        // 过滤文件名.\/的特殊字符，防止利用上传漏洞
+        $newfileName = preg_replace('#(\\\|\/|\.)#i', '', $newfileName);
         //获取视频时长start
         vendor('getid3.getid3');
         // 实例化
@@ -973,22 +1054,18 @@ class Ueditor extends Base
         // 移动到框架应用根目录/public/uploads/ 目录下
         $this->savePath = $this->savePath.date('Ymd/');
         // 使用自定义的文件保存规则
-        $info = $file->rule(function ($file) {
-            return $this->admin_id . '-' . dd2char(date("ymdHis") . mt_rand(100, 999));
-        })->move(UPLOAD_PATH . $this->savePath);
-
+        $file_uploadname_open = (int)tpCache('global.file_uploadname_open');
+        if ($file_uploadname_open == 1) { // by 小秋
+            $SaveName = substr(str_shuffle('abcdefgAhijklRmnopqGrstuvwxyz'), 0, 1).mt_rand(1,9999).'-'.$newfileName;
+            $info = $file->move(UPLOAD_PATH.$this->savePath,$SaveName);
+        } else {
+            $info = $file->rule(function ($file) {
+                return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999)); // 使用自定义的文件保存规则
+            })->move(UPLOAD_PATH.$this->savePath);
+        }
         if ($info) {
-            // 定义文件名
-            $fileName    = $file->getInfo('name');
-            // 提取出文件名，不包括扩展名
-            $newfileName = preg_replace('/\.([^\.]+)$/', '', $fileName);
-            // 过滤文件名.\/的特殊字符，防止利用上传漏洞
-            $newfileName = preg_replace('#(\\\|\/|\.)#i', '', $newfileName);
-
             $file_path = UPLOAD_PATH.$this->savePath.$info->getSaveName();
-
             $file_size = $info->getSize();
-
             $data = array(
                 'state'    => 'SUCCESS',
                 'url'      => '/' . $file_path,

@@ -119,8 +119,8 @@ class Search extends Base
     {
         if (IS_POST) {
             $param = input('param.');
-            $param['search_tabu_words'] = htmlspecialchars_decode($param['search_tabu_words']);
-            $search_tabu_words = explode(PHP_EOL, $param['search_tabu_words']);
+            $search_tabu_words = htmlspecialchars_decode($param['search_tabu_words']);
+            $search_tabu_words = explode(PHP_EOL, $search_tabu_words);
             foreach ($search_tabu_words as $key => $val) {
                 $val = trim($val);
                 if (!empty($val)) {
@@ -168,6 +168,9 @@ class Search extends Base
             $search['search_tabu_words'] = implode(PHP_EOL, $search_tabu_words);
         }
         $this->assign('search',$search);
+
+        $foreign_is_status = tpSetting('foreign.foreign_is_status', [], 'cn');
+        $this->assign('foreign_is_status',$foreign_is_status);
 
         return $this->fetch();
     }

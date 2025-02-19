@@ -162,7 +162,7 @@ class Decoder
             if ($this->GIF_bfseek > strlen($this->GIF_stream)) {
                 return 0;
             }
-            $this->GIF_buffer[] = ord($this->GIF_stream{$this->GIF_bfseek++});
+            $this->GIF_buffer[] = ord($this->GIF_stream[$this->GIF_bfseek++]);
         }
         return 1;
     }

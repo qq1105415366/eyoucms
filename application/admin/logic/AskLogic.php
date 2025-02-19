@@ -445,7 +445,7 @@ class AskLogic extends Model
         fclose($fp);
         if(!eyPreventShell($saveDir) || !file_exists($saveDir) || $md5File != md5_file($saveDir))
         {
-            return ['code' => 0, 'msg' => '下载保存问答模板包失败，请检查所有目录的权限以及用户组不能为root'];
+            return ['code' => 0, 'msg' => '下载问答模板包失败，请检查网站目录权限'];
         }
         return ['code' => 1, 'msg' => '下载成功'];
     }                

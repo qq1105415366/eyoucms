@@ -335,8 +335,24 @@ class Archives extends Base
                     ->where('id','IN',$channelIds)
                     ->getAllWithIndex('id');
                 $assign_data['channelRow'] = $channelRow;
-
+                $cityRow = get_citysite_list();
                 foreach ($list as $key => $val) {
+                    $row[$val['aid']]['areas']  = '';
+                    if($row[$val['aid']]['area_id']>0){
+                        if (isset($cityRow[$row[$val['aid']]['area_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['area_id']]['name'];     
+                        }
+                    }elseif($row[$val['aid']]['city_id']>0){
+                        if (isset($cityRow[$row[$val['aid']]['city_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['city_id']]['name'];     
+                        }
+                    }elseif($row[$val['aid']]['province_id']>0){                        
+                        if (isset($cityRow[$row[$val['aid']]['province_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['province_id']]['name'];     
+                        }
+                    } else{
+                        $row[$val['aid']]['areas']  = '全国';
+                    }
                     $row[$val['aid']]['arcurl'] = get_arcurl($row[$val['aid']]);
                     $row[$val['aid']]['litpic'] = handle_subdir_pic($row[$val['aid']]['litpic']); // 支持子目录
                     $list[$key] = $row[$val['aid']];
@@ -502,7 +518,7 @@ class Archives extends Base
                 if ($r !== false) {
                     adminLog('审核文档-id：'.implode(',', $aids));
                     /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                    Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                     model('SqlCacheTable')->InsertSqlCacheTable(true);
                     /* END */
                     $this->success('操作成功！');
@@ -530,7 +546,7 @@ class Archives extends Base
                 if ($r !== false) {
                     adminLog('取消审核-id：'.implode(',', $aids));
                     /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                    Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                     model('SqlCacheTable')->InsertSqlCacheTable(true);
                     /* END */
                     $this->success('操作成功！');
@@ -619,7 +635,7 @@ class Archives extends Base
                 \think\Cache::clear('taglist');
                 \think\Cache::clear('archives');
                 /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                 model('SqlCacheTable')->InsertSqlCacheTable(true);
                 /* END */
 
@@ -979,6 +995,7 @@ class Archives extends Base
                         continue;
                     }
                     if ($val['dtype'] == 'htmltext') {
+                        $addonFieldExtList[$key]['dfvalue'] = $val['dfvalue'] = !empty($val['dfvalue']) ? htmlspecialchars(handle_subdir_pic(htmlspecialchars_decode($val['dfvalue']), 'html')) : $val['dfvalue'];
                         if ($val['name'] == 'content_ey_m'){
                             $content_ey_m_dfvalue = $val['dfvalue'];
                             if ($val['ifeditable']){
@@ -1003,6 +1020,7 @@ class Archives extends Base
                 $first_html = '';
                 foreach ($addonFieldExtList as $key => $val) {
                     if ($val['dtype'] == 'htmltext') {
+                        $addonFieldExtList[$key]['dfvalue'] = $val['dfvalue'] = !empty($val['dfvalue']) ? htmlspecialchars(handle_subdir_pic(htmlspecialchars_decode($val['dfvalue']), 'html')) : $val['dfvalue'];
                         if ($val['name'] == 'content_ey_m'){
                             $content_ey_m_dfvalue = $val['dfvalue'];
                             if ($val['ifeditable']){
@@ -1371,6 +1389,10 @@ EOF;
         $assign_data['admin_info'] = session('admin_info');
         $assign_data['auth_role_info'] = $admin_info['auth_role_info'];
         
+        //允许发布文档列表的栏目
+        $arctype_html = allow_release_arctype($typeid);
+        $assign_data['arctype_html'] = $arctype_html;
+
         $this->assign($assign_data);
         return $this->fetch('index_draft');
     }
@@ -1382,6 +1404,7 @@ EOF;
         if (!empty($aid)){
             $map['aid'] = ['NEQ', $aid];
         }
+        $map['channel'] = ['NEQ', 6];
         $count = Db::name('archives')->where($map)->count('aid');
         if (!empty($count)){
             $this->error("<font color='black'>系统已存在标题为'<font color='red'>".$title."'</font>的文档! </font><a href='javascript:void(0);' onclick='layer.closeAll();'>[<font color='red'>关闭</font>]</a>");
@@ -1740,7 +1763,7 @@ EOF;
             $res = Db::name('archives')->where('aid',$param['aid'])->update($update);
             if (false !== $res){
                 // 清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表
-                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                 model('SqlCacheTable')->InsertSqlCacheTable(true);
                 $this->success('退回成功');
             }
@@ -1759,7 +1782,7 @@ EOF;
             $res = Db::name('archives')->where('aid',$param['aid'])->update($update);
             if (false !== $res){
                 // 清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表
-                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                 model('SqlCacheTable')->InsertSqlCacheTable(true);
                 $this->success('提交成功');
             }

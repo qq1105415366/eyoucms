@@ -110,7 +110,7 @@ class Ask extends Base
             $askData[$key]['add_time'] = friend_date($value['add_time']);
             $content = htmlspecialchars_decode($value['content']);
             $askData[$key]['no_format_content'] = checkStrHtml($content);
-//            $askData[$key]['no_format_content'] = @msubstr(checkStrHtml($value['content']), 0, config('global.arc_seo_description_length'), false);
+//            $askData[$key]['no_format_content'] = @msubstr(checkStrHtml($value['content']), 0, get_seo_description_length(), false);
         }
         $res['data'] = $askData;
         $typeList = $this->getTypeList();
@@ -160,7 +160,7 @@ class Ask extends Base
         // seo信息
         $info['seo_title'] = $info['ask_title'] . ' - ' . $info['type_name'];
         $info['seo_keywords'] = $info['ask_title'];
-        $info['seo_description'] = @msubstr(checkStrHtml($info['content']), 0, config('global.arc_seo_description_length'), false);
+        $info['seo_description'] = @msubstr(checkStrHtml($info['content']), 0, get_seo_description_length(), false);
 
         $info['answer'] = $this->GetAskReplyData($param);
         return $info;
@@ -552,7 +552,7 @@ class Ask extends Base
                 if (1 == $this->users['ask_is_review']) {
                     $this->success('回答成功，但你的回答需要管理员审核！', $url, ['review' => true]);
                 }else{
-                    $this->success('发布成功！', $url);
+                     $this->success('发布成功！', $url, ['resultId' => $ResultId]);
                 }
             }else{
                 $this->error('发布的信息有误，请检查！');

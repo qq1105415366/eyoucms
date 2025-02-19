@@ -23,6 +23,7 @@ use think\Cookie;
 class TagSporderlist extends Base
 {
     public $users_id = 0;
+    public $usersTplVersion    = '';
     public $usersTpl2xVersion    = '';
 
     //初始化
@@ -32,6 +33,7 @@ class TagSporderlist extends Base
         $this->users_id = session('users_id');
         // 是否安装核销插件
         $this->weappInfo = model('ShopPublicHandle')->getWeappVerifyInfo();
+        $this->usersTplVersion = getUsersTplVersion();
         $this->usersTpl2xVersion = getUsersTpl2xVersion();
     }
 
@@ -129,6 +131,22 @@ class TagSporderlist extends Base
 
             // 订单支付方式名称
             $pay_method_arr = Config::get('global.pay_method_arr');
+            // 获取订单状态
+            $order_status_arr = Config::get('global.order_status_arr');
+            if ('v5' == $this->usersTplVersion) {
+                foreach ($pay_method_arr as $key => $val) {
+                    if (isset($this->pay_method_arr[$key])) {
+                        $val = $this->pay_method_arr[$key];
+                    }
+                    $pay_method_arr[$key] = $val;
+                }
+                foreach ($order_status_arr as $key => $val) {
+                    if (isset($this->order_status_arr[$key])) {
+                        $val = $this->order_status_arr[$key];
+                    }
+                    $order_status_arr[$key] = $val;
+                }
+            }
 
             // 订单数据处理
             $OrderIds = $OrderIds_ = [];
@@ -221,9 +239,7 @@ class TagSporderlist extends Base
 
                 // 封装取消订单JS
                 $result['list'][$key]['CancelOrder'] = " onclick=\"CancelOrder('{$value['order_id']}');\" ";
-
-                // 获取订单状态
-                $order_status_arr = Config::get('global.order_status_arr');
+                
                 $result['list'][$key]['order_status_name'] = !empty($order_status_arr[$value['order_status']]) ? $order_status_arr[$value['order_status']] : '';
                 if (!empty($this->weappInfo) && 2 === intval($value['logistics_type']) && 1 === intval($value['order_status'])) {
                     $result['list'][$key]['order_status_name'] = '待核销';
@@ -319,7 +335,12 @@ class TagSporderlist extends Base
             $data_json = json_encode($data);
             $version   = getCmsVersion();
             // 循环中第一个数据带上JS代码加载
-            $srcurl = get_absolute_url("{$this->root_dir}/public/static/common/js/tag_sporderlist.js?v={$version}");
+            if ('v5' == $this->usersTplVersion) {
+                $jsfile = "tag_sporderlist_{$this->usersTplVersion}.js";
+            } else {
+                $jsfile = "tag_sporderlist.js";
+            }
+            $srcurl = get_absolute_url("{$this->root_dir}/public/static/common/js/{$jsfile}?v={$version}");
             $result['list'][0]['hidden'] = <<<EOF
 <script type="text/javascript">
     var d62a4a8743a94dc0250be0c53f833b = {$data_json};

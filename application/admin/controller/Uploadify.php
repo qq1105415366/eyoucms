@@ -279,22 +279,29 @@ class Uploadify extends Base
     {
         $func = input('func');
         $path = input('path','allimg');
+        $path = preg_replace('/([^\w\-\/\\\]*)/i', '', $path);
         $num = input('num/d', '1');
         $default_size = intval(tpCache('basic.file_size') * 1024 * 1024); // 单位为b
         $size = input('size/d'); // 单位为kb
         $size = empty($size) ? $default_size : $size*1024;
+        $width = input('width/d', 0);
+        $height = input('height/d', 0);
         $info = array(
             'num'=> $num,
-            'title' => '',          
+            'title' => '',
             'upload' =>url('Ueditor/imageUp',array('savepath'=>$path,'pictitle'=>'banner','dir'=>'images')),
             'fileList'=>url('Uploadify/fileList',array('path'=>$path)),
             'size' => $size,
             'type' => $this->image_type,
-            'input' => input('input'),
-            'func' => empty($func) ? 'undefined' : $func,
+            'input' => preg_replace('/([^\w\-]*)/i', '', input('input')),
+            'func' => empty($func) ? 'undefined' : preg_replace('/([^\w\-]*)/i', '', $func),
             'path'     => $path,
+            'width'     => $width,
+            'height'     => $height,
         );
-        $this->assign('info',$info);
+        $assign_data['info'] = $info;
+
+        $this->assign($assign_data);
         return $this->fetch();
     }
     
@@ -307,9 +314,9 @@ class Uploadify extends Base
         exit;
     }
     
-    public function fileList(){
+    public function fileList($type = 'Images', $path = 'allimg'){
         /* 判断类型 */
-        $type = input('type','Images');
+        $type = input('type', $type);
         switch ($type){
             /* 列出图片 */
             case 'Images' : $allowFiles = str_replace(',', '|', $this->image_type);break;
@@ -334,15 +341,20 @@ class Uploadify extends Base
         $start = isset($_GET['start']) ? htmlspecialchars($_GET['start']) : 0;
         $end = $start + $size;
         
-        $path = input('path','allimg');
+        $path = input('path', $path);
         if (1 == preg_match('#\.#', $path)) {
-            echo json_encode(array(
-                    "state" => "路径不符合规范",
-                    "list" => array(),
-                    "start" => $start,
-                    "total" => 0
-            ));
-            exit;
+            $res = array(
+                "state" => "路径不符合规范",
+                "list" => array(),
+                "start" => $start,
+                "total" => 0
+            );
+            if (IS_AJAX) {
+                echo json_encode($res);
+                exit;
+            } else {
+                return $res;
+            }
         }
         if ('adminlogo' == $path) {
             $path = 'public/static/admin/logo';
@@ -350,6 +362,8 @@ class Uploadify extends Base
             $path = 'public/static/admin/login';
         } else if ('loginbgimg' == $path) {
             $path = 'public/static/admin/loginbg';
+        } else if ('ico' == $path) {
+            $path = 'public/static/admin/ico';
         } else {
             $path = UPLOAD_PATH.$path;
         }
@@ -357,13 +371,18 @@ class Uploadify extends Base
         /* 获取文件列表 */
         $files = $this->getfiles($path, $allowFiles, $key);
         if (empty($files)) {
-            echo json_encode(array(
-                    "state" => "没有相关文件",
-                    "list" => array(),
-                    "start" => $start,
-                    "total" => count($files)
-            ));
-            exit;
+            $res = array(
+                "state" => "没有相关文件",
+                "list" => array(),
+                "start" => $start,
+                "total" => count($files)
+            );
+            if (IS_AJAX) {
+                echo json_encode($res);
+                exit;
+            } else {
+                return $res;
+            }
         }
         
         /* 获取指定范围的列表 */
@@ -373,14 +392,18 @@ class Uploadify extends Base
         }
         
         /* 返回数据 */
-        $result = json_encode(array(
-                "state" => "SUCCESS",
-                "list" => $list,
-                "start" => $start,
-                "total" => count($files)
-        ));
-        
-        echo $result;
+        $res = array(
+            "state" => "SUCCESS",
+            "list" => $list,
+            "start" => $start,
+            "total" => count($files)
+        );
+        if (IS_AJAX) {
+            echo json_encode($res);
+            exit;
+        } else {
+            return $res;
+        }
     }
 
     /**
@@ -400,10 +423,16 @@ class Uploadify extends Base
                     $this->getfiles($path2, $allowFiles, $key, $files);
                 } else {
                     if (preg_match("/\.(".$allowFiles.")$/i", $file) && preg_match("/.*". $key .".*/i", $file)) {
+                        //获取图像信息
+                        $info = @getimagesize(ROOT_PATH.'/'.$path2);
                         $files[] = array(
+                            'id'=> mchStrCode($path2, 'ENCODE'),
                             'url'=> ROOT_DIR.'/'.$path2, // 支持子目录
                             'name'=> $file,
-                            'mtime'=> filemtime($path2)
+                            'mtime'=> filemtime($path2),
+                            'width'=> empty($info[0]) ? 0 : $info[0],
+                            'height'=> empty($info[1]) ? 0 : $info[1],
+                            'mime'=> empty($info['mime']) ? '' : $info['mime'],
                         );
                     }
                 }

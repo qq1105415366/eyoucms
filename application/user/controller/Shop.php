@@ -109,7 +109,7 @@ class Shop extends Base
             // 数据由标签调取生成
             return $this->fetch('users/shop_order_details');
         }else{
-            $this->error('非法访问！');
+            $this->error(show_foreign_lang('非法访问'));
         }
     }
 
@@ -156,7 +156,7 @@ class Shop extends Base
                 ->where($CartWhere)
                 ->order('a.add_time desc')
                 ->select();
-            if (empty($list)) $this->error('请选择要购买的商品！');
+            if (empty($list)) $this->error(show_foreign_lang('请选择要购买的商品！'));
             
             $ExceedingStock = 0;
             // 处理商品库存检测
@@ -245,7 +245,7 @@ class Shop extends Base
 
             // 数量不可为空
             if (empty($param['num']) || 0 > $param['num']) {
-                $this->error('请选择数量！');
+                $this->error(show_foreign_lang('请选择数量！'));
             }
             // 查询条件
             $archives_where = [
@@ -283,12 +283,12 @@ class Shop extends Base
                 cookie($querystr, $querydata);
                 // 跳转链接
                 $url = urldecode(url('user/Shop/shop_under_order', ['querystr'=>$querystr]));
-                $this->success('立即购买！',$url);
+                $this->success(show_foreign_lang('立即购买！'),$url);
             }else{
-                $this->error('该商品不存在或已下架！');
+                $this->error(show_foreign_lang('该商品不存在或已下架！'));
             }
         }else {
-            $this->error('非法访问！');
+            $this->error(show_foreign_lang('非法访问'));
         }
     }
 
@@ -301,7 +301,7 @@ class Shop extends Base
             // 商品是否已售罄
             $this->IsSoldOut($param);
             // 数量不可为空
-            if (empty($param['num']) || 0 > $param['num']) $this->error('请选择数量！');
+            if (empty($param['num']) || 0 > $param['num']) $this->error(show_foreign_lang('请选择数量！'));
 
             // 查询条件
             $archives_where = [
@@ -338,15 +338,15 @@ class Shop extends Base
                     $cart_id = $this->shop_cart_db->add($data);
                 }
                 if (!empty($cart_id)) {
-                    $this->success('加入购物车成功！', url('user/Shop/shop_cart_list'), ['code'=>1]);
+                    $this->success(show_foreign_lang('加入购物车成功！'), url('user/Shop/shop_cart_list'), ['code'=>1]);
                 } else {
-                    $this->error('加入购物车失败！', null, ['code'=>-1]);
+                    $this->error(show_foreign_lang('加入购物车失败！'), null, ['code'=>-1]);
                 }
             } else {
-                $this->error('该商品不存在或已下架！', null, ['code'=>-1]);
+                $this->error(show_foreign_lang('该商品不存在或已下架！'), null, ['code'=>-1]);
             }
         } else {
-            $this->error('非法访问！', null, ['code'=>-1]);
+            $this->error(show_foreign_lang('非法访问'), null, ['code'=>-1]);
         }
     }
 
@@ -429,10 +429,10 @@ class Shop extends Base
                         $this->success(foreign_lang('system12', $this->home_lang), null, ['NumberVal'=>$CartData['num'], 'AmountVal'=>$CartData['price'], 'CartAmountVal'=>$CartAmountVal]);
                     }
                 } else {
-                    $this->error('商品数量最少为1', null, ['error'=>'0']);
+                    $this->error(show_foreign_lang('商品数量最少为1'), null, ['error'=>'0']);
                 }
             } else {
-                $this->error('该商品不存在或已下架！');
+                $this->error(show_foreign_lang('该商品不存在或已下架！'));
             }
         }
     }
@@ -498,7 +498,7 @@ class Shop extends Base
                 ];
                 $this->success(foreign_lang('system12', $this->home_lang), null, $data);
             } else {
-                $this->error('删除失败！');
+                $this->error(show_foreign_lang('操作失败'));
             }
         }
     }
@@ -516,9 +516,9 @@ class Shop extends Base
             // 删除数据
             $result = $this->shop_cart_db->where($where)->delete(true);
             if (!empty($result)) {
-                $this->success('删除成功');
+                $this->success(show_foreign_lang('操作成功'));
             } else {
-                $this->error('删除失败');
+                $this->error(show_foreign_lang('操作失败'));
             }
         }
     }
@@ -651,7 +651,7 @@ class Shop extends Base
         $ReturnOrderData = session($this->users_id.'_ReturnOrderData');
         if (empty($ReturnOrderData)) {
             $url = session($this->users_id.'_EyouShopOrderUrl');
-            $this->error('订单支付异常，请刷新重新下单~',$url);
+            $this->error(show_foreign_lang('订单支付异常，请刷新重新下单~'),$url);
         }
         $eyou = [
             'field' => $ReturnOrderData,
@@ -697,7 +697,7 @@ class Shop extends Base
                 ->select();
 
             // 没有相应的产品
-            if (empty($list[0])) $this->error('订单生成失败，没有相应的商品！');
+            if (empty($list[0])) $this->error(show_foreign_lang('订单生成失败，没有相应的商品！'));
             $list[0]['product_num']      = 1;
             $list[0]['under_order_type'] = 2; // 快速下单支付
 
@@ -835,15 +835,15 @@ class Shop extends Base
         if (IS_POST) {
             // 提交的订单信息判断
             $post = input('post.');
-            if (empty($post)) $this->error('订单生成失败，商品数据有误');
+            if (empty($post)) $this->error(show_foreign_lang('订单生成失败，商品数据有误'));
 
             // 物流类型
             $post['logistics_type'] = !empty($post['logistics_type']) ? intval($post['logistics_type']) : 0;
             if (2 === intval($post['logistics_type'])) {
-                if (empty($post['store_id'])) $this->error('请选择自提门店');
-                if (empty($post['buyer'])) $this->error('请输入用户姓名');
-                if (empty($post['phone'])) $this->error('请输入预留手机号');
-                if (!check_mobile($post['phone'])) $this->error('预留手机号格式不正确');
+                if (empty($post['store_id'])) $this->error(show_foreign_lang('请选择自提门店'));
+                if (empty($post['buyer'])) $this->error(show_foreign_lang('请输入用户姓名'));
+                if (empty($post['phone'])) $this->error(show_foreign_lang('请输入预留手机号'));
+                if (!check_mobile($post['phone'])) $this->error(show_foreign_lang('预留手机号格式不正确'));
             }
 
             $OrderData = [];
@@ -861,9 +861,9 @@ class Shop extends Base
                 $OrderData['order_md5'] = md5($aid.$spec_value_id);
 
                 // 商品数量判断
-                if ($num <= 0) $this->error('订单生成失败，商品数量有误！');
+                if ($num <= 0) $this->error(show_foreign_lang('订单生成失败，商品数量有误！'));
                 // 订单来源判断
-                if ($type != 1) $this->error('订单生成失败，提交来源有误！');
+                if ($type != 1) $this->error(show_foreign_lang('订单生成失败，提交来源有误！'));
                 
                 // 立即购买查询条件
                 $where = [
@@ -900,15 +900,15 @@ class Shop extends Base
                     ->select();
             }
             // 没有相应的产品
-            if (empty($list)) $this->error('订单生成失败，没有相应的产品！');
+            if (empty($list)) $this->error(show_foreign_lang('订单生成失败，没有相应的商品！'));
 
             // 生成订单之前的产品数据整理
             $retData = $this->shop_model->handlerOrderData('normal', $OrderData, $list, $this->users, $post);
             if (empty($retData['code'])) $this->error($retData['msg']);
 
             // 判断下单商品是否有多个商家的商品，若多个商家一起下单则执行
-            $merchantID = count(array_unique(get_arr_column($list, 'merchant_id')));
-            if (intval($merchantID) > 1) {
+            $merchantID = count(array_filter(array_unique(get_arr_column($list, 'merchant_id'))));
+            if (intval($merchantID) >= 1) {
                 $multiMerchantLogic = new \app\user\logic\MultiMerchantLogic;
                 $multiMerchantLogic->multiMerchantOrderHandle($retData['data']['list'], $post);
             }
@@ -1010,9 +1010,9 @@ class Shop extends Base
                 if (empty($post['payment_type'])) $this->error('网站支付配置未完善，购买服务暂停使用');
                 // 数据验证
                 $rule = ['payment_type' => 'require|token'];
-                $message = ['payment_type.require' => '不可为空！'];
+                $message = ['payment_type.require' => show_foreign_lang('不可为空！')];
                 $validate = new \think\Validate($rule, $message);
-                if (!$validate->check($post)) $this->error('不可连续提交订单！');
+                if (!$validate->check($post)) $this->error(show_foreign_lang('不可连续提交订单！'));
             }
 
             // 订单提交处理 -- 其他逻辑公共调用方法，部分逻辑改动不适合直接修改原文件时请在此方法做处理和兼容
@@ -1101,7 +1101,7 @@ class Shop extends Base
                                     // 余额支付
                                     if ($this->users['users_money'] < $OrderData['order_amount']) {
                                         // 余额不足，支付失败
-                                        $this->error('余额不足，支付失败！', null, ['url' => url('user/Shop/shop_centre')]);
+                                        $this->error(show_foreign_lang('余额不足，支付失败！'), null, ['url' => url('user/Shop/shop_centre')]);
                                     } else {
                                         // 余额充足，进行支付
                                         $ret = Db::name('users')->where(['users_id' => $this->users_id])->update([
@@ -1165,14 +1165,14 @@ class Shop extends Base
                         }
                         // PC端支付、手机浏览器端支付
                         else {
-                            if (in_array($this->usersTplVersion, ['v2', 'v3', 'v4']) && isset($post['payment_type'])) {
+                            if (in_array($this->usersTplVersion, ['v2', 'v3', 'v4', 'v5']) && isset($post['payment_type'])) {
                                 // 余额支付、微信支付、支付宝支付、其他第三方支付
                                 $payment_type = $post['payment_type'];
                                 if ('yezf_balance' == $payment_type) {
                                     // 余额支付
                                     if ($this->users['users_money'] < $OrderData['order_amount']) {
                                         $url = url('user/Shop/shop_centre');
-                                        $this->error('余额不足，支付失败！', null, ['url'=>$url]);
+                                        $this->error(show_foreign_lang('余额不足，支付失败！'), null, ['url'=>$url]);
                                     } else {
                                         $ret = Db::name('users')->where(['users_id'=>$this->users_id])->update([
                                             'users_money' => Db::raw('users_money-'.$OrderData['order_amount']),
@@ -1201,7 +1201,7 @@ class Shop extends Base
                                     $payment_type_arr = explode('_', $payment_type);
                                     $pay_mark = !empty($payment_type_arr[1]) ? $payment_type_arr[1] : '';
                                     $payApiRow = Db::name('pay_api_config')->where(['pay_mark' => $pay_mark, 'lang' => $this->home_lang])->find();
-                                    if (empty($payApiRow)) $this->error('请选择正确的支付方式！');
+                                    if (empty($payApiRow)) $this->error(show_foreign_lang('请选择正确的支付方式！'));
 
                                     // 返回支付所需参数
                                     $data = [
@@ -1241,7 +1241,7 @@ class Shop extends Base
                         $SmsConfig = tpCache('sms');
                         $ReturnData['mobile'] = GetMobileSendData($SmsConfig, $this->users, $OrderData, 1, 'delivery_pay');
                         // 发送站内信给后台
-                        $OrderData['pay_method'] = '货到付款';
+                        $OrderData['pay_method'] = show_foreign_lang('货到付款');
                         SendNotifyMessage($OrderData, 5, 1, 0);
                         // 返回结束
                         $ReturnData['is_gourl'] = 1;
@@ -1255,10 +1255,10 @@ class Shop extends Base
                         $this->success('订单已生成！', urldecode(url('user/Shop/shop_centre')), $ReturnData);
                     }
                 } else {
-                    $this->error('订单生成失败，商品数据有误！');
+                    $this->error(show_foreign_lang('订单生成失败，商品数据有误'));
                 }
             } else {
-                $this->error('订单生成失败，商品数据有误！');
+                $this->error(show_foreign_lang('订单生成失败，商品数据有误'));
             }
         }
     }
@@ -1400,7 +1400,7 @@ class Shop extends Base
                 $this->success('数据正确', url('user/Shop/shop_under_order'));
             }
 
-            $this->error('数据错误');
+            $this->error(show_foreign_lang('数据有误'));
         }
     }
 
@@ -1429,10 +1429,14 @@ class Shop extends Base
     {
         if (IS_AJAX_POST) {
             $post = input('post.');
-            if (empty($post['consignee'])) $this->error('请填写收货人姓名');
-            if (empty($post['mobile'])) $this->error('请填写收货人手机');
-            if (empty($post['province'])) $this->error('请完善收货地址');
-            if (empty($post['address'])) $this->error('请填写详细地址');
+            if (empty($post['consignee'])) $this->error(show_foreign_lang('请填写收货人姓名'));
+            if (empty($post['mobile'])) $this->error(show_foreign_lang('请填写收货人手机'));
+            if ('v5' == $this->usersTplVersion) {
+                if (empty($post['country'])) $this->error(show_foreign_lang('请完善收货地址'));
+            } else {
+                if (empty($post['province'])) $this->error('请完善收货地址');
+            }
+            if (empty($post['address'])) $this->error(show_foreign_lang('请填写详细地址'));
             // 添加数据
             $post['users_id'] = $this->users_id;
             $post['add_time'] = getTime();
@@ -1465,27 +1469,27 @@ class Shop extends Base
                 }
 
                 // 如果是移动端(手机端、微信端)并且有v2x参数则执行
-                if ((isMobile() || isWeixin()) && !empty($post['v2x'])) {
+                if ((isMobile() || isWeixin()) && (!empty($post['v2x']) || !empty($post['v5']))) {
                     $url = session($this->users_id.'_EyouShopOrderUrl');
-                    $this->success('添加成功', $url, ['url' => $url]);
+                    $this->success(show_foreign_lang('操作成功'), $url, ['url' => $url]);
                 }
 
                 if (!empty($post['type']) && 'list' == $post['type']) {
                     $url = url('user/Shop/shop_address_list');
-                    $this->success('添加成功', $url, ['url' => $url]);
+                    $this->success(show_foreign_lang('操作成功'), $url, ['url' => $url]);
                 }
 
                 // 根据地址ID查询相应的中文名字
-                $post['country']  = '中国';
+                $post['country']  = ('v5' == $this->usersTplVersion) ? get_country_name($post['country']) : '';
                 $post['province'] = get_province_name($post['province']);
                 $post['city']     = get_city_name($post['city']);
                 $post['district'] = get_area_name($post['district']);
                 $post['addr_id']  = $addr_id;
                 $post['is_mobile'] = $this->is_mobile;
-                $post['Info']     = $post['province'].' '.$post['city'].' '.$post['district'];
-                $this->success('添加成功！', null, $post);
+                $post['Info']     = $post['country'] . ' ' . $post['province'].' '.$post['city'].' '.$post['district'];
+                $this->success(show_foreign_lang('操作成功'), null, $post);
             } else {
-                $this->error('数据有误！');
+                $this->error(show_foreign_lang('操作失败'));
             }
         }
 
@@ -1499,14 +1503,15 @@ class Shop extends Base
 
             $eyou = [
                 'field'    => [
-                    'Province' => get_province_list(),
+                    'Country'  => in_array($this->usersTplVersion, ['v5']) ? get_country_list() : [],
+                    'Province' => !in_array($this->usersTplVersion, ['v5']) ? get_province_list() : [],
                     'types'    => $types,
                     'addr_num' => $addr_num,
                 ],
             ];
             $this->assign('eyou',$eyou);
         }else{
-            $this->error('非法来源！');
+            $this->error(show_foreign_lang('数据有误'));
         }
 
         $this->assign('is_mobile', $this->is_mobile);
@@ -1521,16 +1526,22 @@ class Shop extends Base
     {
         if (IS_AJAX_POST) {
             $post = input('post.');
-            if (empty($post['consignee'])) $this->error('请填写收货人姓名');
-            if (empty($post['mobile'])) $this->error('请填写收货人手机');
-            if (empty($post['province'])) $this->error('请完善收货地址');
-            if (empty($post['address'])) $this->error('请填写详细地址');
+            if (empty($post['consignee'])) $this->error(show_foreign_lang('请填写收货人姓名'));
+            if (empty($post['mobile'])) $this->error(show_foreign_lang('请填写收货人手机'));
+            if ('v5' == $this->usersTplVersion) {
+                if (empty($post['country'])) $this->error(show_foreign_lang('请完善收货地址'));
+            } else {
+                if (empty($post['province'])) $this->error('请完善收货地址');
+            }
+            if (empty($post['address'])) $this->error(show_foreign_lang('请填写详细地址'));
             // 更新条件及数据
             $post['addr_id'] = intval($post['addr_id']);
             $post['users_id'] = $this->users_id;
             $post['update_time'] = getTime();
             $post['lang']     = $this->home_lang;
-            $post['country'] = (empty($post['country']) || $post['country'] == '中国') ? 0 : 1;
+            if ('v5' != $this->usersTplVersion) {
+                $post['country'] = (empty($post['country']) || $post['country'] == '中国') ? 0 : 1;
+            }
             if (isset($post['is_default'])) $post['is_default'] = !empty($post['is_default']) ? 1 : 0;
             
             $where = [
@@ -1553,19 +1564,19 @@ class Shop extends Base
                 }
 
                 // 如果是移动端(手机端、微信端)并且有v2x参数则执行
-                if ((isMobile() || isWeixin()) && !empty($post['v2x'])) {
+                if ((isMobile() || isWeixin()) && (!empty($post['v2x']) || !empty($post['v5']))) {
                     $url = session($this->users_id.'_EyouShopOrderUrl');
-                    $this->success('修改成功', $url, ['url' => $url]);
+                    $this->success(show_foreign_lang('操作成功'), $url, ['url' => $url]);
                 }
 
                 // 根据地址ID查询相应的中文名字
-                $post['country']  = '中国';
+                $post['country']  = ('v5' == $this->usersTplVersion) ? get_country_name($post['country']) : '中国';
                 $post['province'] = get_province_name($post['province']);
                 $post['city']     = get_city_name($post['city']);
                 $post['district'] = get_area_name($post['district']);
-                $this->success('修改成功', null, $post);
+                $this->success(show_foreign_lang('操作成功'), null, $post);
             } else {
-                $this->error('数据有误！');
+                $this->error(show_foreign_lang('操作失败'));
             }
         }
 
@@ -1577,17 +1588,19 @@ class Shop extends Base
             'lang'     => $this->home_lang,
         ];
         $address = $this->shop_address_db->where($where)->find();
-        if (empty($address)) $this->error('数据有误！');
+        if (empty($address)) $this->error(show_foreign_lang('数据有误'));
 
         // 处理收货地址
-        if (in_array($this->usersTplVersion, ['v3']) || in_array($this->usersTpl2xVersion, ['v2.x'])) {
+        if (in_array($this->usersTplVersion, ['v3', 'v5']) || in_array($this->usersTpl2xVersion, ['v2.x'])) {
+            $address['country_name'] = get_country_name($address['country']);
             $address['province_name'] = get_province_name($address['province']);
             $address['city_name'] = get_city_name($address['city']);
             $address['district_name'] = get_area_name($address['district']);
         }
 
-        $address['country']  = '中国'; //国家
-        $address['Province'] = get_province_list(); // 省份
+        $address['country']  = empty($address['country_name']) ? '中国' : $address['country_name']; //国家
+        $address['Country']  = in_array($this->usersTplVersion, ['v5']) ? get_country_list() : []; // 国家
+        $address['Province'] = !in_array($this->usersTplVersion, ['v5']) ? get_province_list() : []; // 省份
         $address['City']     = $this->region_db->where('parent_id',$address['province'])->select(); // 城市
         $address['District'] = $this->region_db->where('parent_id',$address['city'])->select(); // 县/区/镇
         $address['onDelAddress'] = " onclick=\"DelAddress('{$addr_id}', this);\" ";
@@ -1622,9 +1635,9 @@ class Shop extends Base
                     $gourl = input('param.gourl/s', '', 'urldecode');
                 }
                 $url = url('Shop/shop_address_list', ['type'=>$type, 'gourl'=>$gourl]);
-                $this->success('删除成功！', null, ['url'=>$url]);
+                $this->success(show_foreign_lang('操作成功'), null, ['url'=>$url]);
             }else{
-                $this->error('删除失败！');
+                $this->error(show_foreign_lang('操作失败'));
             }
         }
     }
@@ -1657,9 +1670,9 @@ class Shop extends Base
                 $data['is_default']  = '0';// 设置为非默认
                 $data['update_time'] = getTime();
                 $this->shop_address_db->where($AddressWhere)->update($data);
-                $this->success('设置成功！');
+                $this->success(show_foreign_lang('操作成功'));
             }else{
-                $this->error('数据有误！');
+                $this->error(show_foreign_lang('操作失败'));
             }
         }
     }
@@ -1703,7 +1716,7 @@ class Shop extends Base
                     'aid' => $aid
                 ];
                 $archives = $this->archives_db->field('merchant_id, free_shipping')->where($where)->select();
-                $merchantID = count(array_unique(get_arr_column($archives, 'merchant_id')));
+                $merchantID = count(array_filter(array_unique(get_arr_column($archives, 'merchant_id'))));
             } else {
                 $where = [
                     'a.selected' => 1,
@@ -1711,7 +1724,7 @@ class Shop extends Base
                 ];
                 $field = 'b.merchant_id, b.free_shipping';
                 $archives = $this->shop_cart_db->alias('a')->field($field)->join('__ARCHIVES__ b', 'a.product_id = b.aid', 'LEFT')->where($where)->select();
-                $merchantID = count(array_unique(get_arr_column($archives, 'merchant_id')));
+                $merchantID = count(array_filter(array_unique(get_arr_column($archives, 'merchant_id'))));
             }
             if (intval($merchantID) >= 1) {
                 // 处理查询出需要运费的商品数量
@@ -1731,7 +1744,7 @@ class Shop extends Base
             $template_money = floatval($template_money);
             $this->success('查询成功！', '', $template_money);
         } else {
-            $this->error('订单号错误');
+            $this->error(show_foreign_lang('订单号错误'));
         }
     }
 
@@ -1740,7 +1753,7 @@ class Shop extends Base
     {
         $parent_id  = input('param.parent_id/d', 0);
         $regionData = $this->region_db->where("parent_id", $parent_id)->select();
-        if (in_array($this->usersTpl2xVersion, ['v2.x']) || in_array($this->usersTplVersion, ['v3'])) {
+        if (in_array($this->usersTpl2xVersion, ['v2.x']) || in_array($this->usersTplVersion, ['v3', 'v5'])) {
             $this->success('查询成功！', null, $regionData);
         } else {
             $html = '';
@@ -1761,9 +1774,9 @@ class Shop extends Base
             $post = input('post.');
             // 添加订单操作记录
             AddOrderAction($post['order_id'],$this->users_id,'0','1','0','1','提醒成功！','会员提醒管理员及时发货！');
-            $this->success('提醒成功！');
+            $this->success(show_foreign_lang('提醒成功'));
         }else{
-            $this->error('订单号错误');
+            $this->error(show_foreign_lang('订单号错误'));
         }
     }
 
@@ -1815,9 +1828,9 @@ class Shop extends Base
                         $dealerCommonLogic->dealerOrderSettlementExecute($post['order_id'], $this->users_id);
                     }
                 }
-                $this->success('会员确认收货');
+                $this->success(show_foreign_lang('会员确认收货'));
             }else{
-                $this->error('订单号错误');
+                $this->error(show_foreign_lang('订单号错误'));
             }
         }
     }
@@ -2004,11 +2017,11 @@ class Shop extends Base
                 $spec_stock = Db::name('product_spec_value')->where($SpecWhere)->getField('spec_stock');
                 if (empty($spec_stock)) {
                     $data['code'] = -1; // 已售罄
-                    $this->error('商品已售罄！', null, $data);
+                    $this->error(show_foreign_lang('商品已售罄！'), null, $data);
                 }
                 if ($spec_stock < $param['num']) {
                     $data['code'] = -1; // 库存不足
-                    $this->error('商品最大库存：'.$spec_stock, null, $data);
+                    $this->error(show_foreign_lang('商品最大库存：').$spec_stock, null, $data);
                 }
             } else {
                 $archives_where = [
@@ -2019,11 +2032,11 @@ class Shop extends Base
                 $stock_count = $this->archives_db->where($archives_where)->getField('stock_count');
                 if (empty($stock_count)) {
                     $data['code'] = -1; // 已售罄
-                    $this->error('商品已售罄！', null, $data);
+                    $this->error(show_foreign_lang('商品已售罄！'), null, $data);
                 }
                 if ($stock_count < $param['num']) {
                     $data['code'] = -1; // 库存不足
-                    $this->error('商品最大库存：'.$stock_count, null, $data);
+                    $this->error(show_foreign_lang('商品最大库存：').$stock_count, null, $data);
                 }
             }
         }
@@ -2435,7 +2448,7 @@ class Shop extends Base
                         // 商品不存在
                         $arcurl = urldecode(url('home/View/index', ['aid'=>$vv['product_id']]));
                         $has_deleted = 1;
-                        $msg_deleted = '[商品已停售]';
+                        $msg_deleted = show_foreign_lang('[商品已停售]');
                     }
                     $result['list'][$key]['details'][$kk]['arcurl'] = $arcurl;
                     $result['list'][$key]['details'][$kk]['has_deleted'] = $has_deleted;

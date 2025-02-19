@@ -60,6 +60,7 @@ class TagCollect extends Base
     <script>window.tag_collection_list || document.write('<script src="{$srcurl}" type="text/javascript"><\/script>')</script>
     <script type="text/javascript">ey_v377550("{$aid}","{$class}");</script>
 EOF;
+        // $result['hidden'] = '';
         return $result;
     }
 }

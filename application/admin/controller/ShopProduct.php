@@ -202,11 +202,28 @@ class ShopProduct extends Base
                     ->join('__ARCTYPE__ b', 'a.typeid = b.id', 'LEFT')
                     ->where('a.aid', 'in', $aids)
                     ->getAllWithIndex('aid');
+                $cityRow = get_citysite_list();
                 // 查询商品是否开启规格
                 $goodsSpecArr = Db::name('product_spec_value')->field('aid, value_id')->where('aid', 'in', $aids)->select();
                 $goodsSpecArr = group_same_key($goodsSpecArr, 'aid');
                 // 处理商品信息
                 foreach ($list as $key => $val) {
+                    $row[$val['aid']]['areas']  = '';
+                    if($row[$val['aid']]['area_id']>0){
+                        if (isset($cityRow[$row[$val['aid']]['area_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['area_id']]['name'];     
+                        }
+                    }elseif($row[$val['aid']]['city_id']>0){
+                        if (isset($cityRow[$row[$val['aid']]['city_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['city_id']]['name'];     
+                        }
+                    }elseif($row[$val['aid']]['province_id']>0){                        
+                        if (isset($cityRow[$row[$val['aid']]['province_id']]['name'])) {
+                            $row[$val['aid']]['areas']  = $cityRow[$row[$val['aid']]['province_id']]['name'];     
+                        }
+                    } else{
+                        $row[$val['aid']]['areas']  = '全国';
+                    }
                     $row[$val['aid']]['arcurl'] = get_arcurl($row[$val['aid']]);
                     $row[$val['aid']]['litpic'] = handle_subdir_pic($row[$val['aid']]['litpic']);
                     $row[$val['aid']]['goodsSpec'] = $goodsSpecArr[$val['aid']] ? count($goodsSpecArr[$val['aid']]) : 0;
@@ -281,7 +298,7 @@ class ShopProduct extends Base
             // SEO描述
             $seo_description = '';
             if (empty($post['seo_description']) && !empty($content)) {
-                $seo_description = @msubstr(checkStrHtml($content), 0, config('global.arc_seo_description_length'), false);
+                $seo_description = @msubstr(checkStrHtml($content), 0, get_seo_description_length(), false);
             } else {
                 $seo_description = $post['seo_description'];
             }
@@ -323,6 +340,9 @@ class ShopProduct extends Base
                 if (is_dir('./weapp/Waimao/')) {
                     $waimaoLogic = new \weapp\Waimao\logic\WaimaoLogic;
                     $waimaoLogic->get_new_htmlfilename($htmlfilename, $post, 'add', $this->globalConfig);
+                } else {
+                    $foreignLogic = new \app\admin\logic\ForeignLogic;
+                    $foreignLogic->get_new_htmlfilename($htmlfilename, $post, 'add', $this->globalConfig);
                 }
             }
             $post['htmlfilename'] = $htmlfilename;
@@ -392,8 +412,9 @@ class ShopProduct extends Base
                 'admin_id'        => session('admin_info.admin_id'),
                 'sales_all'    => $sales_all,
                 'stock_show'      => empty($post['stock_show']) ? 0 : $post['stock_show'],
-                'users_price'     => empty($post['users_price']) ? 0 : floatval($post['users_price']),
                 'crossed_price'     => empty($post['crossed_price']) ? 0 : floatval($post['crossed_price']),
+                'users_price'      => empty($post['users_price']) ? 0 : floatval($post['users_price']),
+                'old_price'      => empty($post['old_price']) ? 0 : floatval($post['old_price']),
                 'lang'            => $this->admin_lang,
                 'sort_order'      => 100,
                 'add_time'        => getTime(),
@@ -681,7 +702,7 @@ class ShopProduct extends Base
             // SEO描述
             $seo_description = '';
             if (!empty($basic_update_seo_description) || empty($post['seo_description'])) {
-                $seo_description = @msubstr(checkStrHtml($content), 0, config('global.arc_seo_description_length'), false);
+                $seo_description = @msubstr(checkStrHtml($content), 0, get_seo_description_length(), false);
             } else {
                 $seo_description = $post['seo_description'];
             }
@@ -741,6 +762,9 @@ class ShopProduct extends Base
                 if (is_dir('./weapp/Waimao/')) {
                     $waimaoLogic = new \weapp\Waimao\logic\WaimaoLogic;
                     $waimaoLogic->get_new_htmlfilename($htmlfilename, $post, 'edit', $this->globalConfig);
+                } else {
+                    $foreignLogic = new \app\admin\logic\ForeignLogic;
+                    $foreignLogic->get_new_htmlfilename($htmlfilename, $post, 'edit', $this->globalConfig);
                 }
             }
             $post['htmlfilename'] = $htmlfilename;
@@ -767,7 +791,7 @@ class ShopProduct extends Base
 
             // 虚拟销量和总虚拟销量
             $post['virtual_sales'] = empty($post['virtual_sales']) ? 0 : intval($post['virtual_sales']);
-            if (!empty($post['spec_type']) && $post['spec_type'] == 2) { // 多规格
+            if (!empty($post['spec_type']) && 2 === intval($post['spec_type'])) { // 多规格
                 $sales_all = 0;
                 $post['virtual_sales'] = 0; // 多规格不加上虚拟销量
                 foreach ($post['spec_sales'] as $key => $val) {
@@ -797,10 +821,12 @@ class ShopProduct extends Base
                 'seo_description' => $seo_description,
                 'sales_all'    => $sales_all,
                 'stock_show'      => empty($post['stock_show']) ? 0 : $post['stock_show'],
-                'users_price'     => empty($post['users_price']) ? 0 : floatval($post['users_price']),
                 'crossed_price'     => empty($post['crossed_price']) ? 0 : floatval($post['crossed_price']),
+                'users_price'      => empty($post['users_price']) ? 0 : floatval($post['users_price']),
+                'old_price'      => empty($post['old_price']) ? 0 : floatval($post['old_price']),
                 // 'add_time'        => strtotime($post['add_time']),
                 'update_time'     => getTime(),
+                'stock_code'     => empty($post['stock_code']) ? '' : $post['stock_code'],
             );
             $post['logistics_type'] = !empty($post['logistics_type']) && 0 === intval($post['prom_type']) ? implode(',', $post['logistics_type']) : 0;
             $data = array_merge($post, $newData);
@@ -817,7 +843,7 @@ class ShopProduct extends Base
                 $data['users_discount_type'] = 0;
             }
             $result = Db::name('archives')->where($where)->update($data);
-            if (!empty($result)) {
+            if ($result !== false) {
                 // 单规格 且 选择指定会员级别 则 执行
                 if (1 === intval($post['spec_type']) && 1 === intval($post['users_discount_type'])) {
                     model('ShopPublicHandle')->saveUsersDiscountPriceList($post['users_discount'], $data['aid']);
@@ -884,6 +910,7 @@ class ShopProduct extends Base
                         }
                     }
                 }
+
                 // 删除指定的商品参数
                 if (!empty($post['del_attr_id'])) {
                     $delAttrID = explode(',', $post['del_attr_id']);
@@ -904,6 +931,7 @@ class ShopProduct extends Base
                 if (empty($post['goodsLabelID'])) $post['goodsLabelID'] = [];
                 model('ShopGoodsLabel')->saveGoodsLabelBind($data['aid'], $post['goodsLabelID']);
 
+                $_POST['aid'] = $data['aid'];
                 // 生成静态页面代码
                 $successData = [
                     'aid' => $data['aid'],
@@ -947,7 +975,7 @@ class ShopProduct extends Base
 
         // SEO描述
         // if (!empty($info['seo_description'])) {
-        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, config('global.arc_seo_description_length'), false);
+        //     $info['seo_description'] = @msubstr(checkStrHtml($info['seo_description']), 0, get_seo_description_length(), false);
         // }
 
         // 物流支持类型
@@ -1131,12 +1159,12 @@ class ShopProduct extends Base
                 'lang' => $this->admin_lang,
             ];
             $update = [
-                'stock_show'  => empty($post['stock_show']) ? 0 : intval($post['stock_show']),
                 'stock_count' => empty($post['stock_count']) ? 0 : intval($post['stock_count']),
                 'users_price' => empty($post['users_price']) ? 0 : floatval($post['users_price']),
                 'users_discount_type'  => empty($post['users_discount_type']) ? 0 : intval($post['users_discount_type']),
                 'update_time' => getTime(),
             ];
+            if (!empty($post['stock_show'])) $update['stock_show'] = intval($post['stock_show']);
             $update = array_merge($post, $update);
             $result = Db::name('archives')->where($where)->update($update);
             // 后续处理

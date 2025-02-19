@@ -209,7 +209,7 @@
                                               }
                                               var formData = new FormData();
                                               formData.append('file',file);
-                                  			  formData.append('compress', '1000-1000');
+                                              formData.append('compress', '1000-1000');
                                               formData.append('_ajax',1);
                                               layer_loading('正在处理');
                                               $.ajax({
@@ -315,23 +315,23 @@
                                         
                                         function GetAddonextitem(init, typeidNew, aidNew, is_destroy) {
                                             var channel = $("#typeid option:selected").attr('data-channel');
-			                                $("input[name='channel']").val(channel);
-			                                if (3 == channel){
-			                                    $("#tupianji").show();
-			                                    $("#xiazai").hide();
-			                                    $("#shipin").hide();
-			                                }else if (4 == channel){
-			                                    $("#tupianji").hide();
-			                                    $("#xiazai").show();
-			                                    $("#shipin").hide();
-			                                }else if (5 == channel){
-			                                    $("#tupianji").hide();
-			                                    $("#xiazai").hide();
-			                                    $("#shipin").show();
-			                                }else{
-			                                    $("#tupianji").hide();
-			                                    $("#xiazai").hide();
-			                                    $("#shipin").hide();
+                                            $("input[name='channel']").val(channel);
+                                            if (3 == channel){
+                                                $("#tupianji").show();
+                                                $("#xiazai").hide();
+                                                $("#shipin").hide();
+                                            }else if (4 == channel){
+                                                $("#tupianji").hide();
+                                                $("#xiazai").show();
+                                                $("#shipin").hide();
+                                            }else if (5 == channel){
+                                                $("#tupianji").hide();
+                                                $("#xiazai").hide();
+                                                $("#shipin").show();
+                                            }else{
+                                                $("#tupianji").hide();
+                                                $("#xiazai").hide();
+                                                $("#shipin").hide();
                                             }
                                             var loadingTxt = '正在加载';
                                             if (1 == init) {
@@ -341,7 +341,7 @@
                                             
                                             $.ajax({
                                                 url: "{:url('user/UsersRelease/get_addonextitem')}",
-                                 			    data: {typeid: typeidNew, aid: aidNew, _ajax:1},
+                                                data: {typeid: typeidNew, aid: aidNew, _ajax:1},
                                                 type:'post',
                                                 success:function(res) {
                                                     layer.closeAll();
@@ -354,7 +354,7 @@
                                                                 showEditor_1597892187('addonFieldExt_'+value);
                                                             });
                                                         }
-                                    			        if (4 == channel) {
+                                                         if (4 == channel) {
                                                             var download = res.data.download;
                                                             var users_level_html = '<option value="0" selected>不限会员</option>';
                                                             $.each(download.users_level, function (index, value) {
@@ -367,11 +367,13 @@
                                                             $('#arc_level_id').html(users_level_html);
 
                                                             if('local' != download.upload_flag){
-                                                                //第三方
-                                                                var upload_button_html = '<button type="button" class="el-button el-button--primary is-plain el-button--small" style="position: relative;z-index: 1;">\n选择多文件\n' +
-                                                                    '                       <input type="file" name="file" id="'+download.upload_flag+'File" multiple="multiple" onchange="'+download.upload_flag+'_download__upload(this);" style="position: absolute;top: 0;right: 0;opacity: 0;width: 110px;height: 30px;"/>\n' +
-                                                                    '                  </button>';
-                                                                $('#download-layui-upload').prepend(upload_button_html);
+                                                                if (-1 == $('#download-layui-upload').html().indexOf('onchange="'+download.upload_flag+'_download__upload(this);"')) {
+                                                                  //第三方
+                                                                  var upload_button_html = '<button type="button" class="el-button el-button--primary is-plain el-button--small" style="position: relative;z-index: 1;">\n选择多文件\n' +
+                                                                      '                       <input type="file" name="file" id="'+download.upload_flag+'File" multiple="multiple" onchange="'+download.upload_flag+'_download__upload(this);" style="position: absolute;top: 0;right: 0;opacity: 0;width: 110px;height: 30px;"/>\n' +
+                                                                      '                  </button>';
+                                                                  $('#download-layui-upload').prepend(upload_button_html);
+                                                                }
                                                             }else{
                                                                 $("#buttonList").show();
                                                             }
@@ -384,8 +386,8 @@
                                                             attr_field20210507 = download.attr_field;
                                                             servername_use20210507 = download.servername_use;
 
-			                                                var downfile_list = '{$downfile_list|default=""}';
-			                                                downfile_list = JSON.parse(downfile_list);
+                                                              var downfile_list = '{$downfile_list|default=""}';
+                                                              downfile_list = JSON.parse(downfile_list);
 
                                                                 $("#remote-file-checkbox").prop("checked",true);
                                                                 var template_div_remote20210507_html = '';
@@ -425,7 +427,7 @@
                                                                          '         <div class="help-hot-list" style="display: none;" id="search_keywords_list_servername_local_'+n+'"></div>\n' +
                                                                          '    </td>\n' +
                                                                          '    <td>'+v.file_size+'</td>\n' +
-                                                                         '    <td><span style="color: #5FB878;">上传成功</span></td>\n' +
+                                                                         '    <td><span style="color: #5FB878;">'+ey_foreign_system10+'</span></td>\n' +
                                                                          '    <td>\n' +
                                                                          '          <a class="fc-colours cursor-pointer" onclick="DeleteFile(this)">移除</a>\n' +
                                                                          '          <input type="hidden" name="fileupload[file_url][]" value="'+v.file_url+'">\n' +
@@ -459,7 +461,7 @@
                                     <div class="item-from-row" style="border-bottom:none;">
                                         <div class="from-row-l">&nbsp;</div>
                                         <div class="from-row-r">
-                           				     <input type="hidden" name="old_arcrank" value="{$ArchivesData.arcrank}">
+                                       <input type="hidden" name="old_arcrank" value="{$ArchivesData.arcrank}">
                                             <input type="button" data-url="{:url('UsersRelease/article_edit')}" onclick="EditArticle(this);" class="el-button el-button--primary " value="确认提交"/>
                                         </div>
                                     </div>

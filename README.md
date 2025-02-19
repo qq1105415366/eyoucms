@@ -1,20 +1,14 @@
 # 易优CMS
 
-#### 特别通知
-由于一些已修复的漏洞、BUG未能及时更新到这里，请大家访问易优cms官方下载最新包，或者在线升级网站后台即可。 https://www.eyoucms.com
+#### 易优介绍
+1. EyouCms是什么，EyouCms是一个自由和开放源码的内容管理系统，它是一个可以独立使用的内容发布系统（CMS）。以模板多、易优化、开源而闻名，是国内新锐的PHP开源网站管理系统，也是最受用户好评的PHP类CMS系统。
+2. 目前微信小程序、微信公众号等都以插件形式安装使用，开发者也可以基于EyouCMS开发自己喜好的插件功能。
 
 ```
 如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，获取第一时间更新，谢谢！
 ```
 
-#### 新产品推荐（小程序开源分享）
-坚决做一款小程序标签化API接口，小白也能快速搭建前端+后台完整带数据的小程序CMS。https://gitee.com/weng_xianhu/eymini
-
 #### ---------------------------------------------
-
-#### 易优介绍
-1. EyouCms是什么，EyouCms是一个自由和开放源码的内容管理系统，它是一个可以独立使用的内容发布系统（CMS）。以模板多、易优化、开源而闻名，是国内新锐的PHP开源网站管理系统，也是最受用户好评的PHP类CMS系统。
-2. 目前微信小程序、微信公众号等都以插件形式安装使用，开发者也可以基于EyouCMS开发自己喜好的插件功能。
 
 #### 易优架构
 1. 这是基于thinkphp5+小程序+layui研发的一套简易CMS企业建站系统，包含完整后台管理、前台展示。
@@ -38,14 +32,16 @@
 5. 丰富的模版：易优拥有大量免费的漂亮模版，涵盖各行各业，任用户自由选择。
 
 #### 效果演示
-1. 在线浏览：http://demo.eyoucms.com
-2. 后台登录：http://demo.eyoucms.com/login.php
+1. 在线浏览：https://demo.yiyocms.com
+2. 后台登录：https://demo.yiyocms.com/login.php
 3. Demo下载：https://www.eyoucms.com
 4. 免费模板：https://www.eyoucms.com/moban/
 
 #### 安装教程
 1. 新手必读：https://www.eyoucms.com/help/azwt/2020/1012/11028.html
 2. 安装Eyoucms系统：http://www.eyoucms.com/doc/operation/ruheanzhuang/583.html
+#### 交流群
+![输入图片说明](3.png)
 
 #### 参与贡献
-1. 赞赞团队
+1. 快推科技

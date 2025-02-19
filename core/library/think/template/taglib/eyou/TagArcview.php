@@ -69,7 +69,7 @@ class TagArcview extends Base
         $channeltype_table = $channelInfo['table'];
 
         /*栏目链接*/
-        if ($result['is_part'] == 1) {
+        if (!empty($val['is_part']) && $result['is_part'] == 1) {
             $result['typeurl'] = $result['typelink'];
         } else {
             $result['typeurl'] = typeurl('home/'.$controller_name."/lists", $result);
@@ -77,7 +77,7 @@ class TagArcview extends Base
         /*--end*/
 
         /*文档链接*/
-        if ($result['is_jump'] == 1) {
+        if (!empty($val['is_jump']) && $result['is_jump'] == 1) {
             $result['arcurl'] = $result['jumplinks'];
         } else {
             $result['arcurl'] = arcurl('home/'.$controller_name.'/view', $result);
@@ -146,6 +146,9 @@ class TagArcview extends Base
             }
             unset($result['content_ey_m']);
         }
+
+        // 如果存在分销插件则处理分销商商品URL(携带分销商参数，用于绑定分销商上下级)
+        $result = $this->handleDealerGoodsURL($result, [], true);
 
         return $result;
     }

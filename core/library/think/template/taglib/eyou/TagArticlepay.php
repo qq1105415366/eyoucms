@@ -42,10 +42,17 @@ class TagArticlepay extends Base
         }
         $artData = Db::name('archives')
             ->alias('a')
-            ->field('a.restric_type, b.content,b.content_ey_m')
+            ->field('a.restric_type, b.content,b.content_ey_m,a.channel')
             ->join('article_content b','a.aid = b.aid')
             ->where('a.aid',$aid)
             ->find();
+        if (is_dir('./weapp/CompressContent/')) {                            
+            try {                                                
+                $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                
+                $artData = $compressLogic->decrypt_base64_encode(2,$artData);
+            } catch (Exception $e) {
+            }                
+        }        
         $result['displayId'] = ' id="article_display_'.$aid.'_v061972" style="display:none;" ';
         $result['vipDisplayId'] = ' id="article_vipDisplay_'.$aid.'_v061972" style="display:none;" ';
 

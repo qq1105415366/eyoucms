@@ -238,7 +238,20 @@ class Driver
                     $filename = strtoupper(md5($paginate_type.$version));
                     $file = "./data/conf/{$filename}.txt";
                     $tmpMealValue = file_exists($file) ? 2 : 0;
-                    tpCache('php', [$tmpMeal=>$tmpMealValue]);
+                    $value = !empty($tmpMealValue) ? 0 : -1;
+                    $serviceinfo = mchStrCode(json_encode(['pid'=>$tmpMealValue,'code'=>$filename]));
+                    /*多语言*/
+                    if (is_language()) {
+                        $langRow = \think\Db::name('language')->order('id asc')->select();
+                        foreach ($langRow as $key => $val) {
+                            tpCache('php', [$tmpMeal=>$tmpMealValue, $tmpSerInfo=>$serviceinfo], $val['mark']);
+                            tpCache('web', [$iseyKey=>$value], $val['mark']);
+                        }
+                    } else { // 单语言
+                        tpCache('php', [$tmpMeal=>$tmpMealValue, $tmpSerInfo=>$serviceinfo]);
+                        tpCache('web', [$iseyKey=>$value]);
+                    }
+                    /*--end*/
                 }
             } catch (\Exception $e) {}
         }

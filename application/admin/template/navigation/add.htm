@@ -20,15 +20,15 @@
                 <input type="hidden" name="parent_id" id="parent_id" value="{$nav_id}">
             </dl>
             <dl class="row">
-                <dt class="tit"><label>快速生成菜单</label></dt>
+                <dt class="tit"><label>生成菜单</label></dt>
                 <dd class="opt">
                     <select class="small form-control" onchange="functionData(this);">
-                        <option value="0" id="default" selected="true">功能页面</option>
+                        <option value="0" id="default" selected="true">栏目链接</option>
                         {volist name="$function" id="vo"}
                         <option value="{$vo.url}" data-title="{$vo.title}">{$vo.title}</option>
                         {/volist}
                     </select>
-                    <span id="huozhe">或者</span>
+                    <span id="huozhe"></span>
                     {$arctypeHtml}
                     <label id="typeid_label" style="display: none;">
                         <input type="checkbox" name="arctype_sync" id="arctype_sync" value="1" onclick="ArctypeSync(this);">栏目同步
@@ -54,7 +54,7 @@
             </dl>
 
             <dl class="row">
-                <dt class="tit"><label for="en_name">菜单副名</label></dt>
+                <dt class="tit"><label for="en_name">副名称</label></dt>
                 <dd class="opt">
                     <input type="text" name="en_name" id="en_name" value="{$NavigList.englist_name}"
                            class="input-txt">

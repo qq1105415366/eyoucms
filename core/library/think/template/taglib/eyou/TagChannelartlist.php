@@ -45,33 +45,38 @@ class TagChannelartlist extends Base
      * @param boolean $self 包括自己本身
      * @author wengxianhu by 2018-4-26
      */
-    public function getChannelartlist($typeid = '', $type = 'self', $currentclass = '')
+    public function getChannelartlist($typeid = '', $type = 'self', $currentclass = '', $modelid = '')
     {
         $this->currentclass = $currentclass;
-        $typeid = !empty($typeid) ? $typeid : $this->tid;
-
-        // 栏目ID为空则默认顶级栏目
-        if (empty($typeid)) {
+        if (!empty($modelid)) {
+            $typeid = '';
             $type = 'top';
         } else {
-            // 多语言
-            $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
+            $typeid = !empty($typeid) ? $typeid : $this->tid;
+
+            // 栏目ID为空则默认顶级栏目
             if (empty($typeid)) {
-                echo '标签channelartlist报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
-                return false;
+                $type = 'top';
             } else {
-                if (self::$language_split) {
-                    $this->lang = Db::name('arctype')->where(['id'=>$typeid])->cache(true, EYOUCMS_CACHE_TIME, 'arctype')->value('lang');
-                    if ($this->lang != self::$home_lang) {
-                        $lang_title = Db::name('language_mark')->where(['mark'=>self::$home_lang])->value('cn_title');
-                        echo "标签channel报错：【{$lang_title}】语言 typeid 值不存在。";
-                        return false;
+                // 多语言
+                $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
+                if (empty($typeid)) {
+                    echo '标签channelartlist报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
+                    return false;
+                } else {
+                    if (self::$language_split) {
+                        $this->lang = Db::name('arctype')->where(['id'=>$typeid])->cache(true, EYOUCMS_CACHE_TIME, 'arctype')->value('lang');
+                        if ($this->lang != self::$home_lang) {
+                            $lang_title = Db::name('language_mark')->where(['mark'=>self::$home_lang])->value('cn_title');
+                            echo "标签channel报错：【{$lang_title}】语言 typeid 值不存在。";
+                            return false;
+                        }
                     }
                 }
             }
         }
 
-        $result = $this->getSwitchType($typeid, $type);
+        $result = $this->getSwitchType($modelid, $typeid, $type);
         return $result;
     }
 
@@ -81,7 +86,7 @@ class TagChannelartlist extends Base
      * @param boolean $self 包括自己本身
      * @author wengxianhu by 2018-4-26
      */
-    public function getSwitchType($typeid = '', $type = 'son')
+    public function getSwitchType($modelid = '', $typeid = '', $type = 'son')
     {
         $result = array();
         switch ($type) {
@@ -94,7 +99,7 @@ class TagChannelartlist extends Base
                 break;
 
             case 'top': // 顶级栏目
-                $result = $this->getTop();
+                $result = $this->getTop($modelid);
                 break;
 
             case 'sonself': // 下级、同级栏目
@@ -163,7 +168,7 @@ class TagChannelartlist extends Base
             $ctl_name_list = model('Channeltype')->getAll('id,ctl_name', array(), 'id');
             foreach ($result as $key => $val) {
                 // 获取指定路由模式下的URL
-                if ($val['is_part'] == 1) {
+                if (!empty($val['is_part']) && $val['is_part'] == 1) {
                     $typeurl = $val['typelink'];
                 } else {
                     $ctl_name = $ctl_name_list[$val['current_channel']]['ctl_name'];
@@ -223,7 +228,7 @@ class TagChannelartlist extends Base
             $ctl_name_list = model('Channeltype')->getAll('id,ctl_name', array(), 'id');
             foreach ($result as $key => $val) {
                 // 获取指定路由模式下的URL
-                if ($val['is_part'] == 1) {
+                if (!empty($val['is_part']) && $val['is_part'] == 1) {
                     $typeurl = $val['typelink'];
                 } else {
                     $ctl_name = $ctl_name_list[$val['current_channel']]['ctl_name'];
@@ -252,19 +257,19 @@ class TagChannelartlist extends Base
      * 获取顶级栏目
      * @author wengxianhu by 2017-7-26
      */
-    public function getTop()
+    public function getTop($modelid = '')
     {
-        $map = array(
-            'parent_id'    => 0,
-            'is_hidden' => 0,
-            'status'    => 1,
-            'is_del'    => 0,
-        );
+        $map = [];
+        !empty($modelid) && $map['current_channel'] = intval($modelid);
+        $map['lang'] = self::$home_lang;
+        $map['parent_id'] = 0;
+        $map['is_hidden'] = 0;
+        $map['is_del'] = 0; // 回收站功能
+        $map['status'] = 1;
         $group_user_where = $this->diy_get_users_group_arctype_query_builder();   //会员分组查询条件
         if (empty($group_user_where)){
             $result = Db::name('arctype')->field('*, id as typeid')
                 ->where($map)
-                ->where('lang', $this->lang)
                 ->order('sort_order asc')
                 ->select();
         }else{
@@ -272,7 +277,6 @@ class TagChannelartlist extends Base
                 ->join("weapp_users_group_arctype b",'a.id = b.type_id','left')
                 ->field('a.*, id as typeid')
                 ->where($map)
-                ->where('lang', $this->lang)
                 ->where($group_user_where)
                 ->order('sort_order asc')
                 ->select();
@@ -281,7 +285,7 @@ class TagChannelartlist extends Base
             $ctl_name_list = model('Channeltype')->getAll('id,ctl_name', array(), 'id');
             foreach ($result as $key => $val) {
                 // 获取指定路由模式下的URL
-                if ($val['is_part'] == 1) {
+                if (!empty($val['is_part']) && $val['is_part'] == 1) {
                     $typeurl = $val['typelink'];
                 } else {
                     $ctl_name = $ctl_name_list[$val['current_channel']]['ctl_name'];

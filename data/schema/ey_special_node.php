@@ -72,6 +72,15 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'allsorts' => 
+  array (
+    'name' => 'allsorts',
+    'type' => 'text',
+    'notnull' => false,
+    'default' => NULL,
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'row' => 
   array (
     'name' => 'row',

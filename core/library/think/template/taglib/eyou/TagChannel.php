@@ -40,43 +40,47 @@ class TagChannel extends Base
      * @param boolean $self 包括自己本身
      * @author wengxianhu by 2018-4-26
      */
-    public function getChannel($typeid = '', $type = 'top', $currentclass = '', $notypeid = '')
+    public function getChannel($typeid = '', $type = 'top', $currentclass = '', $notypeid = '', $modelid = '')
     {
         $this->currentclass = $currentclass;
-        $typeid  = !empty($typeid) ? $typeid : $this->tid;
+        if (!empty($modelid)) {
+            $typeid = '';
+        } else {
+            $typeid  = !empty($typeid) ? $typeid : $this->tid;
 
-        /*多语言*/
-        if (!empty($typeid)) {
-            $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
-            if (empty($typeid)) {
-                echo '标签channel报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
-                return false;
-            }
-        }
-        /*--end*/
-
-        if (empty($typeid)) {
-            /*应用于没有指定tid的列表，默认获取该控制器下的第一级栏目ID*/
-            // http://demo.eyoucms.com/index.php/home/Article/lists.html
-            $map = array(
-                'lang' => self::$home_lang,
-                'parent_id' => 0,
-                'is_hidden' => 0,
-                'status'    => 1,
-            );
-            $controller_name = request()->controller();
-            $channeltype_info = model('Channeltype')->getInfoByWhere(array('ctl_name'=>$controller_name), 'id');
-            if (!empty($channeltype_info)) {
-                $map['channeltype'] = $channeltype_info['id'];
-            }
-            $group_user_where = $this->diy_get_users_group_arctype_query_builder();   //会员分组查询条件
-            if (empty($group_user_where)){
-                $typeid = Db::name('arctype')->where($map)->order('sort_order asc')->limit(1)->getField('id');
-            }else{
-                $typeid = Db::name('arctype')->alias("a")->join("weapp_users_group_arctype b",'a.id = b.type_id','left')
-                    ->where($map)->where($group_user_where)->order('sort_order asc')->limit(1)->getField('id');
+            /*多语言*/
+            if (!empty($typeid)) {
+                $typeid = model('LanguageAttr')->getBindValue($typeid, 'arctype');
+                if (empty($typeid)) {
+                    echo '标签channel报错：找不到与第一套【'.self::$main_lang.'】语言关联绑定的属性 typeid 值 。';
+                    return false;
+                }
             }
             /*--end*/
+
+            if (empty($typeid)) {
+                /*应用于没有指定tid的列表，默认获取该控制器下的第一级栏目ID*/
+                // http://demo.eyoucms.com/index.php/home/Article/lists.html
+                $map = array(
+                    'lang' => self::$home_lang,
+                    'parent_id' => 0,
+                    'is_hidden' => 0,
+                    'status'    => 1,
+                );
+                $controller_name = request()->controller();
+                $channeltype_info = model('Channeltype')->getInfoByWhere(array('ctl_name'=>$controller_name), 'id');
+                if (!empty($channeltype_info)) {
+                    $map['channeltype'] = $channeltype_info['id'];
+                }
+                $group_user_where = $this->diy_get_users_group_arctype_query_builder();   //会员分组查询条件
+                if (empty($group_user_where)){
+                    $typeid = Db::name('arctype')->where($map)->order('sort_order asc')->limit(1)->getField('id');
+                }else{
+                    $typeid = Db::name('arctype')->alias("a")->join("weapp_users_group_arctype b",'a.id = b.type_id','left')
+                        ->where($map)->where($group_user_where)->order('sort_order asc')->limit(1)->getField('id');
+                }
+                /*--end*/
+            }
         }
 
         if (self::$language_split) {
@@ -88,7 +92,7 @@ class TagChannel extends Base
             }
         }
 
-        $result = $this->getSwitchType($typeid, $type, $notypeid);
+        $result = $this->getSwitchType($modelid, $typeid, $type, $notypeid);
 
         return $result;
     }
@@ -99,7 +103,7 @@ class TagChannel extends Base
      * @param boolean $self 包括自己本身
      * @author wengxianhu by 2018-4-26
      */
-    public function getSwitchType($typeid = '', $type = 'top', $notypeid = '')
+    public function getSwitchType($modelid = '', $typeid = '', $type = 'top', $notypeid = '')
     {
         $result = array();
         switch ($type) {
@@ -112,7 +116,7 @@ class TagChannel extends Base
                 break;
 
             case 'top': // 顶级栏目
-                $result = $this->getTop($notypeid);
+                $result = $this->getTop($modelid, $notypeid);
                 break;
 
             case 'sonself': // 下级、同级栏目
@@ -150,7 +154,7 @@ class TagChannel extends Base
      * @param string $self true表示没有子栏目时，获取同级栏目
      * @author wengxianhu by 2017-7-26
      */
-    public function getSon($typeid, $self = false)
+    public function getSon($typeid = '', $self = false)
     {
         $result = array();
         if (empty($typeid)) {
@@ -194,11 +198,12 @@ class TagChannel extends Base
 
         /*--end*/
         if ($res) {
+            $allArctypePids = model('Arctype')->getAllPidByids([$typeid, $this->tid]);
             $ctl_name_list = model('Channeltype')->getAll('id,ctl_name', array(), 'id');
             foreach ($res as $key => $val) {
                 $val['extends'] = '';
                 /*获取指定路由模式下的URL*/
-                if ($val['is_part'] == 1) {
+                if (!empty($val['is_part']) && $val['is_part'] == 1) {
                     $val['typeurl'] = $val['typelink'];
                     if (!is_http_url($val['typeurl'])) {
                         $typeurl = '//'.request()->host();
@@ -225,7 +230,7 @@ class TagChannel extends Base
                 /*--end*/
 
                 /*标记栏目被选中效果*/
-                if ($val['id'] == $typeid || $val['id'] == $this->tid) {
+                if (!empty($allArctypePids[$val['id']])) {
                     $val['currentclass'] = $val['currentstyle'] = $this->currentclass;
                 } else {
                     $val['currentclass'] = $val['currentstyle'] = '';
@@ -353,18 +358,18 @@ class TagChannel extends Base
      * 获取顶级栏目
      * @author wengxianhu by 2017-7-26
      */
-    public function getTop($notypeid = '')
+    public function getTop($modelid = '', $notypeid = '')
     {
         $result = array();
 
         /*获取所有栏目*/
         $arctypeLogic = new \app\common\logic\ArctypeLogic();
         $arctype_max_level = intval(config('global.arctype_max_level'));
-        $map = array(
-            'is_hidden' => 0,
-            'is_del'    => 0, // 回收站功能
-            'status'    => 1,
-        );
+        $map = [];
+        !empty($modelid) && $map['current_channel'] = intval($modelid);
+        $map['is_hidden'] = 0;
+        $map['is_del'] = 0; // 回收站功能
+        $map['status'] = 1;
         !empty($notypeid) && $map['id'] = ['NOTIN', $notypeid]; // 排除指定栏目ID
         $group_user_where = $this->diy_get_users_group_arctype_query_builder('b.');   //会员分组查询条件
         $res = $arctypeLogic->arctype_list(0, 0, false, $arctype_max_level, $map,true,$group_user_where);
@@ -393,7 +398,7 @@ class TagChannel extends Base
             foreach ($res as $key => $val) {
                 $val['extends'] = '';
                 /*获取指定路由模式下的URL*/
-                if ($val['is_part'] == 1) {
+                if (!empty($val['is_part']) && $val['is_part'] == 1) {
                     $val['typeurl'] = $val['typelink'];
                     if (!is_http_url($val['typeurl'])) {
                         $typeurl = '//'.request()->host();
@@ -492,7 +497,7 @@ class TagChannel extends Base
     /**
      * 获取最顶级父栏目ID
      */
-    public function getTopTypeid($typeid)
+    public function getTopTypeid($typeid = 0)
     {
         $topTypeId = 0;
         if ($typeid > 0) {

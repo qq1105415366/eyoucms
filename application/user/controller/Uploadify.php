@@ -332,6 +332,130 @@ class Uploadify extends Base {
         }
     }
     
+    //上传文件
+    private function upFile($fieldName) {
+        if (!IS_POST) {
+            return json_encode(['state' =>'非法上传']);
+        }
+
+        $file = request()->file($fieldName);
+        if (empty($file)) $file = request()->file('upfile');
+        if (empty($file)) $file = request()->file('upload');
+
+        if(empty($file)){
+            if (!@ini_get('file_uploads')) {
+                return json_encode(['state' =>'请检查空间是否开启文件上传功能！']);
+            } else {
+                return json_encode(['state' =>'ERROR，请上传文件']);
+            }
+        }
+        $error = $file->getError();
+        if(!empty($error)){
+            return json_encode(['state' =>$error]);
+        }
+
+        $max_file_size = intval(tpCache('basic.file_size') * 1024 * 1024);
+        $fileExt = '';
+        $image_type = tpCache('basic.image_type');
+        !empty($image_type) && $fileExt .= '|'.$image_type;
+        $file_type = tpCache('basic.file_type');
+        !empty($file_type) && $fileExt .= '|'.$file_type;
+        $media_type = tpCache('basic.media_type');
+        !empty($media_type) && $fileExt .= '|'.$media_type;
+        $fileExt = !empty($fileExt) ? str_replace('||', '|', $fileExt) : config('global.image_ext');
+        $fileExt = str_replace('|', ',', trim($fileExt, '|'));
+        $result = $this->validate(
+            ['file' => $file], 
+            ['file'=>'fileSize:'.$max_file_size.'|fileExt:'.$fileExt],
+            ['file.fileSize' => '上传文件过大','file.fileExt'=>'上传文件后缀名必须为'.$fileExt]
+        );
+        // 文件后缀名
+        $file_ext = pathinfo($file->getInfo('name'), PATHINFO_EXTENSION);
+
+        /*验证图片一句话木马*/
+        if (in_array($file_ext, explode('|', $image_type))) {
+            if (false === check_illegal($file->getInfo('tmp_name'), false, $file_ext)) {
+                $result = '疑似木马图片！';
+            }
+        }
+        /*--end*/
+
+        if (true !== $result || empty($file)) {
+            $state = "ERROR" . $result;
+            return json_encode(['state' =>$state]);
+        }
+
+        // 移动到框架应用根目录/public/uploads/ 目录下
+        $this->savePath = $this->savePath.date('Ymd/');
+        // 使用自定义的文件保存规则
+        $info = $file->rule(function ($file) {
+            return $this->admin_id.'-'.dd2char(date("ymdHis").mt_rand(100,999));
+        })->move(UPLOAD_PATH.$this->savePath);
+
+        if (!empty($info)) {
+            $return_url = '/'.UPLOAD_PATH.$this->savePath.$info->getSaveName();
+            $data = array(
+                'state' => 'SUCCESS',
+                'url' => ROOT_DIR.$return_url,
+                'title' => '',//$info->getSaveName(),
+                'original' => $file->getInfo('name'),
+                'time' => date("Y-m-d H:i:s"),
+                'type' => '.' . $info->getExtension(),
+                'size' => $info->getSize(),
+            );
+
+            //图片加水印
+            $file_type = $file->getInfo('type');
+            $fileextArr = explode(',', $this->image_type);
+            if (stristr($file_type, 'image') && 'ico' != $file_ext) {
+                print_water($data['url']);
+                /*同步到第三方对象存储空间*/
+                $bucket_data = SynImageObjectBucket($data['url']);
+                $data = array_merge($data, $bucket_data);
+                /*end*/
+            }
+            
+            /*-------------------------保存上传图片记录 start-----------------------*/
+            $img_info = [];
+            if (in_array($file_ext, ['jpg','jpeg','png','bmp','gif','ico','webp'])) {
+                $img_info = @getimagesize('.'.$return_url);
+                $width = isset($img_info[0]) ? $img_info[0] : 0;
+                $height = isset($img_info[1]) ? $img_info[1] : 0;
+                $mime = '';
+                if (!is_http_url($data['url'])) {
+                    $mime = isset($img_info['mime']) ? $img_info['mime'] : $info->getMime();
+                }
+
+                $data['time'] = getTime();
+                $data['width'] = $width;
+                $data['height'] = $height;
+
+                $addData = [
+                    'aid'         =>0,
+                    'type_id'     =>0,
+                    'image_url'   =>$data['url'],
+                    'title'       => $data['original'],
+                    'intro'       => '',
+                    'width'       => $width,
+                    'height'      => $height,
+                    'filesize'    => $data['size'],
+                    'mime'        => $mime,
+                    'users_id'    => (int)session('users_id'),
+                    'sort_order'  => 100,
+                    'add_time'    => getTime(),
+                    'update_time' => getTime(),
+                ];
+                $img_id = Db::name('uploads')->insertGetId($addData);
+                $data['img_id'] = $img_id;
+            }
+            /*-------------------------保存上传图片记录 end-----------------------*/
+        } else {
+            $data = array('state' => 'ERROR'.$info->getError());
+        }
+        
+        return json_encode($data);
+    }
+
     //抓取远程图片
     private function saveRemote($config,$fieldName){
         $imgUrl = htmlspecialchars($fieldName);
@@ -482,19 +606,29 @@ class Uploadify extends Base {
         }
 
         $original = $file->getInfo('name');
+        // 图片后缀名
+        $file_ext = pathinfo($original, PATHINFO_EXTENSION);
         // ico图片文件不进行验证
-        if (pathinfo($original, PATHINFO_EXTENSION) != 'ico') {
-            $result = $this->validate(
-                ['file' => $file], 
-                ['file'=>'image|fileSize:'.$max_file_size.'|fileExt:'.$this->image_type],
-                ['file.image' => '上传文件必须为图片','file.fileSize' => '上传图片不能超过'.format_bytes($max_file_size),'file.fileExt'=>'上传图片后缀名必须为'.$this->image_type]
-               );
+        if ($file_ext != 'ico') {
+            if('webp' == $file_ext && version_compare(PHP_VERSION,'7.1.0','<')) {
+                $result = "php7.1.0或以上版本才支持上传{$file_ext}";
+            } else {
+                $result = $this->validate(
+                    ['file' => $file], 
+                    ['file'=>'image|fileSize:'.$max_file_size.'|fileExt:'.$this->image_type],
+                    [
+                        'file.image' => '上传文件必须为图片',
+                        'file.fileSize' => '上传图片不能超过'.format_bytes($max_file_size),
+                        'file.fileExt'=>'上传图片后缀名必须为'.$this->image_type,
+                    ]
+                );
+            }
         } else {
             $result = true;
         }
 
         /*验证图片一句话木马*/
-        if (false === check_illegal($file->getInfo('tmp_name'))) {
+        if (false === check_illegal($file->getInfo('tmp_name'), false, $file_ext)) {
             $result = '疑似木马图片！';
         }
         /*--end*/
@@ -682,6 +816,10 @@ class Uploadify extends Base {
     // 上传多媒体
     public function AjaxUploadMedia()
     {
+        if (!IS_POST) {
+            return json_encode(['state' => '非法上传']);
+        }
+
         $file     = request()->file('file');
         if (empty($file)) {
             if (!@ini_get('file_uploads')) {
@@ -773,6 +911,10 @@ class Uploadify extends Base {
 
     //上传文件
     public function DownloadUploadFile(){
+        if (!IS_POST) {
+            echo json_encode(['msg' => '非法上传']);exit;
+        }
+
         header('Content-Type: text/html; charset=utf-8');
         // 获取定义的上传最大参数
         $max_file_size = intval(tpCache('basic.file_size') * 1024 * 1024);
@@ -859,6 +1001,10 @@ class Uploadify extends Base {
     // 上传视频
     public function upVideo()
     {
+        if (!IS_POST) {
+            return json_encode(['state' => '非法上传']);
+        }
+
         $file     = request()->file('file');
         if (empty($file)) {
             if (!@ini_get('file_uploads')) {

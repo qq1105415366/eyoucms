@@ -75,7 +75,7 @@
                                     <span class="span_input"> <input type="hidden"/> </span>
                                     <textarea placeholder="请输入标题..." style="height: 28px;"></textarea>
                                     <textarea placeholder="请输入链接网址..." style="height: 28px;"></textarea>
-                                    <textarea placeholder="广告注释：支持HTML代码" style="height: 64px;"></textarea>
+                                    <textarea placeholder="广告注释：支持HTML代码，不支持Javascript代码" style="height: 64px;"></textarea>
                                     <div class="operation">
                                         <a href="javascript:void(0)">&nbsp;&nbsp;</a>
                                         <a href="javascript:void(0)">&nbsp;&nbsp;</a>
@@ -93,7 +93,7 @@
                 <dt class="tit"> <label for="type">广告内容</label> </dt>
                 <dd class="opt">
                     <input type="text" name="video_litpic" id="video_litpic" class="input-txt">
-                    <input type="file" id="courseware_file" data-type='local' onchange="upload_video_litpic_1615775137(this)" style="display: none;">
+                    <input type="file" accept="{$file_upload_media_type}" id="courseware_file" data-type='local' onchange="upload_video_litpic_1615775137(this)" style="display: none;">
                     {eq name="$WeappOpen.qny_open" value="1"}
                     &nbsp;<a href="javascript:void(0);" class="ncap-btn ncap-btn-green" id="upload_video_litpic_qiniu" onclick="$('#courseware_file').attr('data-type', 'qiniu').trigger('click');">七牛云上传</a>
                     {/eq}
@@ -128,7 +128,7 @@
                 <dd class="opt">          
                     <textarea rows="5" cols="60" id="intro" name="intro" style="height:60px;"></textarea>
                     <span class="err"></span>
-                    <p class="notic"></p>
+                    <p class="notic">不支持Javascript代码</p>
                 </dd>
             </dl> 
 
@@ -782,11 +782,12 @@
     function ClearPicArr(obj,path)
     {
         $(obj).parent().parent().parent().remove(); // 删除完服务器的, 再删除 html上的图片
+        layer.msg('移除成功', {time:1000});
         $.ajax({
             type:'POST',
             url:"{:url('Uploadimgnew/delupload')}",
             data:{action:"del", filename:path, _ajax:1},
-            success:function(){}
+            success:function(res){}
         }); 
     }
 

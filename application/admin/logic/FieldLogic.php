@@ -95,7 +95,7 @@ class FieldLogic extends Model
             {
                 $default_sql = "DEFAULT '$dfvalue'";
             }
-            $maxlen = 10;
+            $maxlen = 20;
             $fields[0] = " `$fieldname` decimal($maxlen,2) NOT NULL $default_sql COMMENT '$fieldtitle';";
             $fields[1] = "decimal($maxlen,2)";
             $fields[2] = $maxlen;
@@ -176,6 +176,16 @@ class FieldLogic extends Model
             $dfvalue = "'".$dfvalue."'";
             $fields[0] = " `$fieldname` enum($dfvalue) NULL DEFAULT '{$default_value}' COMMENT '$fieldtitle';";
             $fields[1] = "enum($dfvalue)";
+            $fields[2] = $maxlen;
+        }
+        else if("checkboxs" == $dtype)
+        {
+            if(empty($dfvalue)) {
+                $dfvalue = '';
+            }
+            $maxlen = 10003;
+            $fields[0] = " `$fieldname` text COMMENT '$fieldtitle|{$maxlen}';";
+            $fields[1] = "text";
             $fields[2] = $maxlen;
         }
         else
@@ -278,6 +288,10 @@ class FieldLogic extends Model
             if ($this->checkChannelFieldList($table, $fieldname, $channel_id)) {
                 $sql = "ALTER TABLE `{$table}` DROP COLUMN `{$fieldname}`;";
                 if(false !== Db::execute($sql)) {
+                    if (is_dir('./weapp/CompressContent/')) {                    
+                        $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;  
+                        $compressLogic->copydata(4,$channel_id,'',$table,$sql);
+                    }    
                     /*重新生成数据表字段缓存文件*/
                     try {
                         schemaTable($table);
@@ -350,7 +364,7 @@ class FieldLogic extends Model
         $table = Db::name('channeltype')->where('id',$channel_id)->getField('table');
         $tableExt = PREFIX.$table.'_content';
         $rowExt = Db::query("SHOW FULL COLUMNS FROM {$tableExt}");
-        foreach ($rowExt as $key => $val) {
+        foreach ($rowExt as $key => $val) {            
             $fieldname = $val['Field'];
             if (in_array($fieldname, array('id','add_time','update_time','aid','typeid'))) {
                 continue;
@@ -592,6 +606,8 @@ class FieldLogic extends Model
                 $dtype = 'imgs';
             } else if (1002 == $maxlen || 10002 == $maxlen) {
                 $dtype = 'files';
+            } else if (1003 == $maxlen || 10003 == $maxlen) {
+                $dtype = 'checkboxs';
             } else {
                 $dtype = 'multitext';
             }
@@ -656,6 +672,7 @@ class FieldLogic extends Model
                 switch ($dtype) {
 
                     case 'checkbox':
+                    case 'checkboxs':
                     {
                         $val = implode(',', $val);
                         break;

@@ -29,6 +29,8 @@
             <a href="javascript:void(0);" class="addr_q" id="upload_addonFieldExt_courseware_oss" onclick="$('#courseware_file').attr('data-type','oss').trigger('click');">oss上传</a>
             {elseif isset($channelRow.data.cos_open) && $channelRow.data.cos_open == 1}
             <a href="javascript:void(0);" class="addr_q" id="upload_addonFieldExt_courseware_cos" onclick="$('#courseware_file').attr('data-type', 'cos').trigger('click');">cos上传</a>
+            {elseif isset($channelRow.data.aws_open) && $channelRow.data.aws_open == 1}
+            <a href="javascript:void(0);" class="addr_q" id="upload_addonFieldExt_courseware_aws" onclick="$('#courseware_file').attr('data-type', 'aws').trigger('click');">亚马逊S3上传</a>
             {else/}
             <a href="javascript:void(0);" class="addr_q" id="upload_addonFieldExt_courseware_local" onclick="$('#courseware_file').attr('data-type','local').trigger('click');">本地上传</a>
             {/if}
@@ -90,7 +92,7 @@
                     $("#video_size_sys_1").val(res.size);
                     $("#video_mime_sys_1").val(res.mime);
                     $("#video_name_sys_1").val(res.title);
-                    $("#upload_video_sys_1").text('上传成功');
+                    $("#upload_video_sys_1").text(ey_foreign_system10);
                     setTimeout(function(){
                         $('#upload_video_sys_1').text('本地上传');
                     }, 2000 )
@@ -111,6 +113,7 @@
         var is_show_qiniuyun = {$channelRow.data.qiniuyun_open|default=0};
         var is_show_oss = {$channelRow.data.oss_open|default=0};
         var is_show_cos = {$channelRow.data.cos_open|default=0};
+        var is_show_aws = {$channelRow.data.aws_open|default=0};
         if (n) {
             var num = n;
             var html = "";
@@ -128,13 +131,16 @@
                 "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_file_id_" + num + "\" value=\"" + v.file_id + "\">" +
                 "                            <input type=\"file\" class=\"input-txt\" id=\"qiniu_click_sys_" + num + "\" onchange=\"QiniuUpload('" + num + "');\" style=\"display: none;\">\n" +
                 "                            <input type=\"file\" class=\"input-txt\" id=\"oss_click_sys_" + num + "\" onchange=\"OssUpload('" + num + "');\" style=\"display: none;\">\n" +
-                "                            <input type=\"file\" class=\"input-txt\" id=\"cos_click_sys_" + num + "\" onchange=\"CosUpload('" + num + "');\" style=\"display: none;\">\n";
+                "                            <input type=\"file\" class=\"input-txt\" id=\"cos_click_sys_" + num + "\" onchange=\"CosUpload('" + num + "');\" style=\"display: none;\">\n" +
+                "                            <input type=\"file\" class=\"input-txt\" id=\"aws_click_sys_" + num + "\" onchange=\"AwsUpload('" + num + "');\" style=\"display: none;\">\n";
             if (is_show_qiniuyun == 1) {
                 html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"qiniu_upload_video_sys_" + num + "\" onclick=\"click_qiniu_sys('" + num + "')\">七牛云上传</a>\n";
             } else if (is_show_oss == 1) {
                 html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"oss_upload_video_sys_" + num + "\" onclick=\"click_oss_sys('" + num + "')\">oss上传</a>\n";
             } else if (is_show_cos == 1) {
                 html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"cos_upload_video_sys_" + num + "\" onclick=\"click_cos_sys('" + num + "');\">cos上传</a>\n";
+            } else if (is_show_aws == 1) {
+                html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"aws_upload_video_sys_" + num + "\" onclick=\"click_aws_sys('" + num + "');\">亚马逊S3上传</a>\n";
             } else {
                 html += "                        <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"upload_video_sys_" + num + "\" data-num='" + num + "'>本地上传</a>\n";
             }
@@ -165,13 +171,16 @@
                 "                            <input type=\"hidden\" class=\"input-txt\" id=\"video_file_id_" + num + "\">" +
                 "                            <input type=\"file\" class=\"input-txt\" id=\"qiniu_click_sys_" + num + "\" onchange=\"QiniuUpload('" + num + "');\" style=\"display: none;\">\n" +
                 "                            <input type=\"file\" class=\"input-txt\" id=\"oss_click_sys_" + num + "\" onchange=\"OssUpload('" + num + "');\" style=\"display: none;\">\n" +
-                "                            <input type=\"file\" class=\"input-txt\" id=\"cos_click_sys_" + num + "\" onchange=\"CosUpload('" + num + "');\" style=\"display: none;\">\n";
+                "                            <input type=\"file\" class=\"input-txt\" id=\"cos_click_sys_" + num + "\" onchange=\"CosUpload('" + num + "');\" style=\"display: none;\">\n" +
+                "                            <input type=\"file\" class=\"input-txt\" id=\"aws_click_sys_" + num + "\" onchange=\"AwsUpload('" + num + "');\" style=\"display: none;\">\n";
             if (is_show_qiniuyun == 1) {
                 html += "                   <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"qiniu_upload_video_sys_" + num + "\" onclick=\"click_qiniu_sys('" + num + "')\">七牛云上传</a>\n";
             }else if (is_show_oss == 1) {
                 html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"oss_upload_video_sys_" + num + "\" onclick=\"click_oss_sys('" + num + "')\">oss上传</a>\n";
             }else if (is_show_cos == 1) {
                 html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"cos_upload_video_sys_" + num + "\" onclick=\"click_cos_sys('" + num + "')\">cos上传</a>\n";
+            }else if (is_show_aws == 1) {
+                html += "                    <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"aws_upload_video_sys_" + num + "\" onclick=\"click_aws_sys('" + num + "')\">亚马逊S3上传</a>\n";
             }else{
                 html += "                        <a href=\"javascript:void(0);\" class=\"addr_q\" id=\"upload_video_sys_" + num + "\" data-num='" + num + "'>本地上传</a>\n" ;
             }
@@ -220,7 +229,7 @@
                         $("#video_size_sys_"+n).val(res.size);
                         $("#video_mime_sys_"+n).val(res.mime);
                         $("#video_name_sys_"+n).val(res.title);
-                        $("#upload_video_sys_"+num).text('上传成功');
+                        $("#upload_video_sys_"+num).text(ey_foreign_system10);
                         setTimeout(function(){
                             $('#upload_video_sys_'+num).text('本地上传');
                         }, 2000 );
@@ -247,6 +256,8 @@
             upload_addonFieldExt_courseware_oss(e); // OSS上传
         } else if ('cos' == data_type) {
             upload_addonFieldExt_courseware_cos(e); // COS上传
+        } else if ('aws' == data_type) {
+            upload_addonFieldExt_courseware_aws(e); // 亚马逊S3上传
         } else {
             var file = $(e)[0].files[0];
             if (!file) {
@@ -284,7 +295,7 @@
                         showErrorMsg(res.state);
                         $('#upload_addonFieldExt_courseware_local').html('本地上传');
                     }else {
-                        $("#upload_addonFieldExt_courseware_local").html('上传成功');
+                        $("#upload_addonFieldExt_courseware_local").html(ey_foreign_system10);
                         setTimeout(function(){
                             $('#upload_addonFieldExt_courseware_local').html('本地上传');
                         }, 2000 );
@@ -354,7 +365,7 @@
                             return myXhr; //xhr对象返回给jQuery使用
                         },
                         success: function(res2){
-                            $("#upload_addonFieldExt_courseware_qiniu").html('上传成功');
+                            $("#upload_addonFieldExt_courseware_qiniu").html(ey_foreign_system10);
                             setTimeout(function(){
                                 $('#upload_addonFieldExt_courseware_qiniu').html('七牛云上传');
                             }, 2000 );
@@ -436,7 +447,7 @@
                             var res = $(res2).find('PostResponse');
                             if (res) {
                                 var key =  res.find('Key').text();
-                                $("#upload_addonFieldExt_courseware_oss").html('上传成功');
+                                $("#upload_addonFieldExt_courseware_oss").html(ey_foreign_system10);
                                 setTimeout(function(){
                                     $('#upload_addonFieldExt_courseware_oss').html('oss上传');
                                 }, 2000 );
@@ -524,7 +535,7 @@
                             return myXhr; //xhr对象返回给jQuery使用
                         },
                         success: function(res2){
-                            $("#qiniu_upload_video_sys_"+num).text('上传成功');
+                            $("#qiniu_upload_video_sys_"+num).text(ey_foreign_system10);
                             setTimeout(function(){
                                 $('#qiniu_upload_video_sys_'+num).text('七牛云上传');
                             }, 2000 )
@@ -634,7 +645,7 @@
                             var res = $(data).find('PostResponse');
                             if (res) {
                                 var key =  res.find('Key').text();
-                                $("#oss_upload_video_sys_"+num).text('上传成功');
+                                $("#oss_upload_video_sys_"+num).text(ey_foreign_system10);
                                 setTimeout(function(){
                                     $('#oss_upload_video_sys_'+num).text('oss上传');
                                 }, 2000 )
@@ -731,7 +742,7 @@
                     $("#video_title_sys_" + num).val(res.data.name);
                     $("#video_time_sys_" + num).val(duration);
                     $("#video_size_sys_" + num).val(res.data.size);
-                    $("#cos_upload_video_sys_"+num).text('上传成功');
+                    $("#cos_upload_video_sys_"+num).text(ey_foreign_system10);
                 } else {
                     $("#cos_upload_video_sys_"+num).text('上传失败');
                 }
@@ -742,6 +753,86 @@
             error: function(e){
                 layer.closeAll();
                 $("#cos_click_sys_"+num).val('');
+                showErrorAlert(e.responseText);
+            }
+        });
+    }
+    /*亚马逊S3上传代码 --- 开发者*/
+    function click_aws_sys(num) {
+        $("#aws_click_sys_"+num).trigger("click");
+    }
+    // 上传视频
+    function AwsUpload(num) {
+        // 获取文件路径名
+        var file = $("#aws_click_sys_"+num)[0].files[0];
+
+        // 获取视频时长start
+        var url = URL.createObjectURL(file);
+        var oVideo = document.createElement('video');
+        var duration = 0;
+        oVideo.setAttribute('src', url);
+        oVideo.oncanplay = ()=>{
+            duration = parseInt(oVideo.duration);
+        }
+        // 获取视频时长end
+
+        var fileName = file.name;
+        var fileExt = fileName.substr(fileName.lastIndexOf('.')).toLowerCase();
+        var ext = judgeExt(fileExt);
+        if (ext == -1) {
+            showErrorAlert('不支持选中的视频格式，可在附件设置中修改');
+            return false;
+        }
+        var size = "{$upload_max_filesize}";
+        if (file.size > size) {
+            showErrorAlert('视频大小超过限制，可在附件设置中修改');
+            return false;
+        }
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('file_ext', fileExt);
+        $.ajax({
+            type: 'post',
+            url: '__ROOT_DIR__/index.php?m=plugins&c=Aws&a=aws_upload&_ajax=1',
+            data: formData,
+            contentType: false,
+            processData: false,
+            dataType: 'json',
+            xhr: function () {
+                myXhr = $.ajaxSettings.xhr();
+                if (myXhr.upload) {
+                    myXhr.upload.addEventListener('progress', function(e){
+                        var curr = e.loaded;
+                        var total = e.total;
+                        process = parseInt(curr / total * 100);
+                        if (100 == process) {
+                            process = 99;
+                            layer_loading('上传亚马逊S3');
+                        }
+                        $("#aws_upload_video_sys_"+num).text('上传中...'+process+"%");
+
+                    });
+                }
+                return myXhr;
+            },
+            success: function(res) {
+                layer.closeAll();
+                if (1 == res.code) {
+                    $("#video_url_sys_" + num).val(res.data.url);
+                    $("#video_title_sys_" + num).val(res.data.name);
+                    $("#video_time_sys_" + num).val(duration);
+                    $("#video_size_sys_" + num).val(res.data.size);
+                    $("#aws_upload_video_sys_"+num).text(ey_foreign_system10);
+                } else {
+                    $("#aws_upload_video_sys_"+num).text('上传失败');
+                }
+                setTimeout(function(){
+                    $('#aws_upload_video_sys_'+num).text('亚马逊S3上传');
+                }, 2000);
+            },
+            error: function(e){
+                layer.closeAll();
+                $("#aws_click_sys_"+num).val('');
                 showErrorAlert(e.responseText);
             }
         });
@@ -802,6 +893,8 @@
         url = "{:url('plugins/AliyunOss/deleteOss')}";
         {elseif isset($channelRow.data.cos_open) && $channelRow.data.cos_open == 1}
         url = "{:url('plugins/Cos/deleteCos')}";
+        {elseif isset($channelRow.data.aws_open) && $channelRow.data.aws_open == 1}
+        url = "{:url('plugins/Aws/deleteAws')}";
         {else/}
         url = "{:url('user/Uploadify/del_local')}";
         {/if}

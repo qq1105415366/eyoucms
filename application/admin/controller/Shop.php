@@ -22,8 +22,6 @@ use app\user\model\Pay as PayModel;  //用于虚拟网盘商品付款后自动�
 
 class Shop extends Base {
 
-    public $UsersConfigData = [];
-
     /**
      * 构造方法
      */
@@ -38,11 +36,6 @@ class Shop extends Base {
         $this->shop_order_log_db     = Db::name('shop_order_log');          // 订单操作表
         $this->shipping_template_db  = Db::name('shop_shipping_template');  // 运费模板表
         $this->product_spec_preset_db = Db::name('product_spec_preset');    // 产品规格预设表
-
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-
-        $this->assign('userConfig', $this->UsersConfigData);
 
         // 用于产品规格逻辑功能处理
         $this->ProductSpecLogic = new ProductSpecLogic;
@@ -105,6 +98,15 @@ class Shop extends Base {
         // 商城配置信息
         $smtp = tpCache('smtp');
         $this->assign('smtp', $smtp);
+
+        // 文件类型
+        $file_type = tpCache('basic.file_type');
+        $file_type = !empty($file_type) ? $file_type : 'zip|gz|rar|iso|doc|xls|ppt|wps|docx|xlsx|pptx|pdf|pem';
+        if (strpos($file_type, 'pem') === false) $file_type = $file_type . '|pem';
+        $this->assign('file_type', $file_type);
+
+        // 系统最大上传文件的大小
+        $this->assign('upload_max_filesize', upload_max_filesize());
         return $this->fetch('conf');
     }
 
@@ -372,13 +374,13 @@ class Shop extends Base {
 
         // 是否开启货到付款
         $shopOpenOffline = 1;
-        if (0 === intval($this->UsersConfigData['shop_open_offline']) || !isset($this->UsersConfigData['shop_open_offline'])) {
+        if (0 === intval($this->usersConfig['shop_open_offline']) || !isset($this->usersConfig['shop_open_offline'])) {
             $shopOpenOffline = 0;
         }
         $this->assign('shopOpenOffline', $shopOpenOffline);
 
         // 开启的商城商品类型
-        $shopType = $this->UsersConfigData['shop_type'];
+        $shopType = $this->usersConfig['shop_type'];
         $this->assign('shopType', $shopType);
 
         // 是否开启微信、支付宝支付
@@ -876,7 +878,7 @@ class Shop extends Base {
 
                 }else if ('ysh' == $post['status_name']) {
                     // 如果后台【商城中心】-【商城配置】-【订单设置】-收货后可维权时间设置为0，则表示订单不允许申请维权
-                    $OrderData['allow_service'] = !empty($this->UsersConfigData['order_right_protect_time']) ? 0 : 1;
+                    $OrderData['allow_service'] = !empty($this->usersConfig['order_right_protect_time']) ? 0 : 1;
 
                     // 订单确认收货，追加更新数组
                     $UpdateData['order_status'] = '3';
@@ -2116,6 +2118,8 @@ class Shop extends Base {
                     $val['apply_channels'] = empty($params['list'][$val['code']]['apply_channels']) ? '' : "应用于".str_replace(',', '、', $params['list'][$val['code']]['apply_channels']);
                     $list[$key] = $val;
                 }
+            } else {
+                $list = [];
             }
         } catch (\Exception $e) {
             
@@ -2217,7 +2221,7 @@ class Shop extends Base {
             );
             tpCache('system', ['system_usecodelist'=>'']);
             $upgradeLogic->GetKeyData($values);
-            $url = $upgradeLogic->getServiceUrl(true).'/index.php?m=api&c=Weapp&a=checkBatchVersion';
+            $url = $upgradeLogic->getServiceUrl(true, 'weapp').'/index.php?m=api&c=Weapp&a=checkBatchVersion';
             $response = @httpRequest($url, 'POST', $values, [], 5);
             $batch_upgrade = json_decode($response, true);
             if (is_array($batch_upgrade)) {

@@ -77,13 +77,23 @@ class Foreign extends Base {
             }
             $seoData = [
                 'seo_titleurl_format' => intval($post['seo_titleurl_format']),
+                'seo_description_length' => intval($post['seo_description_length']),
             ];
-            tpCache('seo', $seoData);
-
             $basicData = [
                 'basic_indexname' => $post['basic_indexname'],
             ];
-            tpCache('basic', $basicData);
+            $searchData = [
+                'search_model' => 'intellect',
+            ];
+
+            $langRow = Db::name('language')->order('id asc')->select();
+            foreach ($langRow as $key => $val) {
+                tpCache('seo', $seoData, $val['mark']);
+                tpCache('basic', $basicData, $val['mark']);
+                if (!empty($post['foreign_is_status'])) {
+                    tpCache('search', $searchData, $val['mark']);
+                }
+            }
 
             // 清空文档的自定义文件名
             if (empty($post['seo_titleurl_format'])) {
@@ -95,7 +105,9 @@ class Foreign extends Base {
             // 基本设置
             $foreignData = tpSetting('foreign', [], 'cn');
             $foreignData['foreign_is_status'] = intval($post['foreign_is_status']);
+            $foreignData['foreign_htmlfilename_mode'] = intval($post['foreign_htmlfilename_mode']);
             $foreignData['foreign_clear_htmlfilename'] = intval($post['foreign_clear_htmlfilename']);
+            $foreignData['foreign_seo_description_mode'] = intval($post['foreign_seo_description_mode']);
             tpSetting('foreign', $foreignData, 'cn');
             // 生成语言包文件
             model('ForeignPack')->updateLangFile();
@@ -113,38 +125,16 @@ class Foreign extends Base {
             }
 
             Cache::clear('foreign_pack');
-            $this->success("操作成功");
+            $this->success("保存成功");
         }
-        $this->error("操作失败");
+        $this->error("保存失败");
     }
 
     /**
-     * 批量更新文档URL
+     * 执行 - 批量更新文档URL、SEO描述
+     * @return [type] [description]
      */
-    // public function htmlfilename_index()
-    // {
-    //     $foreignData = tpSetting('foreign', [], 'cn');
-    //     if (empty($foreignData['foreign_is_status'])) {
-    //         $this->error('尚未启用外贸助手功能', url('Foreign/index'));
-    //     }
-    //     $seo_titleurl_format = empty($this->globalConfig['seo_titleurl_format']) ? 0 : $this->globalConfig['seo_titleurl_format'];
-    //     if (empty($seo_titleurl_format)) {
-    //         $this->error('文档URL尚未开启外贸格式', url('Foreign/index'));
-    //     }
-
-    //     // 基本设置
-    //     $assign_data = [];
-    //     $foreignData = tpSetting('foreign', [], 'cn');
-    //     $assign_data['foreignData'] = empty($foreignData) ? [] : $foreignData;
-    //     $this->assign($assign_data);
-
-    //     return $this->fetch();
-    // }
-
-    /**
-     * 执行 - 批量更新文档URL
-     */
-    public function htmlfilename_handel()
+    public function batch_handle_update()
     {
         @ini_set('memory_limit', '-1');
         function_exists('set_time_limit') && set_time_limit(0);
@@ -158,29 +148,30 @@ class Foreign extends Base {
             if (empty($foreignData['foreign_is_status'])) {
                 $this->error('外贸助手已关闭', url('Foreign/index'));
             }
+            $handle_type = [];
             $seo_titleurl_format = empty($this->globalConfig['seo_titleurl_format']) ? 0 : $this->globalConfig['seo_titleurl_format'];
             if (empty($seo_titleurl_format)) {
-                $this->error('请勾选文档URL格式为外贸链接', url('Foreign/index'));
+                if (!empty($foreignData['foreign_clear_htmlfilename'])) {
+                    $handle_type[] = 'clear_htmlfilename';
+                }
+            } else {
+                if (!empty($foreignData['foreign_htmlfilename_mode'])) {
+                    $handle_type[] = 'up_htmlfilename';
+                }
+            }
+            if (!empty($foreignData['foreign_seo_description_mode'])) {
+                $handle_type[] = 'up_seo_desc';
             }
 
-            $foreign_htmlfilename_mode = input('param.foreign_htmlfilename_mode/d');
-            if (!empty($foreign_htmlfilename_mode)) {
+            if (1 == count($handle_type) && in_array('clear_htmlfilename', $handle_type)) {
                 Db::name('archives')->where(['aid'=>['gt', 0]])->update(['htmlfilename'=>'']);
                 $this->success('', null, ['achievepage'=>0,'allpagetotal'=>0,'pagetotal'=>0]);
             } else {
                 $achievepage = input("param.achieve/d", 0); // 已完成文档数
-                $data = $this->logic->handelUpdateArticle($foreign_htmlfilename_mode, $achievepage);
+                $data = $this->logic->batchHandelUpdate($handle_type, $achievepage);
                 $this->success($data[0], null, $data[1]);
             }
         }
-
-        $foreign_htmlfilename_mode = input('param.foreign_htmlfilename_mode/d');
-        $this->assign('foreign_htmlfilename_mode', $foreign_htmlfilename_mode);
-
-        // 批量更新URL的配置
-        $foreignData = tpSetting('foreign', [], 'cn');
-        $foreignData['foreign_htmlfilename_mode'] = $foreign_htmlfilename_mode;
-        tpSetting('foreign', $foreignData, 'cn');
 
         return $this->fetch();
     }
@@ -189,7 +180,7 @@ class Foreign extends Base {
      * 清除数据缓存+页面缓存
      * @return [type] [description]
      */
-    public function clear_cache_htmlfilename()
+    public function clear_cache()
     {
         Cache::clear();
         delFile(RUNTIME_PATH);

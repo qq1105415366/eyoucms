@@ -236,7 +236,7 @@ class Guestbook extends Base
             ])->delete();
             if ($r !== false) {
                 // ---------后置操作
-                model('Guestbook')->afterDel($id_arr);
+                model('Guestbook')->afterDel($id_arr, $form_type);
                 model('Arctype')->hand_type_count(['aid'=>$id_arr]);//统计栏目文档数量
                 // ---------end
                 adminLog('删除留言-id：' . implode(',', $id_arr));
@@ -612,26 +612,35 @@ class Guestbook extends Base
         // 如果是区域类型则执行
         if (9 == $info['attr_input_type']) {
             // 反序列化默认值参数
-            $dfvalue = unserialize($info['attr_values']);
-            if (0 == $dfvalue['region_id']) {
-                $parent_id = $dfvalue['region_id'];
-            } else {
-                // 查询当前选中的区域父级ID
-                $parent_id = Db::name('region')->where("id", $dfvalue['region_id'])->getField('parent_id');
-                if (0 == $parent_id) {
-                    $parent_id = $dfvalue['region_id'];
-                }
+            if (!preg_match('/^([\x{4e00}-\x{9fa5}\w\"\:\{\}\;\，\,]*)$/u', $info['attr_values'])) {
+                $info['attr_values'] = '';
             }
+            $dfvalue = unserialize($info['attr_values']);
+            if (is_array($dfvalue)) {
+                $dfvalue['region_id'] = preg_replace('/([^\d\,]+)/i', '', $dfvalue['region_id']);
+                $dfvalue['region_ids'] = preg_replace('/([^\d\,]+)/i', '', $dfvalue['region_ids']);
+                $dfvalue['region_names'] = preg_replace("/([^\x{4e00}-\x{9fa5}\,\，]+)/u", '', $dfvalue['region_names']);
 
-            // 查询市\区\县信息
-            $assign_data['City'] = Db::name('region')->where("parent_id", $parent_id)->select();
-            // 加载数据到模板
-            $assign_data['region'] = [
-                'parent_id'    => $parent_id,
-                'region_id'    => $dfvalue['region_id'],
-                'region_names' => $dfvalue['region_names'],
-                'region_ids'   => $dfvalue['region_ids'],
-            ];
+                if (0 == $dfvalue['region_id']) {
+                    $parent_id = $dfvalue['region_id'];
+                } else {
+                    // 查询当前选中的区域父级ID
+                    $parent_id = Db::name('region')->where("id", $dfvalue['region_id'])->getField('parent_id');
+                    if (0 == $parent_id) {
+                        $parent_id = $dfvalue['region_id'];
+                    }
+                }
+
+                // 查询市\区\县信息
+                $assign_data['City'] = Db::name('region')->where("parent_id", $parent_id)->select();
+                // 加载数据到模板
+                $assign_data['region'] = [
+                    'parent_id'    => $parent_id,
+                    'region_id'    => $dfvalue['region_id'],
+                    'region_names' => $dfvalue['region_names'],
+                    'region_ids'   => $dfvalue['region_ids'],
+                ];
+            }
 
             // 删除默认值,防止切换其他类型时使用到
             unset($info['attr_values']);
@@ -736,12 +745,6 @@ class Guestbook extends Base
                 ->where(['a.aid'=>$aid, 'a.form_type'=>$form_type])
                 ->find();
         }
-        $city = "";
-        $city_arr = getCityLocation($row['ip']);
-        if (!empty($city_arr)) {
-            !empty($city_arr['location']) && $city .= $city_arr['location'];
-        }
-        $row['city'] = $city;
         // 标记为已读
         if (empty($row['is_read'])) {
             $row['is_read'] = 1;

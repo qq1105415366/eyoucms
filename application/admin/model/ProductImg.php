@@ -34,7 +34,7 @@ class ProductImg extends Model
      */
     public function getProImg($aid, $field = '*')
     {
-        $result = Db::name('ProductImg')->field($field)
+        $result = Db::name('product_img')->field($field)
             ->where('aid', $aid)
             ->order('sort_order asc')
             ->select();
@@ -51,7 +51,7 @@ class ProductImg extends Model
         if (!is_array($aid)) {
             $aid = array($aid);
         }
-        $result = Db::name('ProductImg')->where(array('aid'=>array('IN', $aid)))->delete();
+        $result = Db::name('product_img')->where(array('aid'=>array('IN', $aid)))->delete();
 
         return $result;
     }
@@ -65,10 +65,11 @@ class ProductImg extends Model
         $proimg = isset($post['proimg']) ? $post['proimg'] : array();
         $imgintro = isset($post['imgintro']) ? $post['imgintro'] : array();
 
+        // 删除产品图片
+        if (isset($post['proimg'])) $this->delProImg($aid);
+
         if (!empty($proimg) && count($proimg) > 1) {
             array_pop($proimg); // 弹出最后一个
-            // 删除产品图片
-            $this->delProImg($aid);
              // 添加图片
             $data = array();
             $sort_order = 0;
@@ -76,15 +77,15 @@ class ProductImg extends Model
             {
                 if($val == null || empty($val))  continue;
                 
-                $img_info = array();
+                $img_info = [];
                 $filesize = 0;
                 if (is_http_url($val)) {
                     $imgurl = handle_subdir_pic($val);
                 } else {
                     $imgurl = ROOT_PATH.ltrim($val, '/');
+                    $img_info = @getimagesize($imgurl);
                     $filesize = @filesize('.'.$val);
                 }
-                $img_info = @getimagesize($imgurl);
                 $width = isset($img_info[0]) ? $img_info[0] : 0;
                 $height = isset($img_info[1]) ? $img_info[1] : 0;
                 $type = isset($img_info[2]) ? $img_info[2] : 0;
@@ -107,7 +108,7 @@ class ProductImg extends Model
                 );
             }
             if (!empty($data)) {
-                Db::name('ProductImg')->insertAll($data);
+                Db::name('product_img')->insertAll($data);
 
                 // 没有封面图时，取第一张图作为封面图
                 $litpic = isset($post['litpic']) ? $post['litpic'] : '';

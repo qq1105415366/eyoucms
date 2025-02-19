@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" >
+<html style="padding-right: unset;">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Language" content="zh-cn"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta name='robots' content='noindex,nofollow' />
+    <title>二次验证 - 后台登录</title>
+    <link rel="shortcut icon" type="image/x-icon" href="__ROOT_DIR__/favicon.ico?v={$version}" media="screen"/>
+    <link href="__PUBLIC__/plugins/bootstrap/css/bootstrap.min.css?v={$version}" rel="stylesheet" type="text/css" />
+    <link href="__SKIN__/css/login_twofactor.css?v={$version}" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="__STATIC__/common/js/jquery.min.js?v={$version}"></script>
+    <script type="text/javascript" src="__PUBLIC__/plugins/layer-v3.1.0/layer.js?v={$version}"></script>
+    <style type="text/css">
+      .layui-layer-btn .layui-layer-btn0 {
+          border-color: #2189be;
+          background-color: #2189be;
+      }
+    </style>
+  </head>
+  <body style="padding-right: unset;">
+    <div id="main">
+      <div class="container">
+        <div class="form">
+          <div id="notice" style="display: none;">
+            <div class="alert alert-danger" style="display: block;" role="alert">
+              <button class="close" id="close_alert" type="button">
+                <span>×</span>
+              </button>
+              <div class="message"></div>
+            </div>
+          </div>
+          <div class="normal">
+            <div class="two-factor-header">
+              <h4 class="bold">
+                二次验证
+              </h4>
+            </div>
+            <p class="text-info">
+              {$security_ask}
+            </p>
+            <div class="form-group field-totp-code">
+              <input class="form-control" id="twofactor_code" type="text" placeholder="请输入密保答案" autofocus="" autocomplete="off">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block btn-emphasis" id="submit-button" type="button">提 交</button>
+          <div class="text-right forget-container">
+            <a href="javascript:void(0);" onclick="showConfirm('通过FTP在根目录/data/conf/ ，新建一个内容为空 twofactor_login_open.txt 文件，便可以跳过后台二次验证，再重新登录即可')">忘记密保答案？</a>&nbsp;|&nbsp;
+            <a id="forget" href="{$Request.baseFile}">返回登录</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+
+        function showConfirm(title){
+            layer.confirm(title, {
+                area: ['480px', '190px'],
+                move: false,
+                title: '临时解决方法',
+                shade: [0.7, '#fafafa'],
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['关闭'] ,//按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            });
+        }
+
+        /**
+         * 封装的加载层
+         */
+        function layer_loading(msg){
+            var loading = layer.msg(
+            msg+'...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;请勿刷新页面', 
+            {
+                icon: 1,
+                time: 3600000, //1小时后后自动关闭
+                shade: [0.2] //0.1透明度的白色背景
+            });
+            //loading层
+            var index = layer.load(3, {
+                shade: [0.1,'#fff'] //0.1透明度的白色背景
+            });
+
+            return loading;
+        }
+        
+        $(function(){
+
+            $(document).keydown(function(event){
+                if(event.keyCode ==13){
+                    $('#submit-button').trigger("click");
+                }
+            });
+
+            $('#submit-button').on('click',function(){
+                var twofactor_code = $('#twofactor_code').val();
+                if (twofactor_code == '') {
+                    layer.msg('请输入密保答案！', {time: 1500});
+                    $('#twofactor_code').focus();
+                    return false;
+                }
+
+                var url = "{:url('Admin/login', ['_ajax'=>1])}";
+                if (url.indexOf('?') > -1) {
+                    url += '&';
+                } else {
+                    url += '?';
+                }
+                url += 't='+Math.random();
+                layer_loading('准备进入');
+                $.ajax({
+                    async:false,
+                    url: url,
+                    data: {twofactor_code:twofactor_code, twofactor_check:1},
+                    type:'post',
+                    dataType:'json',
+                    success:function(res){
+                        if(1 == res.code){
+                            top.location.href = res.url;
+                        }else{
+                            layer.closeAll();
+                            layer.alert(res.msg, {icon: 5, title:false, closeBtn: false});
+                            return false;
+                        }
+                    },
+                    error : function(e) {
+                        layer.closeAll();
+                        layer.alert(e.responseText, {icon: 5, title:false, closeBtn: false});
+                    }
+                });
+            });
+        });
+    </script>
+
+    {include file="public/footer" /}

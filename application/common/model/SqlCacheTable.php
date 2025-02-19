@@ -77,12 +77,16 @@ class SqlCacheTable extends Model
             // exit;
             if (!empty($SqlName)) {
                 // 更新数据
+                $map = [
+                    'sql_name' => ['IN', $SqlName],
+                ];
+                $sql_result = (int)Db::name('sql_cache_table')->where($map)->value('sql_result');
                 $Data = [
-                    'sql_result' => Db::raw('sql_result+1'),
+                    'sql_result' => $sql_result + 1,
                     'update_time' => getTime()
                 ];
                 // 执行更新
-                Db::name('sql_cache_table')->where('sql_name', 'IN', $SqlName)->update($Data);
+                Db::name('sql_cache_table')->where($map)->update($Data);
             }
 
         } else if ('edit' == $opt) {
@@ -228,12 +232,16 @@ class SqlCacheTable extends Model
 
             if (!empty($SqlName)) {
                 // 更新数据
+                $map = [
+                    'sql_name' => ['IN', $SqlName],
+                ];
+                $sql_result = (int)Db::name('sql_cache_table')->where($map)->value('sql_result');
                 $Data = [
-                    'sql_result' => Db::raw('sql_result+1'),
+                    'sql_result' => $sql_result + 1,
                     'update_time' => getTime()
                 ];
                 // 执行更新
-                Db::name('sql_cache_table')->where('sql_name', 'IN', $SqlName)->update($Data);
+                Db::name('sql_cache_table')->where($map)->update($Data);
             }
 
         } else if ('edit' == $opt) {

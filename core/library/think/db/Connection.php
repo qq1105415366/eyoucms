@@ -459,6 +459,9 @@ abstract class Connection
                 }
             }
             /*--end*/
+            // 修复表
+            $this->repairTable($sql);
+            
             if ($this->isBreak($e)) {
                 return $this->close()->execute($sql, $bind, $query);
             }
@@ -472,6 +475,9 @@ abstract class Connection
                 }
             }
             /*--end*/
+            // 修复表
+            $this->repairTable($sql);
+            
             if ($this->isBreak($e)) {
                 return $this->close()->execute($sql, $bind, $query);
             }
@@ -484,10 +490,26 @@ abstract class Connection
                 }
             }
             /*--end*/
+            // 修复表
+            $this->repairTable($sql);
+            
             if ($this->isBreak($e)) {
                 return $this->close()->execute($sql, $bind, $query);
             }
             throw $e;
+        }
+    }
+
+    /**
+     * 修复数据表
+     * @param  [type] $sql [description]
+     * @return [type]      [description]
+     */
+    private function repairTable($sql)
+    {
+        // 修复setting表
+        if (preg_match('/^(\s*)UPDATE(\s+)(`)?' . $this->config['prefix'] . 'setting(`)?(\s+)SET(\s+)/i', $sql) || preg_match('/^(\s*)INSERT(\s+)INTO(\s+)(`)?' . $this->config['prefix'] . 'setting(`)?(\s+)/i', $sql)) {
+            @Db::query("REPAIR TABLE " . $this->config['prefix'] . "setting");
         }
     }
 

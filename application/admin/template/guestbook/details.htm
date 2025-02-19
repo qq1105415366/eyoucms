@@ -15,13 +15,7 @@
     </div>
     <div style="display: flex;align-items: center;padding: 15px 0;">
         <div style="width: 10%;min-width: 60px;"><strong>IP来源</strong></div>
-        <div style="width: 90%;">{$row.ip}&nbsp;&nbsp;
-            {notempty name='$row.city'}
-                ({$row.city})
-            {else /}
-                (<a href="https://www.baidu.com/s?wd={$row.ip}" target="_blank">查看地区</a>)
-            {/notempty}
-        </div>
+        <div style="width: 90%;">{$row.ip}&nbsp;&nbsp;(<span id="city_name" data-ip="{$row.ip}"></span>)</div>
     </div>
     <div style="display: flex;align-items: center;padding: 15px 0;">
         <div style="width: 10%;min-width: 60px;"><strong>提交来源</strong></div>
@@ -54,5 +48,32 @@
     </div>
 </div>
 {/notempty}
+
+<script type="text/javascript">
+    $(function(){
+        get_ip_city_name();
+        function get_ip_city_name()
+        {
+            var ip = $('#city_name').data('ip');
+            $('#city_name').html('查询区域中……');
+            $.ajax({
+                type : 'post',
+                url : "{:url('Ajax/get_ip_city_name')}",
+                data : {ip:ip, _ajax:1},
+                dataType : 'json',
+                success : function(res){
+                    if (res.code == 1) {
+                        $('#city_name').html(res.data.city_name);
+                    } else {
+                        $('#city_name').html('<a href="https://www.baidu.com/s?wd='+ip+'" target="_blank">查看地区</a>');
+                    }
+                },
+                error:function(e){
+                    $('#city_name').html(e.responseText);
+                }
+            });
+        }
+    });
+</script>
 
 {include file="public/footer" /}

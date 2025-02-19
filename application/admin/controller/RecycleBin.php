@@ -30,7 +30,7 @@ class RecycleBin extends Base
     public function _initialize() {
         parent::_initialize();
         if (empty($this->globalConfig['language_split'])) {
-            if (!preg_match('/^(arctype_)/i', ACTION_NAME)) {
+            if (!preg_match('/^(arctype|archives|gbookattr)_/i', ACTION_NAME)) {
                 $this->language_access(); // 多语言功能操作权限
             }
         }
@@ -235,7 +235,7 @@ class RecycleBin extends Base
                     Cache::clear();
                     adminLog('还原栏目：'.$row['typename']);
                     /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                    Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                    Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                     model('SqlCacheTable')->InsertSqlCacheTable(true);
                     /* END */
                     model('Arctype')->hand_type_count(['typeid'=>[$del_id]]);//统计栏目文档数量
@@ -398,7 +398,7 @@ class RecycleBin extends Base
             }
             adminLog('还原栏目：'.trim($typename,','));
             /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
             /* END */
             model('Arctype')->hand_type_count(['typeid'=>$post['del_id']]);//统计栏目文档数量
@@ -778,7 +778,7 @@ class RecycleBin extends Base
                             Cache::clear();
                             adminLog('还原文档：'.implode('|', get_arr_column($row, 'title')));
                             /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                             model('SqlCacheTable')->InsertSqlCacheTable(true);
 
                             model('Arctype')->hand_type_count(['aid'=>$id_arr]);//统计栏目文档数量
@@ -805,6 +805,9 @@ class RecycleBin extends Base
         $id_arr = input('del_id/a');
         $id_arr = eyIntval($id_arr);
         if(IS_POST && !empty($id_arr)){
+            if (is_dir('./weapp/CompressContent/')) {                                            
+                $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                
+            }   
             // 当前文档信息
             $row = $this->archives->field('aid, title, channel')
                 ->where([
@@ -833,6 +836,12 @@ class RecycleBin extends Base
                         foreach ($row2Group as $key => $val) {
                             $table = $channeltypeRow[$key]['table'];
                             $aidarr_tmp = get_arr_column($val, 'aid');
+                            if (!empty($compressLogic)) {
+                                try {                                
+                                    $compressLogic->copydata(3,'','',$table, $id_arr);
+                                } catch (Exception $e) {
+                                }                
+                            }                                
                             if (!empty($channeltypeRow[$key]['ifsystem'])){
                                 model($table)->afterDel($id_arr);
                             }else{
@@ -1249,5 +1258,34 @@ class RecycleBin extends Base
             }
         }
         $this->error("操作失败!");
+    }
+
+    /**
+     * 回收站开关设置
+     */
+    public function set_web_recycle_switch()
+    {
+        if (IS_POST) {
+            $value = input('param.value/d', 0);
+            $recycle_is_clear = input('param.recycle_is_clear/d', 0);
+            // 清空回收站
+            if (!empty($value) && !empty($recycle_is_clear)) {
+                model('RecycleBin')->clear('all');
+            }
+            /*多语言*/
+            if (is_language()) {
+                $langRow = \think\Db::name('language')->order('id asc')
+                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
+                    ->select();
+                foreach ($langRow as $key => $val) {
+                    tpCache('web', ['web_recycle_switch'=>$value], $val['mark']);
+                }
+            } else {
+                tpCache('web', ['web_recycle_switch'=>$value]);
+            }
+            /*--end*/
+            $this->success('操作成功');
+        }
+        $this->error('操作失败');
     }
 }

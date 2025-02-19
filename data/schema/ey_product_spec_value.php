@@ -90,6 +90,15 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'stock_code' => 
+  array (
+    'name' => 'stock_code',
+    'type' => 'varchar(100)',
+    'notnull' => false,
+    'default' => NULL,
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'is_seckill' => 
   array (
     'name' => 'is_seckill',

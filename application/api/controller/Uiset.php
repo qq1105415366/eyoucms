@@ -477,7 +477,6 @@ class Uiset extends Controller
                 'idcode' => $this->idcode,
             )),
         );
-
         $filename = $this->uipath."{$page}.inc.php";
         if (ui_write_bidden_inc($arr, $filename, true)) {
             $this->success('操作成功');

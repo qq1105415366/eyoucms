@@ -12,11 +12,23 @@
                 <li>1.登录 <a href="https://mp.weixin.qq.com" target="_blank">微信公众号</a>，确认是否已经配置了 JS接口安全域名 、网页授权域名，<a href="javascript:void(0);" onclick="Images('https://www.eyoucms.com/uploads/allimg/20240411/1008-2404111KH3109.png', 900, 600);">查看教程</a></li>
                 <li>2.登录 <a href="https://mp.weixin.qq.com" target="_blank">微信公众号</a>，在设置与开发>公众号设置>服务类目>里添加这个类目： <font color="#fe7300">商业服务->软件/建站/技术开发</font></li>
                 <li>3.如果所选服务类目的行业和以上不一致，将会导致模板消息不可用</li>
-                <li style="color: red;">4.请先把登录账号与您的微信进行绑定关联，否则接收不到推送信息！<a href="javascript:void(0);"  data-href="{:url('Admin/admin_edit', ['id'=>$admin_id,'iframe'=>1])}" onclick="openHelpframe(this, '个人信息', '100%', '100%');">打开个人信息</a></li>
+                <li>4.功能开启并进行管理员绑定，否则无法接收推送</li>
             </ul>
         </div>
         <form class="form-horizontal pl10 pr10" id="post_form" action="" method="post">
             <div class="ncap-form-default">
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="wechat_push_notice_open">消息推送</label>
+                    </dt>
+                    <dd class="opt">
+                        <label class="curpoin"><input id="wechat_push_notice_open1" name="wechat[wechat_push_notice_open]" value="1" type="radio" {if condition="!empty($global['wechat_push_notice_open'])"}checked="checked"{/if}>开启</label>
+                        &nbsp;
+                        <label class="curpoin"><input id="wechat_push_notice_open0" name="wechat[wechat_push_notice_open]" value="0" type="radio" {if condition="empty($global['wechat_push_notice_open'])"}checked="checked"{/if}>关闭</label>
+                        <span class="err"></span>
+                        <p class="notic2">当前管理员已有{$adminBindNum|default=0}人绑定并关注公众号&nbsp;[<a href="javascript:void(0);" id="to_bind_btn"  data-href="{:url('Admin/admin_edit', ['id'=>$admin_id,'iframe'=>1])}" onclick="toBind(this);">去绑定</a>]</p>
+                    </dd>
+                </dl>
                 <dl class="row">
                     <dt class="tit">场景开启</dt>
                     <dd class="opt">
@@ -71,7 +83,33 @@
     </div>
 </div>
 <script type="text/javascript">
+    function toBind(obj)
+    {
+        var appid = "{$wechat_data['appid']|default=''}";
+        if ('' == appid) {
+            layer.confirm('未完成填写公众号配置，请先完善再开启', {
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '提示',
+                btnAlign:'r',
+                // closeBtn: 3,
+                btn: ['去配置'], //按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            }, function () {
+                window.location.href = "{:url('Canal/conf_wechat')}";
+            }, function (index) {
+                layer.closeAll(index);
+            });
+        } else {
+            openHelpframe(obj, '个人信息', '100%', '100%');
+        }
+    }
+
     function checkForm() {
+        var cur_admin_bind = {$cur_admin_bind|default=0};
         layer_loading('正在处理');
         $.ajax({
             type: 'post',
@@ -82,7 +120,30 @@
                 layer.closeAll();
                 if (res.code == 1) {
                     layer.msg(res.msg, {shade: layer_shade, time: 1000}, function() {
-                        window.location.reload();
+                        if (1 == cur_admin_bind) {
+                            window.location.reload();
+                        } else {
+                            layer.confirm('当前管理员未完成微信绑定', {
+                                shade: layer_shade,
+                                area: ['480px', '190px'],
+                                move: false,
+                                title: '提示',
+                                btnAlign:'r',
+                                // closeBtn: 3,
+                                btn: ['去绑定', '关闭'], //按钮
+                                success: function () {
+                                    $(".layui-layer-content").css('text-align', 'left');
+                                },
+                                end: function() {
+                                    window.location.reload();
+                                }
+                            }, function () {
+                                openHelpframe($('#to_bind_btn').get(0), '个人信息', '100%', '100%');
+                            }, function (index) {
+                                layer.closeAll(index);
+                                window.location.reload();
+                            });
+                        }
                     });
                 } else {
                     showErrorAlert(res.msg);

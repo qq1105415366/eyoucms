@@ -41,7 +41,7 @@ class Arctype extends Base
         $this->archives = Db::name('archives');
 
         /*兼容每个用户的自定义字段，重新生成数据表字段缓存文件*/
-        $arctypeFieldInfo = include DATA_PATH . 'schema/' . PREFIX . 'arctype.php';
+        $arctypeFieldInfo = include DATA_PATH . 'schema/ey_arctype.php';
         foreach (['weapp_code'] as $key => $val) {
             if (!isset($arctypeFieldInfo[$val])) {
                 try {
@@ -417,7 +417,25 @@ class Arctype extends Base
         $this->assign($assign_data);
         return $this->fetch();
     }
-    
+    /**
+     * 递归查新是否是子集
+     * Author: 非洲和尚
+     * @param  [type]  $fid [父id] $id [查询id]
+     */
+    private function _sonArctype($fid, $id)
+    {
+        // 查询当前id的直接子节点
+        $children = Db::name('arctype')->where('parent_id', $fid)->column('id');
+        if (in_array($id, $children)) {
+            return true;
+        }
+        foreach ($children as $child) {
+            if ($this->_sonArctype($child, $id)) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * 编辑
      */
@@ -453,7 +471,16 @@ class Arctype extends Base
                     $this->error('自己不能成为自己的上级栏目');
                 }
                 /*--end*/
-
+                $arctypeData = Db::name('arctype')->field('parent_id,topid')->where('id',$post['id'])->find();
+                if($arctypeData['parent_id']>0){
+                    if($this->_sonArctype($post['id'], $post['parent_id'])!==false){
+                       $this->error('上级不能成为自己下级的栏目');  
+                    }
+                }else{// 顶级                    
+                    if(Db::name('arctype')->where(['topid'=>$post['id'],'id'=>$post['parent_id']])->find()){
+                        $this->error('上级不能成为自己下级的栏目');   
+                    }  
+                }                      
                 /*目录名称*/
                 $post['dirname'] = func_preg_replace([' ', '　'], '', $post['dirname']);
                 $dirname         = $this->arctypeLogic->get_dirname($post['typename'], $post['dirname'], $post['id']);
@@ -472,6 +499,9 @@ class Arctype extends Base
                 $diy_dirpath = '';
                 if (!empty($post['diy_dirpath'])) {
                     $diy_dirpath = '/'.trim($post['diy_dirpath'],'/');
+                    if (1 == $is_diyseo_htmlpath) { // 自定义静态命名规则
+                        $dirpath = $diy_dirpath;
+                    }
                 }
                 $typelink = !empty($post['is_part']) ? $post['typelink'] : '';
                 $post['target'] = !empty($post['target']) ? 1 : 0;
@@ -613,6 +643,9 @@ class Arctype extends Base
                 }
                 $select_html .= ($selected == $var['id']) ? "selected='true'" : '';
                 $select_html .= ($id == $var['id'] || ($hierarchy + $var['grade'] > $arctype_max_level - 1)) ? "disabled='true' style='background-color:#f5f5f5;' " : '';
+                if($this->_sonArctype($id, $var['id'])!==false){
+                    $select_html .= "disabled='true' style='background-color:#f5f5f5;' ";
+                }                
                 $select_html .= '>';
                 if ($var['level'] > 0)
                 {
@@ -727,6 +760,7 @@ class Arctype extends Base
             $post = input('post.');
             $typeid = input('post.typeid/d', 0);
             if(!empty($typeid)){
+                model('Archives')->editor_auto_210607($post);
                 $info = Db::name('arctype')->field('id,typename,current_channel')
                     ->where([
                         'id'    => $typeid,
@@ -945,7 +979,7 @@ class Arctype extends Base
             if (false !== $r) {
                 adminLog($logtxt);
                 /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                 model('SqlCacheTable')->InsertSqlCacheTable(true);
                 /* END */
                 $this->success('删除成功');
@@ -995,7 +1029,7 @@ class Arctype extends Base
             }
             adminLog($logtxt);
             /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
             model('SqlCacheTable')->InsertSqlCacheTable(true);
             /* END */
             $this->success('删除成功');
@@ -1197,6 +1231,7 @@ class Arctype extends Base
      */
     public function ajax_newtpl()
     {
+        $this->error('出于安全考虑已禁用，请使用ftp或易优助手插件修改模板');
         if (IS_POST) {
             $post = input('post.', '', null);
             $content = input('post.content', '', null);
@@ -1452,6 +1487,7 @@ class Arctype extends Base
                 'dirpath'   => $dirpath,
                 'diy_dirpath'   => $dirpath,
                 'grade' => intval($post['grade']),
+                'litpic' => !empty($post['litpic_local_1'][$key]) ? $post['litpic_local_1'][$key] : '',
                 'templist'  => !empty($post['templist']) ? $post['templist'] : '',
                 'tempview'  => !empty($post['tempview']) ? $post['tempview'] : '',
                 'is_hidden'  => $post['is_hidden'],

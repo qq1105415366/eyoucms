@@ -50,7 +50,6 @@
 						<div class="el-row min-hg-c-70 flex flex-center">
 						    <div class="tc mt-70">
 						        <p class=""><img id='litpic_img' src="{eyou:static file='users/skin/images/null-data.png' /}"/></p>
-						        <p class="fc9">当前暂无评价哦~</p>
 						    </div>
 						</div>
 					{eyou:else/}
@@ -60,7 +59,7 @@
 									<div class="item-top-l">订单号：<a href="{$field.OrDetailsUrl}">{$field.order_code}</a></div>
 									<div class="item-top-r">
                                         {eq name="$field.is_show" value="1"}
-                                        <a href="{$field.ViewCommentUrl}" style="color: red;">查看详情</a>
+                                        <a href="{$field.ViewCommentUrl}" style="color: red;">查看评价</a>
                                         {else/}
                                         <a href="JavaScript:void(0);"  style="color: #8b8b8b;">待审核</a>
                                         {/eq}

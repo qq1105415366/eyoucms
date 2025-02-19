@@ -35,6 +35,7 @@ class ProductSpecValue extends Model
             // 商品规格价格及规格库存
             $time = getTime();
             $saveAll = [];
+            $specStock = 0;
             foreach ($post['spec_price'] as $kkk => $vvv) {
                 $saveAll[] = [
                     'aid'           => $post['aid'],
@@ -43,6 +44,7 @@ class ProductSpecValue extends Model
                     'spec_stock'    => !empty($post['spec_stock'][$kkk]['stock_count']) ? $post['spec_stock'][$kkk]['stock_count'] : 0,
                     'spec_crossed_price' => !empty($post['spec_crossed_price'][$kkk]['crossed_price']) ? $post['spec_crossed_price'][$kkk]['crossed_price'] : 0,
                     'spec_sales_num'=> !empty($post['spec_sales'][$kkk]['spec_sales_num']) ? $post['spec_sales'][$kkk]['spec_sales_num'] : 0,
+                    'stock_code'    => !empty($post['preset_sales'][$kkk]['stock_code']) ? $post['preset_sales'][$kkk]['stock_code'] : '',
                     'seckill_price' => !empty($post['seckill_price'][$kkk]['spec_seckill_price']) ? $post['seckill_price'][$kkk]['spec_seckill_price'] : 0,
                     'seckill_stock' => !empty($post['seckill_stock'][$kkk]['spec_seckill_stock']) ? $post['seckill_stock'][$kkk]['spec_seckill_stock'] : 0,
                     'is_seckill'    => !empty($post['seckill_stock'][$kkk]['spec_seckill_stock']) ? 1 : 0,
@@ -53,6 +55,8 @@ class ProductSpecValue extends Model
                     'add_time'      => $time,
                     'update_time'   => $time,
                 ];
+                // 总库存
+                $specStock += !empty($post['spec_stock'][$kkk]['stock_count']) ? intval($post['spec_stock'][$kkk]['stock_count']) : 0;
             }
             if (!empty($saveAll)) {
                 if ('edit' === strval($action)) {
@@ -67,6 +71,9 @@ class ProductSpecValue extends Model
 
                 // 批量新增商品规格价格数据
                 $this->saveAll($saveAll);
+
+                // 将规格库存汇总存入主表
+                if (isset($specStock)) Db::name('archives')->where(['aid' => $post['aid']])->update(['stock_count' => intval($specStock), 'update_time' => $time]);
             }
         }
     }

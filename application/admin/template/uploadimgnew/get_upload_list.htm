@@ -59,7 +59,7 @@
                                                         <div class="layui-form-item">
                                                             <div class="layui-inline">
                                                                 <div class="layui-input-inline" style="width: 195px;margin-right:0px;">
-                                                                    <i class="glyphicon glyphicon-calendar fa fa-calendar" style=" position: absolute; font-size: 14px; vertical-align: baseline; margin-right: 4px; top: 12px; right: 5px; color: #ababab; "></i>
+                                                                    <i class="glyphicon glyphicon-calendar fa fa-calendar" style=" position: absolute; font-size: 14px; vertical-align: baseline; margin-right: 4px; top: 9px; right: 5px; color: #ababab; "></i>
                                                                     <input type="text" name="eytime" class="layui-input" id="eytime" placeholder="选择上传时间" autocomplete="off" value="{$Request.param.eytime}">
                                                                 </div>
                                                                 <input type="hidden" name="lang" value="{$info.lang}">
@@ -109,7 +109,9 @@
                                         {/empty}
                                         <div class="image-pages">
                                             <div class="image-pages-l">
-                                                <button type="button" class="layui-btn layui-btn-primary layui-btn-sm removeall" onclick="batch_delimg(this);" style="display: none;">删除选中(0)</button>
+                                                <label><input type="checkbox" class="checkAll" autocomplete="off" onclick="choose_all(this);">&nbsp;全选</label>
+                                                <a class="ml5 basics-color" href="javascript:void(0);" onclick="moving(this);">移动</a>
+                                                <a class="ml5 basics-color" href="javascript:void(0);" onclick="batch_delimg(this);">删除</a>
                                             </div>
                                             <div class="image-pages-r"><div id="page">{$pageStr}</div></div>
                                         </div>
@@ -124,6 +126,8 @@
         <script type="text/javascript">
             var type_id = {$type_id|default=0};
             var UploadUpUrl = "{$info.upload}&unneed_syn={$Request.param.unneed_syn}";
+            var UploadTypeListUrl = "{:url('Uploadimgnew/get_type')}";
+            var UpdateTypeIdUrl = "{:url('Uploadimgnew/update_type_id')}";
             var callback = "{$info.func}";
             var num = {$info.num|default=1};
             var upload_num = num;

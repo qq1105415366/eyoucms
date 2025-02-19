@@ -53,6 +53,8 @@ class Ajax extends Base {
     public function update_admin_menu(){
         if (IS_AJAX_POST) {
             $post = input('post.');
+            $post['title'] = empty($post['title']) ? '' : trim($post['title']);
+            $post['original_title'] = empty($post['original_title']) ? '' : trim($post['original_title']);
             if (empty($post['title']) || empty($post['controller_name']) || empty($post['action_name']) || empty($post['menu_id']) || empty($post['type'])){
                 $this->error('请传入正确参数');
             }
@@ -68,7 +70,7 @@ class Ajax extends Base {
                 }
                 $is_switch = isset($post['is_switch']) ? $post['is_switch'] : 1;
                 if (!empty($menu_info)){
-                    $update_data = ['icon' => $icon,'is_menu'=>1, 'is_switch' => $is_switch,'sort_order'=>100,'update_time' => getTime()];
+                    $update_data = ['title' => $post['title'], 'icon' => $icon,'is_menu'=>1, 'is_switch' => $is_switch,'sort_order'=>100,'update_time' => getTime()];
                     if(!empty($post['controller_name'])){
                         $update_data['controller_name'] = $post['controller_name'];
                     }
@@ -86,6 +88,7 @@ class Ajax extends Base {
                     $menu_info = [
                         'menu_id' => $post['menu_id'],
                         'title' => $post['title'],
+                        'original_title' => $post['original_title'],
                         'controller_name' => $post['controller_name'],
                         'action_name' => $post['action_name'],
                         'param' => !empty($post['param']) ? $post['param'] : '',
@@ -96,7 +99,7 @@ class Ajax extends Base {
                         'add_time' => getTime(),
                         'update_time' => getTime()
                     ];
-                    Db::name("admin_menu")->where([ 'title' => $post['title'], 'controller_name' => $post['controller_name'],'action_name' => $post['action_name']])->delete();
+                    Db::name("admin_menu")->where([ 'original_title' => $post['original_title'], 'controller_name' => $post['controller_name'],'action_name' => $post['action_name']])->delete();
                     $r = Db::name("admin_menu")->insert($menu_info);
                 }
                 if ($r !== false) {
@@ -105,7 +108,8 @@ class Ajax extends Base {
                 }
             }else{          //删除目录
                 if (!empty($menu_info)){
-                    $r = Db::name("admin_menu")->where(['menu_id'=>$menu_info['menu_id']])->update(['is_menu'=>0,'sort_order'=>100,'update_time' => getTime()]);
+                    $update_data = ['sort_order'=>100, 'is_menu'=>0, 'update_time' => getTime()];
+                    $r = Db::name("admin_menu")->where(['menu_id'=>$menu_info['menu_id']])->update($update_data);
                     if ($r !== false) {
                         $this->success("删除成功");
                     }
@@ -168,7 +172,7 @@ class Ajax extends Base {
                 }
             } else {
                 $cur_version = getCmsVersion();
-                $file_url = 'ht'.'tp'.':/'.'/'.'up'.'da'.'te'.'.e'.'yo'.'uc'.'m'.'s.'.'co'.'m/'.'pa'.'ck'.'ag'.'e/'.'ve'.'rs'.'io'.'n.'.'tx'.'t';
+                $file_url = 'ht'.'tp'.':/'.'/'.'up'.'da'.'te'.'.e'.'yo'.'u.5'.'f'.'a.'.'c'.'n/'.'pa'.'ck'.'ag'.'e/'.'ve'.'rs'.'io'.'n.'.'tx'.'t';
                 $max_version = @file_get_contents($file_url);
                 $max_version = empty($max_version) ? '' : $max_version;
                 if (!empty($max_version) && $cur_version >= $max_version) {
@@ -341,5 +345,16 @@ class Ajax extends Base {
             }
             tpSetting('syn', ['admin_logic_1692067658'=>1], 'cn');
         }
+    }
+
+    public function get_ip_city_name()
+    {
+        $ip = input('param.ip/s');
+        $city_name = '';
+        $city_arr = getCityLocation($ip);
+        if (!empty($city_arr)) {
+            !empty($city_arr['location']) && $city_name .= $city_arr['location'];
+        }
+        $this->success('读取成功', null, ['city_name'=>$city_name]);
     }
 }

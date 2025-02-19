@@ -126,7 +126,6 @@ EOF;
                 }
             }
         }
-//dump($attr_list);exit;
         return $attr_list;
     }
 

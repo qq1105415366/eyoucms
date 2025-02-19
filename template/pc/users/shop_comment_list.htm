@@ -43,7 +43,7 @@
                                        {$search.hidden}
                                         <div class="input-with-select el-input el-input-group el-input-group--append">
                                             <input type="search" name="order_code" value="{$Request.param.order_code}" autocomplete="off" placeholder="输入订单号查询" class="search-text">
-                                            <input type="submit" value="" class="search-btn iconfont">
+                                            <button type="submit" class="search-btn"><i class="iconfont-users2 icon-users2-sousuo1"></i></button>
                                         </div>
                                     </form>
                                     {/eyou:spsearch}
@@ -57,14 +57,13 @@
                                     {eyou:empty name="$eyou.field.comment"}
                                     <div class="el-row cell null-data tc pt100 bgfff">
                                         <p><img id="litpic_img" src="{eyou:static file='users/skin/images/null-data.png' /}"></p>
-                                        <p>当前暂无评价哦~</p>
                                     </div>
                                     {eyou:else /}
                                     <ul class="goods-list-ul clearfix">
                                         {eyou:volist name="eyou.field.comment" id="field"}
                                         <li class="goods-list-li">
                                             <div class="goods-top">
-                                                <div class="time">下单时间：{$field.add_time|date='Y年m月d日 H:i:s',###}</div>
+                                                <div class="time">评价时间：{$field.add_time|date='Y年m月d日 H:i:s',###}</div>
                                                 <div class="id">订单号：<a href="{$field.OrDetailsUrl}" target="_blank">{$field.order_code}</a></div>
                                                 <div class="star">
                                                     <span class="mr5">{$field.order_total_score}</span><i class="z_comment-star z_star{$field.total_score}"></i>

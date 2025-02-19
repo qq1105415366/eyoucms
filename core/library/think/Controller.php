@@ -143,6 +143,12 @@ class Controller
                 }
                 $this->redirect($url);
                 exit;
+            } else if ($archivesInfo['arcrank'] < 0) {
+                $clear = input('param.clear/d');
+                $admin_id = input('param.admin_id/d');
+                if (empty($admin_id) && empty($clear)) {
+                    abort(404,'页面不存在');
+                }
             }
         }
 
@@ -229,20 +235,33 @@ class Controller
             $web_anti_brushing = config('tpcache.web_anti_brushing');
             if (!empty($web_anti_brushing)) {
                 if ('home' == MODULE_NAME && 'Index' == CONTROLLER_NAME && 'index' == ACTION_NAME) {
-                    $varsarr = ['clear','lang','site','templet','uiset','v','bd_vid','clickid','spm'];
-                    if (1 == config('ey_config.seo_pseudo') || isset($params['uiset'])) {
-                        $varsarr = array_merge($varsarr, ['m','c','a']);
-                    }
-                    $agentcode = config('tpcache.php_agentcode');
-                    if (1 == $agentcode) {
-                        $varsarr[] = 'aid';
-                    }
                     $params = $this->request->param();
                     if (empty($params['a']) || !in_array($params['a'], ['wechat_return','alipay_return','Express100','ey_agent'])) {
+                        $varsarr=[];
+                        if (file_exists(webXssKeyFile())) {
+                            $content = @file_get_contents(webXssKeyFile());
+                            $data = json_decode($content, true);
+                        }
+                        $web_anti_words = empty($data['web_anti_words']) ? [] : explode(PHP_EOL, $data['web_anti_words']);
+                        if (!empty($web_anti_words)) {
+                            foreach ($web_anti_words as $val) {
+                                $varsarr[] = trim($val);
+                            }
+                        }
+                        $whiteList = [];
+                        if (1 == config('ey_config.seo_pseudo') || isset($params['uiset'])) {
+                            $whiteList = array_merge($whiteList, ['m','c','a']);
+                        }
+                        if (1 == config('tpcache.php_agentcode')) {
+                            $whiteList = array_merge($whiteList, ['aid']);
+                        }
+                        foreach ($varsarr as $key => $val) {
+                            if (in_array($val, $whiteList)) {
+                                unset($varsarr[$key]);
+                            }
+                        }
                         foreach ($params as $key => $val) {
-                            if (!in_array($key, $varsarr)) {
-                                abort(404,'页面不存在');
-                            } else if ('clear' == $key) {
+                            if ('clear' == $key) {
                                 if ($val != 1) {
                                     abort(404,'页面不存在');
                                 }
@@ -251,6 +270,16 @@ class Controller
 
                                 } else {
                                     abort(404,'页面不存在');
+                                }
+                            } else if (in_array($key, $varsarr)) {
+                                abort(404,'页面不存在');
+                            } else {
+                                if (!empty($varsarr)) {
+                                    foreach ($varsarr as $_k => $_v) {
+                                        if (preg_match('/^(\/|\?|\/\?)?'.$_v.'(([^\w\-]+)(.*))?$/i', $key)) {
+                                            abort(404,'页面不存在');
+                                        }
+                                    }
                                 }
                             }
                         }

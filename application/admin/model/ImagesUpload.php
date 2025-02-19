@@ -34,7 +34,7 @@ class ImagesUpload extends Model
      */
     public function getImgUpload($aid, $field = '*')
     {
-        $result = Db::name('ImagesUpload')->field($field)
+        $result = Db::name('images_upload')->field($field)
             ->where('aid', $aid)
             ->order('sort_order asc')
             ->select();
@@ -51,7 +51,7 @@ class ImagesUpload extends Model
         if (!is_array($aid)) {
             $aid = array($aid);
         }
-        $result = Db::name('ImagesUpload')->where(array('aid'=>array('IN', $aid)))->delete();
+        $result = Db::name('images_upload')->where(array('aid'=>array('IN', $aid)))->delete();
 
         return $result;
     }
@@ -78,15 +78,15 @@ class ImagesUpload extends Model
             {
                 if($val == null || empty($val))  continue;
                 
+                $img_info = [];
                 $filesize = 0;
-                $img_info = array();
                 if (is_http_url($val)) {
                     $imgurl = handle_subdir_pic($val);
                 } else {
                     $imgurl = ROOT_PATH.ltrim($val, '/');
+                    $img_info = @getimagesize($imgurl);
                     $filesize = @filesize('.'.$val);
                 }
-                $img_info = @getimagesize($imgurl);
                 $width = isset($img_info[0]) ? $img_info[0] : 0;
                 $height = isset($img_info[1]) ? $img_info[1] : 0;
                 $type = isset($img_info[2]) ? $img_info[2] : 0;
@@ -109,7 +109,7 @@ class ImagesUpload extends Model
                 );
             }
             if (!empty($data)) {
-                Db::name('ImagesUpload')->insertAll($data);
+                Db::name('images_upload')->insertAll($data);
 
                 // 没有封面图时，取第一张图作为封面图
                 $litpic = isset($post['litpic']) ? $post['litpic'] : '';

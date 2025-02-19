@@ -30,9 +30,9 @@ return array (
   'size' => 
   array (
     'name' => 'size',
-    'type' => 'float(10,2)',
+    'type' => 'varchar(50)',
     'notnull' => false,
-    'default' => '1.00',
+    'default' => '1',
     'primary' => false,
     'autoinc' => false,
   ),

@@ -1,0 +1,603 @@
+{include file="public/layout"/}
+<body class="bodystyle" style="min-width:auto;">
+<div id="toolTipLayer" style="position: absolute; z-index: 9999; display: none; visibility: visible; left: 95px; top: 573px;"></div>
+<div id="append_parent"></div>
+<div id="ajaxwaitid"></div>
+<script type="text/javascript">
+    var parentObj = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+</script>
+<div class="page min-hg-c-10" style="min-width:auto; ">
+    <div class="flexigrid mb5 htitx">
+        <div class="hDiv">
+            <div class="hDivBox">
+                <table cellspacing="0" cellpadding="0" style="width: 100%">
+                    <thead>
+                        <tr>
+                            <th class="sign w10" axis="col0">
+                                <div class="tc"></div>
+                            </th>
+                            <th abbr="article_title" axis="col3" class="w10">
+                                <div id="anchor-sms" class="tc">登录锁定</div>
+                            </th>
+                            <th abbr="ac_id" axis="col4">
+                                <div class="pr10 tr"><i class="arrow iconfont e-up curpoin"></i></i></div>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <form class="form-horizontal" id="handlepost1" method="post" enctype="multipart/form-data" action="{:url('Security/popup_flameproof')}">
+            <div class="ncap-form-default">
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="web_login_lockopen">登录失败锁定</label>
+                    </dt>
+                    <dd class="opt">
+                        <label class="curpoin mr10"><input id="web_login_lockopen1" name="web_login_lockopen" onclick="login_lockopen(this);" value="1" type="radio" {if condition="!isset($global.web_login_lockopen) || $global.web_login_lockopen == 1"} checked="checked"{/if}>开启</label>
+                        &nbsp;
+                        <label class="curpoin mr10"><input id="web_login_lockopen0" name="web_login_lockopen" onclick="login_lockopen(this);" value="0" type="radio" {if condition="isset($global.web_login_lockopen) && $global.web_login_lockopen == 0"} checked="checked"{/if}>关闭</label>
+                        <span class="err"></span>
+                        <p class="notic">登录<span id="sp_web_login_errtotal">{$global.web_login_errtotal|default=config('login_errtotal')}</span>次失败后，账号被锁定<span id="sp_web_login_errexpire">{$global.web_login_errexpire|default=config('login_errexpire')}</span>秒</p>
+                    </dd>
+                </dl>
+                <div id="div_login_lock" class="{if condition='isset($global.web_login_lockopen) && $global.web_login_lockopen == 0'}none{/if}">
+                    <dl class="row">
+                        <dt class="tit">
+                            <label for="web_login_errtotal">登录错误次数</label>
+                        </dt>
+                        <dd class="opt">
+                            <input id="web_login_errtotal" name="web_login_errtotal" value="{$global.web_login_errtotal|default=config('login_errtotal')}" class="input-txt" type="text" placeholder="不启用默认留空" autocomplete="off" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" onpaste="this.value=this.value.replace(/[^\d]/g,'')" />&nbsp;次
+                            <p class="notic"></p>
+                        </dd>
+                    </dl>
+                    <dl class="row">
+                        <dt class="tit">
+                            <label for="web_login_errexpire">登录锁定时间</label>
+                        </dt>
+                        <dd class="opt">
+                            <input id="web_login_errexpire" name="web_login_errexpire" value="{$global.web_login_errexpire|default=config('login_errexpire')}" class="input-txt" type="text" autocomplete="off" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" onpaste="this.value=this.value.replace(/[^\d]/g,'')" />&nbsp;秒
+                            <p class="notic">默认600秒等于10分钟</p>
+                        </dd>
+                    </dl>
+                </div>
+                <dl class="row">
+                    <div class="bot" style="padding-bottom:0px;">
+                        <a href="JavaScript:void(0);" onclick="checkForm1();" class="ncap-btn-big ncap-btn-green">保存</a>
+                    </div>
+                </dl>
+            </div>
+        </form>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                /* 滑动/展开 */
+                $("div.flexigrid .hDivBox i.arrow").click(function(){
+                    var arrow = $(this).parent().find("i.arrow");
+                    if(arrow.hasClass("e-up")){
+                        arrow.removeClass("e-up");
+                        arrow.addClass("e-down");
+                    }else if(arrow.hasClass("e-down")){
+                        arrow.removeClass("e-down");
+                        arrow.addClass("e-up");
+                    }
+                    $(this).parent().parent().parent().parent().parent().parent().parent().parent().find("div.ncap-form-default").slideToggle();
+                });
+                // 登录错误次数
+                $('#web_login_errtotal').keyup(function(){
+                    var web_login_errtotal = $(this).val();
+                    $('#sp_web_login_errtotal').html(web_login_errtotal);
+                });
+                // 登录锁定时间
+                $('#web_login_errexpire').keyup(function(){
+                    var web_login_errexpire = $(this).val();
+                    $('#sp_web_login_errexpire').html(web_login_errexpire);
+                });
+            });
+
+            function login_lockopen(obj)
+            {
+                var is_open = $(obj).val();
+                if (1 == is_open) {
+                    $('#div_login_lock').show();
+                } else {
+                    $('#div_login_lock').hide();
+                }
+            }
+
+            function checkForm1(){
+                if (1 == $('input[name=web_login_lockopen]:checked').val()) {
+                    var web_login_errtotal_obj = $('input[name=web_login_errtotal]');
+                    if (web_login_errtotal_obj.val() < 2) {
+                        showErrorMsg('登录错误次数不能少于2次！');
+                        web_login_errtotal_obj.focus();
+                        return false;
+                    }
+                    var web_login_errexpire_obj = $('input[name=web_login_errexpire]');
+                    if (web_login_errexpire_obj.val() < 60) {
+                        showErrorMsg('登录错误次数不能少于60秒！');
+                        web_login_errexpire_obj.focus();
+                        return false;
+                    }
+                }
+                layer_loading('正在处理');
+                setTimeout(function (){
+                    $.ajax({
+                        type : 'post',
+                        url : "{:url('Security/popup_flameproof', ['_ajax'=>1])}",
+                        data : $('#handlepost1').serialize(),
+                        dataType : 'json',
+                        success : function(res){
+                            layer.closeAll();
+                            if(res.code == 1){
+                                showSuccessMsg(res.msg, 500, function(){
+                                    window.location.reload();
+                                });
+                            }else{
+                                showErrorMsg(res.msg);
+                            }
+                        },
+                        error: function(e){
+                            layer.closeAll();
+                            showErrorAlert(e.responseText);
+                        }
+                    });
+                }, 1);
+            }
+        </script>
+    </div>
+    <div class="flexigrid mb5 htitx">
+        <div class="hDiv">
+            <div class="hDivBox">
+                <table cellspacing="0" cellpadding="0" style="width: 100%">
+                    <thead>
+                        <tr>
+                            <th class="sign w10" axis="col0">
+                                <div class="tc"></div>
+                            </th>
+                            <th abbr="article_title" axis="col3" class="w10">
+                                <div id="anchor-sms" class="tc">跨站脚本攻击</div>
+                            </th>
+                            <th abbr="ac_id" axis="col4">
+                                <div class="pr10 tr"><i class="arrow iconfont e-up curpoin"></i></i></div>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <form class="form-horizontal" id="handlepost4" method="post" enctype="multipart/form-data" action="{:url('Security/popup_antinjection')}">
+            <div class="ncap-form-default">
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="web_xss_filter">XSS过滤</label>
+                    </dt>
+                    <dd class="opt">
+                        <label class="curpoin"><input id="web_xss_filter1" name="web_xss_filter" value="1" type="radio" {if condition="!empty($global.web_xss_filter)"} checked="checked"{/if}>开启</label>
+                        &nbsp;
+                        <label class="curpoin"><input id="web_xss_filter0" name="web_xss_filter" value="0" type="radio" {if condition="empty($global.web_xss_filter)"} checked="checked"{/if}>关闭</label>
+                        <span class="err"></span>
+                        <p class="notic">开启后，数据储存时对输入的恶意HTML编码进行过滤以防御XSS攻击<br>如&lt;script&gt;过滤为&lt;ｓｃｒｉｐｔ&gt;</p>
+                    </dd>
+                </dl>
+                <dl class="row" id="xssbox" {if condition="empty($global['web_xss_filter'])"} style="display: none" {/if}>
+                    <dt class="tit">
+                        <label for="web_xss_words"></label>
+                    </dt>
+                    <dd class="opt" style="width: auto;">
+                        <span>单词组替换列表</span><br/>
+                        <textarea rows="5" cols="60" id="web_xss_words" name="web_xss_words" style="height:150px; width: 250px;" placeholder="一行=1个单词组
+比如：
+union
+delete
+outfile
+char
+concat
+truncate
+insert
+revoke
+grant
+replace
+rename
+declare
+exec
+delimiter
+phar
+eval
+onerror
+script">{$global.web_xss_words|default=''}</textarea>
+                        <span class="err"></span>
+                        <p class="notic">对输入的指定英文单词进行对等替换</p>
+                    </dd>
+                </dl>
+                <dl class="row">
+                    <dt class="tit">
+                        <label for="web_anti_brushing">网站防止被刷</label>
+                    </dt>
+                    <dd class="opt">
+                        <label class="curpoin"><input id="web_anti_brushing1" name="web_anti_brushing" value="1" type="radio" {if condition="!empty($global.web_anti_brushing)"} checked="checked"{/if}>开启</label>
+                        &nbsp;
+                        <label class="curpoin"><input id="web_anti_brushing0" name="web_anti_brushing" value="0" type="radio" {if condition="empty($global.web_anti_brushing)"} checked="checked"{/if}>关闭</label>
+                        <span class="err"></span>
+                        <p class="notic">开启后可以防止域名后缀加?wb=违禁词也能访问并被收录等情况</p>
+                        <p class="notic2">注意：静态模式下，首页生成应该改为“动态预览”才有效果，仅对首页URL有效</p>
+                    </dd>
+                </dl>
+                <dl class="row" id="antibox" {if condition="empty($global['web_anti_brushing'])"} style="display: none" {/if}>
+                    <dt class="tit">
+                        <label for="web_anti_words"></label>
+                    </dt>
+                    <dd class="opt" style="width: auto;">
+                        <span>URL参数黑名单</span><br/>
+                        <textarea rows="5" cols="60" id="web_anti_words" name="web_anti_words" style="height:150px; width: 250px;" placeholder="一行=1个参数
+wd">{$global.web_anti_words|default=''}</textarea>
+                        <span class="err"></span>
+                        <p class="notic">当前台URL含有参数在黑名单内，访问时报404</p>
+                    </dd>
+                </dl>
+                <dl class="row">
+                    <div class="bot" style="padding-bottom:0px;">
+                        <a href="JavaScript:void(0);" onclick="checkForm4();" class="ncap-btn-big ncap-btn-green">保存</a>
+                    </div>
+                </dl>
+            </div>
+        </form>
+        <script type="text/javascript">
+            function checkForm4(){
+                layer_loading('正在处理');
+                setTimeout(function (){
+                    $.ajax({
+                        type : 'post',
+                        url : "{:url('Security/popup_antinjection', ['_ajax'=>1])}",
+                        data : $('#handlepost4').serialize(),
+                        dataType : 'json',
+                        success : function(res){
+                            layer.closeAll();
+                            if(res.code == 1){
+                                showSuccessMsg(res.msg, 500, function(){
+                                    window.location.reload();
+                                });
+                            }else{
+                                showErrorMsg(res.msg);
+                            }
+                        },
+                        error: function(e){
+                            layer.closeAll();
+                            showErrorAlert(e.responseText);
+                        }
+                    });
+                }, 1);
+            }
+        </script>
+    </div>
+    <div class="flexigrid mb5 htitx">
+        <div class="hDiv">
+            <div class="hDivBox">
+                <table cellspacing="0" cellpadding="0" style="width: 100%">
+                    <thead>
+                        <tr>
+                            <th class="sign w10" axis="col0">
+                                <div class="tc"></div>
+                            </th>
+                            <th abbr="article_title" axis="col3" class="w10">
+                                <div id="anchor-sms" class="tc">后台防火墙</div>
+                            </th>
+                            <th abbr="ac_id" axis="col4">
+                                <div class="pr10 tr"><i class="arrow iconfont e-up curpoin"></i></i></div>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <form class="form-horizontal" id="handlepost2" method="post" enctype="multipart/form-data" action="{:url('Security/popup_firewall')}">
+            <div class="ncap-form-default">
+              
+                <dl class="row">
+                    <dt class="tit">
+                        <label>登录限制</label>
+                    </dt>
+                    <dd class="opt">
+                        <label class="curpoin mr10"><input name="firewall_open_func[]" value="1" type="checkbox" {if condition="!isset($firewallData['firewall_open_func']) || (!empty($firewallData['firewall_open_func']) && in_array(1, $firewallData['firewall_open_func']))"} checked="checked" {/if}>IP白名单</label>
+                        <label class="curpoin mr10"><input name="firewall_open_func[]" value="2" type="checkbox" {if condition="!isset($firewallData['firewall_open_func']) || (!empty($firewallData['firewall_open_func']) && in_array(2, $firewallData['firewall_open_func']))"} checked="checked" {/if}>时间限制</label>
+                        <span class="err"></span>
+                        <p class="notic"></p>
+                    </dd>
+                </dl>
+                <div id="div_firewall_open_func_1">
+                    <dl class="row">
+                        <dt class="tit">
+                            <label>当前IP段</label>
+                        </dt>
+                        <dd class="opt">
+                            {$ipSegment}（ 本机IP：{$currentIp} ）
+                            <span class="err"></span>
+                            <p class="notic"></p>
+                        </dd>
+                    </dl>
+                    <dl class="row">
+                        <dt class="tit">
+                            <label for="firewall_ip_whitelist">IP段白名单</label>
+                        </dt>
+                        <dd class="opt">
+                            <textarea rows="5" cols="80" id="firewall_ip_whitelist" name="firewall_ip_whitelist" style="height:80px;" placeholder="为空默认不限制，IP段示例如下：
+127.0.0.1
+192.168.1.2
+192.168.0.1-192.168.0.255">{$firewallData.firewall_ip_whitelist|default=''}</textarea>
+                            <p class="">多个设置用回车换行，一行代表一个IP白名单解除限制。<br/>示例（如果是单个IP单独写；如果是IP段用“-”连接最小和最大IP（192.168.0.1-192.168.255.255）</p>
+                        </dd>
+                    </dl>
+                </div>
+                <div id="div_firewall_open_func_2">
+                    <dl class="row">
+                        <dt class="tit">
+                            <label>允许登录的星期</label>
+                        </dt>
+                        <dd class="opt">
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="1" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(1, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期一</label>
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="2" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(2, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期二</label>
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="3" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(3, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期三</label>
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="4" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(4, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期四</label>
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="5" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(5, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期五</label>
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="6" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(6, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期六</label>
+                            <label class="curpoin mr10"><input name="firewall_login_week[]" value="7" type="checkbox" {if condition="!isset($firewallData['firewall_login_week']) || (!empty($firewallData['firewall_login_week']) && in_array(7, $firewallData['firewall_login_week']))"} checked="checked" {/if}>星期日</label>
+                            <span class="err"></span>
+                            <p class="notic"></p>
+                        </dd>
+                    </dl>
+                    <dl class="row">
+                        <dt class="tit">
+                            <label>允许登录的时间</label>
+                        </dt>
+                        <dd class="opt">
+                            {for start="0" end="24"}
+                            <label class="curpoin blocki w50 mr10"><input name="firewall_login_hour[]" value="{$i}" type="checkbox" {if condition="!isset($firewallData['firewall_login_hour']) || (!empty($firewallData['firewall_login_hour']) && in_array($i, $firewallData['firewall_login_hour']))"} checked="checked" {/if}>{$i}点</label>
+                            {/for}
+                            <span class="err"></span>
+                            <p class="notic"></p>
+                        </dd>
+                    </dl>
+                </div>
+                <dl class="row">
+                    <div class="bot" style="padding-bottom:0px;">
+                        <input type="hidden" name="firewall_open" value="{$firewallData['firewall_open']|default=0}">
+                        <a href="JavaScript:void(0);" onclick="checkForm2();" class="ncap-btn-big ncap-btn-green">保存</a>
+                    </div>
+                </dl>
+            </div>
+        </form>
+        <script type="text/javascript">
+            $(function(){
+                //XSS过滤
+                $('input[name="web_xss_filter"]').change(function(){                  
+                  var xssSelectedValue = $(this).val();
+                  if(xssSelectedValue==1){
+                    $('#xssbox').css('display','inline-block');
+                  }else{
+                    $('#xssbox').css('display','none');
+                  }
+                });
+                //网站防止被刷
+                $('input[name="web_anti_brushing"]').change(function(){                  
+                  var antiSelectedValue = $(this).val();
+                  if(antiSelectedValue==1){
+                    $('#antibox').css('display','inline-block');
+                  }else{
+                    $('#antibox').css('display','none');
+                  }
+                });
+                handle_disabled();
+                $('input[name="firewall_open_func[]"]').click(function(){
+                    handle_disabled();
+                });
+                function handle_disabled()
+                {
+                    var selectedValues = [];
+                    $('input[name="firewall_open_func[]"]:checked').each(function() {
+                        selectedValues.push($(this).val());
+                    });
+                    $('#div_firewall_open_func_1').find('textarea').attr('disabled', 'disabled').addClass('grey').css('background-color', '#F5F5F5');
+                    $('#div_firewall_open_func_2').find('input').attr('disabled', 'disabled').addClass('grey');
+                    if (0 <= $.inArray('1', selectedValues)) {
+                        $('#div_firewall_open_func_1').find('textarea').removeAttr('disabled').removeClass('grey').css('background-color', '#ffffff');
+                    }
+                    if (0 <= $.inArray('2', selectedValues)) {
+                        $('#div_firewall_open_func_2').find('input').removeAttr('disabled').removeClass('grey');
+                    }
+                }
+            });
+
+            function checkForm2(){
+                layer_loading('正在处理');
+                setTimeout(function (){
+                    $.ajax({
+                        type : 'post',
+                        url : "{:url('Security/popup_firewall', ['_ajax'=>1])}",
+                        data : $('#handlepost2').serialize(),
+                        dataType : 'json',
+                        success : function(res){
+                            layer.closeAll();
+                            if(res.code == 1){
+                                showSuccessMsg(res.msg, 500, function(){
+                                    window.location.reload();
+                                });
+                            }else{
+                                showErrorAlert(res.msg);
+                            }
+                        },
+                        error: function(e){
+                            layer.closeAll();
+                            showErrorAlert(e.responseText);
+                        }
+                    });
+                }, 1);
+            }
+        </script>
+    </div>
+    <div class="flexigrid htitx">
+        <div class="hDiv">
+            <div class="hDivBox">
+                <table cellspacing="0" cellpadding="0" style="width: 100%">
+                    <thead>
+                        <tr>
+                            <th class="sign w10" axis="col0">
+                                <div class="tc"></div>
+                            </th>
+                            <th abbr="article_title" axis="col3" class="w10">
+                                <div id="anchor-sms" class="tc">登录双因子<span class="no-grey notic2">（启用下方验证后，登录后台需要二次验证）</span></div>
+                            </th>
+                            <th abbr="ac_id" axis="col4">
+                                <div class="pr10 tr"><i class="arrow iconfont e-up curpoin"></i></i></div>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <form class="form-horizontal" id="handlepost3" method="post" enctype="multipart/form-data" action="{:url('Security/popup_twofactor')}">
+            <div class="ncap-form-default">
+            
+                <dl class="row">
+                    <dt class="tit">
+                        <label>验证方式</label>
+                    </dt>
+                    <dd class="opt" id="dd_twofactor_check_type">
+                        <label class="curpoin mr10"><input id="twofactor_check_type_-1" name="twofactor_check_type" value="-1" type="radio" {if condition="empty($twofactorData['twofactor_open'])"} checked="checked"{/if}>不启用双因子</label> 
+						<span class="no-grey notic2"> &nbsp;&nbsp;</span>
+						<br>
+                        <label class="curpoin mr10"><input id="twofactor_check_type_0" name="twofactor_check_type" value="0" type="radio" {if condition="!empty($twofactorData['twofactor_open']) && empty($twofactorData['twofactor_check_type'])"} checked="checked" {/if}>启用邮箱验证</label>
+						<span id="twofactor_notic2_0" class="none red notic2">启用前先配置邮箱接口（基本信息>接口API>电子邮箱）</span>
+						<br>
+                        <label class="curpoin mr10"><input id="twofactor_check_type_1" name="twofactor_check_type" value="1" type="radio" {if condition="!empty($twofactorData['twofactor_open']) && !empty($twofactorData['twofactor_check_type']) && 1 == $twofactorData['twofactor_check_type']"} checked="checked" {/if}>启用短信验证</label>
+						<span id="twofactor_notic2_1" class="none red notic2">启用前先配置云短信接口（基本信息>接口API>云短信）</span>
+						<br>
+                        <label class="curpoin mr10"><input id="twofactor_check_type_2" name="twofactor_check_type" value="2" type="radio" {if condition="!empty($twofactorData['twofactor_open']) && !empty($twofactorData['twofactor_check_type']) && 2 == $twofactorData['twofactor_check_type']"} checked="checked" {/if}>启用密保验证</label>
+						<span id="twofactor_notic2_2" class="none red notic2">启用前先配置密保问题（功能地图>安全中心>密保问题）</span>
+						
+                        <input type="hidden" name="twofactor_check_type_old" value="{$twofactorData['twofactor_check_type']|default=0}">
+                        <span class="err"></span>
+                    </dd>
+                </dl>
+                <dl class="row">
+                    <div class="bot" style="padding-bottom:0px;">
+                        <input type="hidden" name="twofactor_open" value="{$twofactorData['twofactor_open']|default=0}">
+                        <a href="JavaScript:void(0);" onclick="checkForm3();" class="ncap-btn-big ncap-btn-green">保存</a>
+                    </div>
+                </dl>
+            </div>
+        </form>
+        <script type="text/javascript">
+
+            $(function(){
+                var twofactor_check_type = $('input[name=twofactor_check_type]:checked').val();
+                if (-1 != twofactor_check_type) {
+                    $('#twofactor_notic2_'+twofactor_check_type).show();
+                }
+
+                $('input[name=twofactor_check_type]').click(function(){
+                    $('span[id^=twofactor_notic2_]').hide();
+                    twofactor_check_type = $(this).val();
+                    console.log(twofactor_check_type)
+                    if (-1 != twofactor_check_type) {
+                        $('#twofactor_notic2_'+twofactor_check_type).show();
+                        if (2 != twofactor_check_type) {
+                            layer_loading('正在检测');
+                        }
+                        $.ajax({
+                            type : 'post',
+                            url : "{:url('Security/popup_twofactor_checkopen', ['_ajax'=>1])}",
+                            data : {twofactor_check_type:twofactor_check_type},
+                            dataType : 'json',
+                            success : function(res){
+                                layer.closeAll();
+                                if(res.code == 1){
+                                    if (2 != twofactor_check_type) {
+                                        layer.confirm(res.msg, {
+                                            shade: layer_shade,
+                                            area: ['480px', '190px'],
+                                            move: false,
+                                            title: '提示',
+                                            btnAlign:'r',
+                                            closeBtn: 3,
+                                            btn: ['确定'] ,//按钮
+                                            success: function () {
+                                                $(".layui-layer-content").css('text-align', 'left');
+                                            }
+                                        }, function (index) {
+                                            layer.close(index);
+                                        });
+                                    }
+                                } else {
+                                    layer.confirm(res.msg, {
+                                        shade: layer_shade,
+                                        area: ['480px', '190px'],
+                                        move: false,
+                                        title: '提示',
+                                        btnAlign:'r',
+                                        closeBtn: 3,
+                                        btn: ['去配置', '确定'] ,//按钮
+                                        success: function () {
+                                            $(".layui-layer-content").css('text-align', 'left');
+                                        },
+                                        cancel: function(index, layero){ 
+                                            $('#twofactor_check_type_'+twofactor_check_type).prop('checked','');
+                                            $('#twofactor_check_type_-1').prop('checked','checked');
+                                            layer.close(index);
+                                            return false; 
+                                        } 
+                                    }, function (index) {
+                                        if (2 == twofactor_check_type) {
+                                            var _parent = parent;
+                                            _parent.layer.close(parentObj);
+                                            _parent.openFullframe(res.url, '密保问题设置', '860px', '70%');
+                                        } else {
+                                            var _parent = parent;
+                                            _parent.layer.close(parentObj);
+                                            _parent.gourl(res.url);
+                                            layer.close(index);
+                                        }
+                                    }, function (index) {
+                                        $('#twofactor_check_type_'+twofactor_check_type).prop('checked','');
+                                        $('#twofactor_check_type_-1').prop('checked','checked');
+                                        layer.close(index);
+                                    });
+                                }
+                            },
+                            error: function(e){
+                                layer.closeAll();
+                                showErrorAlert(e.responseText);
+                            }
+                        });
+                    }
+                });
+            });
+
+            function checkForm3(){
+                layer_loading('正在处理');
+                setTimeout(function (){
+                    $.ajax({
+                        type : 'post',
+                        url : "{:url('Security/popup_twofactor', ['_ajax'=>1])}",
+                        data : $('#handlepost3').serialize(),
+                        dataType : 'json',
+                        success : function(res){
+                            layer.closeAll();
+                            if(res.code == 1){
+                                showSuccessMsg(res.msg, 500, function(){
+                                    window.location.reload();
+                                });
+                            }else{
+                                showErrorAlert(res.msg);
+                            }
+                        },
+                        error: function(e){
+                            layer.closeAll();
+                            showErrorAlert(e.responseText);
+                        }
+                    });
+                }, 1);
+            }
+        </script>
+    </div>
+</div>
+
+{include file="public/footer" /}

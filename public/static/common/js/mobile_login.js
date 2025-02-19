@@ -27,7 +27,7 @@ function send_mobile_code() {
     var reg = /^1[0-9]{10}$/i;
     if (!reg.test(mobile)) {
         $("input[name=mobile]").focus();
-        layer.msg('请输入正确的请输入手机号码！', {time: 1500});
+        layer.msg('请输入正确的手机号码！', {time: 1500});
         return false;
     }
     $('#vertify_div').css('display','block');

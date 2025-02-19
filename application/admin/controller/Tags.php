@@ -56,6 +56,10 @@ class Tags extends Base
 
         $source = input('param.source/s');
         $this->assign('source', $source);
+
+        // 清理过期的tag记录文件
+        $this->clear_tag_relation_file();
+
         return $this->fetch();
     }
  
@@ -411,6 +415,18 @@ class Tags extends Base
         return $this->fetch();
     }
 
+    private function clear_tag_relation_file()
+    {
+        $time = strtotime('-1 day');
+        $files = glob(ROOT_PATH . 'data/conf/tagaids/*.txt');
+        foreach ($files as $key => $val) {
+            $ftime = (int)preg_replace('/^(.*)\/(\d+)\-(\w+)\.txt$/i', '$2', $val);
+            if (!empty($ftime) && $ftime < $time) {
+                @unlink($val);
+            }
+        }
+    }
+
     public function relation_archives()
     {
         $assign_data = array();
@@ -591,9 +607,12 @@ class Tags extends Base
     {
         \think\Session::pause(); // 暂停session，防止session阻塞机制
         if (IS_AJAX) {
+            $filename = session('admin-tag-relation-filename');
+            if (empty($filename)) {
+                session('admin-tag-relation-filename', getTime().'-'.mt_rand(1000,9999).'.txt');
+            }
             $opt = input('param.opt/s');
             $value = input('param.value/s');
-            $filename = ROOT_PATH . 'data/conf/tagaids_1619141574.txt';
             if ('set' == $opt) {
                 $redata = $this->writeTagaidsFile($value);
                 if (true !== $redata) {
@@ -615,11 +634,15 @@ class Tags extends Base
     private function readTagaidsFile()
     {
         $tagaids = '';
-        $filename = ROOT_PATH . 'data/conf/tagaids_1619141574.txt';
-        if (file_exists($filename)) {
-            $len     = filesize($filename);
+        $filename = session('admin-tag-relation-filename');
+        if (empty($filename)) {
+            $filename = 'default.txt';
+        }
+        $filepath = ROOT_PATH . 'data/conf/tagaids/'.$filename;
+        if (file_exists($filepath)) {
+            $len     = filesize($filepath);
             if (!empty($len) && $len > 0) {
-                $fp      = fopen($filename, 'r');
+                $fp      = fopen($filepath, 'r');
                 $tagaids = fread($fp, $len);
                 fclose($fp);
                 $tagaids = $tagaids ? $tagaids : '';
@@ -634,11 +657,15 @@ class Tags extends Base
      */
     private function writeTagaidsFile($value = '')
     {
-        $filename = ROOT_PATH . 'data/conf/tagaids_1619141574.txt';
-        if (!file_exists($filename)) tp_mkdir(dirname($filename));
-        $fp = fopen($filename, "w+");
+        $filename = session('admin-tag-relation-filename');
+        if (empty($filename)) {
+            $filename = 'default.txt';
+        }
+        $filepath = ROOT_PATH . 'data/conf/tagaids/'.$filename;
+        if (!file_exists($filepath)) tp_mkdir(dirname($filepath));
+        $fp = fopen($filepath, "w+");
         if (empty($fp)) {
-            return "请设置" . $filename . "的权限为744";
+            return "请设置" . $filepath . "的权限为744";
         } else {
             if (fwrite($fp, $value)) {
                 fclose($fp);

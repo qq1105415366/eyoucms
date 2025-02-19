@@ -572,6 +572,35 @@
                         <p class="notic">{$vo.remark|default=''}</p>
                     </div>
                 </div>
+
+                {if condition="isset($vo['first']) AND 1 == $vo['first']"}
+                <script type="text/javascript">
+                    // 打开多图选择及上传界面
+                    function OpenImagesList(e, obj) {
+                        var func = '';
+                        if (e.path && e.path[10] && e.path[10].id && undefined != e.path[10].id) {
+                            func = e.path[10].id;
+                        } else {
+                            func = $(obj).parent().parent().parent().parent().parent().parent().parent().parent().parent().attr('id');
+                        }
+                        if (func.indexOf('addonFieldExt_') == -1) {
+                            func = 'addonFieldExt_content';
+                        }
+                        var OpenUrl = "{:url('Uploadify/upload', ['num'=>30, 'path'=>'allimg', 'is_water'=>1])}";
+                        OpenUrl += "&func=images_call_" + func;
+                        top.layer.open({
+                            type: 2,
+                            title: '图片上传',
+                            shade: [0.7, '#fafafa'],
+                            maxmin: false,
+                            shadeClose: false,
+                            area: ['1000px', '625px'],
+                            content: OpenUrl
+                        });
+                    }
+                </script>
+                {/if}
+                
                 <script type="text/javascript">
                     var ue_{$vo.fieldArr}_{$vo.name|default=''} = UE.getEditor('{$vo.fieldArr}_{$vo.name|default=''}',{
                         serverUrl :"{:url('Uploadify/index',array('savepath'=>'allimg'))}",
@@ -598,6 +627,15 @@
                         if(UE.getEditor("{$vo.fieldArr}_{$vo.name|default=''}").queryCommandState('source') != 0) {
                             UE.getEditor("{$vo.fieldArr}_{$vo.name|default=''}").execCommand('source'); //切换到【设计】视图
                         }
+                    }
+
+                    // 加载图片到编辑器指定位置
+                    function images_call_{$vo.fieldArr}_{$vo.name|default=''}(fileurl_tmp) {
+                        var addBody = '';
+                        $.each(fileurl_tmp, function(index, items) {
+                            addBody += '<p><img src="'+items+'" alt="'+fileurl_tmp[index]+'"></p>';
+                        });
+                        UE.getEditor("{$vo.fieldArr}_{$vo.name|default=''}").execCommand('inserthtml', addBody);
                     }
                 </script>
                 <!-- HTML文本 end -->

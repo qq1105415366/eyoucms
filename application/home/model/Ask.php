@@ -567,7 +567,7 @@ class Ask extends Model
         // seo信息
         $info['seo_title'] = $info['ask_title'].' - '.$info['type_name'];
         $info['seo_keywords'] = $info['ask_title'];
-        $info['seo_description'] = @msubstr(checkStrHtml($info['content']), 0, config('global.arc_seo_description_length'), false);
+        $info['seo_description'] = @msubstr(checkStrHtml($info['content']), 0, get_seo_description_length(), false);
         // 个人主页URL
         $info['usershomeurl'] = usershomeurl($info['users_id']);
         // 返回数据

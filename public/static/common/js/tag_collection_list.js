@@ -53,7 +53,8 @@ function ey_v378141(aid,cla,obj)
         if (document.getElementById('ey_login_id_v665117')) {
             $('#ey_login_id_v665117').trigger('click');
         } else {
-            if (!window.layer) {
+            window.location.href = loginurl_v379494;
+            /*if (!window.layer) {
                 alert('请先登录');
             } else {
                 var layerindex = layer.alert('请先登录', {id: 'layer_collection_v378141' , icon: 5, title: false}, function(){
@@ -69,7 +70,7 @@ function ey_v378141(aid,cla,obj)
                 layer.style(layerindex, {
                     top: top
                 }); 
-            }
+            }*/
             return false;
         }
     }

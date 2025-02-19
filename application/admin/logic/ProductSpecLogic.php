@@ -435,7 +435,7 @@ class ProductSpecLogic extends Model
             $order2 = 'spec_value_id desc';
             $specItem = Db::name('product_spec_data_handle')->where($where)->order($order2)->getField('spec_value_id, spec_value, spec_mark_id');
             // 查询规格价格
-            $specPrice = Db::name('product_spec_value_handle')->where('aid', $aid)->order('spec_price asc')->getField('spec_value_id, value_id, spec_price, spec_crossed_price, spec_stock, spec_sales_num');
+            $specPrice = Db::name('product_spec_value_handle')->where('aid', $aid)->order('spec_price asc')->getField('spec_value_id, handle_id, spec_price, spec_crossed_price, spec_stock, spec_sales_num');
         }
         // 组合HTML
         $ReturnHtml  = "<table class='table table-bordered' id='spec_input_tab' border='1' cellpadding='10' cellspacing='10'><thead><tr>";
@@ -460,15 +460,19 @@ class ProductSpecLogic extends Model
             ksort($spec_key_name);
             $spec_key = implode('_', array_keys($spec_key_name));
 
-            $ReturnHtml .="<input type='hidden' name='value_ids[$spec_key][value_id]' value='{$specPrice[$spec_key]['value_id']}'/></td>";
+            if (!empty($quick)) {
+                $ReturnHtml .="<input type='hidden' name='value_ids[$spec_key][value_id]' value='{$specPrice[$spec_key]['value_id']}'/></td>";
+            } else {
+                $ReturnHtml .="<input type='hidden' name='handle_ids[$spec_key][handle_id]' value='{$specPrice[$spec_key]['handle_id']}'/></td>";
+            }
 
-            $ReturnHtml .="<td><input type='text' class='users_price' name='spec_price[$spec_key][users_price]' value='{$specPrice[$spec_key]['spec_price']}' onpaste='this.value=this.value.replace(/[^\d.]/g,\"\")' onkeyup='this.value=this.value.replace(/[^\d.]/g,\"\");UpPrice(this);' onchange='setProductSpecPrice();'/></td>";
+            $ReturnHtml .="<td><input type='text' class='users_price' name='spec_price[$spec_key][users_price]' value='{$specPrice[$spec_key]['spec_price']}'  onpaste='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, \"$1\");' onkeyup='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, \"$1\"); UpPrice(this);' onchange='setProductSpecPrice();'/></td>";
 
-            $ReturnHtml .="<td><input type='text' class='crossed_price' name='spec_crossed_price[$spec_key][crossed_price]' value='{$specPrice[$spec_key]['spec_crossed_price']}' onpaste='this.value=this.value.replace(/[^\d.]/g,\"\")' onkeyup='this.value=this.value.replace(/[^\d.]/g,\"\");UpPrice(this);' onchange='setProductSpecPrice();'/></td>";
+            $ReturnHtml .="<td><input type='text' class='crossed_price' name='spec_crossed_price[$spec_key][crossed_price]' value='{$specPrice[$spec_key]['spec_crossed_price']}'  onpaste='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, \"$1\");' onkeyup='this.value=this.value.replace(/^\D*([0-9]\d*\.?\d{0,2})?.*$/, \"$1\"); UpPrice(this);' onchange='setProductSpecPrice();'/></td>";
 
-            $ReturnHtml .="<td><input type='text' class='stock_count' name='spec_stock[$spec_key][stock_count]' value='{$specPrice[$spec_key]['spec_stock']}' onkeyup='this.value=this.value.replace(/[^\d.]/g,\"\");UpStock(this);' onpaste='this.value=this.value.replace(/[^\d.]/g,\"\")' data-old_stock='{$specPrice[$spec_key]['spec_stock']}' onchange='setProductSpecPrice();'/></td>";
+            $ReturnHtml .="<td><input type='text' class='stock_count' name='spec_stock[$spec_key][stock_count]' value='{$specPrice[$spec_key]['spec_stock']}' onkeyup='this.value=this.value.replace(/[^\d]/g,\"\");UpStock(this);' onpaste='this.value=this.value.replace(/[^\d]/g,\"\")' data-old_stock='{$specPrice[$spec_key]['spec_stock']}' onchange='setProductSpecPrice();'/></td>";
 
-            $ReturnHtml .="<td><input type='text' name='spec_sales[$spec_key][spec_sales_num]' value='{$specPrice[$spec_key]['spec_sales_num']}' onkeyup='this.value=this.value.replace(/[^\d.]/g,\"\")' onpaste='this.value=this.value.replace(/[^\d.]/g,\"\")'></td>";
+            $ReturnHtml .="<td><input type='text' name='spec_sales[$spec_key][spec_sales_num]' value='{$specPrice[$spec_key]['spec_sales_num']}' onkeyup='this.value=this.value.replace(/[^\d]/g,\"\")' onpaste='this.value=this.value.replace(/[^\d]/g,\"\")'></td>";
 
             $ReturnHtml .="</tr>";
         }

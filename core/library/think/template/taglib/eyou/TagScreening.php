@@ -48,7 +48,7 @@ class TagScreening extends Base
     /**
      * 获取搜索表单
      */
-    public function getScreening($currentclass='', $addfields='', $addfieldids='', $alltxt='', $typeid='')
+    public function getScreening($currentclass='', $addfields='', $addfieldids='', $alltxt='', $typeid='', $anchor='')
     {
         // if (self::$home_lang != self::$main_lang) return false;
 
@@ -197,10 +197,10 @@ class TagScreening extends Base
                             } else {
                                 $url = ROOT_DIR.'/index.php?'.urlencode(http_build_query($subLevelParam));
                             }
-                            $url = $this->auto_hide_index(urldecode($url), $seo_pseudo);
+                            $url = $this->auto_hide_index(urldecode($url), $seo_pseudo) . $anchor;
                             // dump($url);
                             // 拼装onClick事件
-                            $threeLevelArr[$p_key_1]['onClick'] = $row[$key]['onClick']." data-url='{$url}'";
+                            $threeLevelArr[$p_key_1]['onClick'] = empty($anchor) ? $row[$key]['onClick']." data-url='{$url}'" : " href='{$url}' ";
                             // 拼装onchange参数
                             $threeLevelArr[$p_key_1]['SelectUrl'] = "data-url='{$url}'";
                             // 初始化参数，默认未选中
@@ -273,10 +273,10 @@ class TagScreening extends Base
                         } else {
                             $url = ROOT_DIR.'/index.php?'.urlencode(http_build_query($subLevelParam));
                         }
-                        $url = $this->auto_hide_index(urldecode($url), $seo_pseudo);
+                        $url = $this->auto_hide_index(urldecode($url), $seo_pseudo) . $anchor;
                         // dump($url);
                         // 拼装onClick事件
-                        $twoLevelArr[$p_key_2]['onClick'] = $row[$key]['onClick']." data-url='{$url}'";
+                        $twoLevelArr[$p_key_2]['onClick'] = empty($anchor) ? $row[$key]['onClick']." data-url='{$url}'" : " href='{$url}' ";
                         // 拼装onchange参数
                         $twoLevelArr[$p_key_2]['SelectUrl'] = "data-url='{$url}'";
                         // 初始化参数，默认未选中
@@ -348,10 +348,10 @@ class TagScreening extends Base
                     } else {
                         $url = ROOT_DIR.'/index.php?'.urlencode(http_build_query($param_query));
                     }
-                    $url = $this->auto_hide_index(urldecode($url), $seo_pseudo);
+                    $url = $this->auto_hide_index(urldecode($url), $seo_pseudo) . $anchor;
                     
                     // 拼装onClick事件
-                    $oneLevelArr[$kk]['onClick'] = $row[$key]['onClick']." data-url='{$url}'";
+                    $oneLevelArr[$kk]['onClick'] = empty($anchor) ? $row[$key]['onClick']." data-url='{$url}'" : " href='{$url}' ";
                     // 拼装onchange参数
                     $oneLevelArr[$kk]['SelectUrl'] = "data-url='{$url}'";
                     // 初始化参数，默认未选中
@@ -454,9 +454,9 @@ class TagScreening extends Base
                     }else{
                         $url = ROOT_DIR.'/index.php?'.urlencode(http_build_query($param_query));
                     }
-                    $url = $this->auto_hide_index(urldecode($url), $seo_pseudo);
+                    $url = $this->auto_hide_index(urldecode($url), $seo_pseudo) . $anchor;
                     // 封装onClick
-                    $data_new[$kk]['onClick'] = $row[$key]['onClick']." data-url='{$url}'";
+                    $data_new[$kk]['onClick'] = empty($anchor) ? $row[$key]['onClick']." data-url='{$url}'" : " href='{$url}' ";
                     // 封装onchange事件
                     $data_new[$kk]['SelectUrl'] = "data-url='{$url}'";
                 }
@@ -465,10 +465,8 @@ class TagScreening extends Base
                 $row[$key]['dfvalue'] = $data_new;
             }
         }
-        // dump($row[3]);
-        // exit;
         
-        $resetUrl = ROOT_DIR.'/index.php?m=home&c=Lists&a=index&tid='.$this->tid.'&'.$url_screen_var.'=1';
+        $resetUrl = ROOT_DIR."/index.php?m=home&c=Lists&a=index&tid={$this->tid}&{$url_screen_var}=1";
 
         $hidden .= <<<EOF
 <script type="text/javascript">
@@ -496,8 +494,6 @@ EOF;
             'hidden' => $hidden,
             'resetUrl' => $resetUrl,
         );
-        // dump($result);exit;
         return $result;
     }
-
 }

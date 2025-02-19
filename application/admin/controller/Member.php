@@ -19,8 +19,6 @@ use app\admin\logic\MemberLogic;
 
 class Member extends Base {
 
-    public $userConfig = [];
-
     /**
      * 构造方法
      */
@@ -46,10 +44,6 @@ class Member extends Base {
         $this->shop_order_details_db = Db::name('shop_order_details');  // 会员订单副表
         /*结束*/
 
-        // 是否开启支付功能设置
-        $this->userConfig = getUsersConfigData('all');
-        $this->assign('userConfig', $this->userConfig);
-
         // 模型是否开启
         $channeltype_row = \think\Cache::get('extra_global_channeltype');
         $this->assign('channeltype_row', $channeltype_row);
@@ -63,7 +57,7 @@ class Member extends Base {
         $param = input('param.');
         $condition = array();
         // 应用搜索条件
-        foreach (['keywords','level'] as $key) {
+        foreach (['keywords','level','users_id'] as $key) {
             if (isset($param[$key]) && $param[$key] !== '') {
                 if ($key == 'keywords') {
                     $condition['a.username|a.nickname|a.mobile|a.email|a.users_id'] = array('LIKE', "%{$param[$key]}%");
@@ -152,7 +146,7 @@ class Member extends Base {
         }
 
         //计算会员人数
-        $levelCountList = [
+        /*$levelCountList = [
             'all' => [
                 'level_id'      => 0,
                 'level_name'    => '全部会员',
@@ -170,7 +164,7 @@ class Member extends Base {
             ];
             $levelCountList['all']['level_count'] += $level_num;
         }
-        $this->assign('levelCountList', $levelCountList);
+        $this->assign('levelCountList', $levelCountList);*/
 
         // 手机端后台管理插件特定使用参数
         $isMobile = input('param.isMobile/d', 0);
@@ -195,7 +189,7 @@ class Member extends Base {
         if (IS_POST) {
             $post = input('post.');
 
-            $username = $post['username'];
+            $username = trim($post['username']);
             if (empty($username)) {
                 $this->error('用户名不能为空！');
             }
@@ -214,7 +208,7 @@ class Member extends Base {
                 /*等保密码复杂度验证 end*/
             }
 
-            if (!empty($this->userConfig['level_member_upgrade']) && 1 == $this->userConfig['level_member_upgrade']) {
+            if (!empty($this->usersConfig['level_member_upgrade']) && 1 == $this->usersConfig['level_member_upgrade']) {
                 if (1 != $post['level'] && !preg_match("/^([0-9]+)$/i", $post['level_maturity_days'])) {
                     $this->error('请填写会员有效期天数！');
                 }
@@ -256,14 +250,13 @@ class Member extends Base {
                 ];
             }
             if (!empty($addData)) {
-                $r = model('Member')->saveAll($addData);
-                if (!empty($r)) {
+                $rdata = model('Member')->saveAll($addData);
+                if (false !== $rdata) {
                     eyou_statistics_data(4, count($addData)); // 统计新增会员数
                     adminLog('批量新增会员：'.implode(',', get_arr_column($addData, 'username')));
                     $this->success('操作成功！', url('Member/users_index'));
-                } else {
-                    $this->error('操作失败');
                 }
+                $this->error('操作失败');
             } else {
                 $this->success('操作成功！', url('Member/users_index'));
             }
@@ -295,11 +288,11 @@ class Member extends Base {
             $post['users_id'] = intval($post['users_id']);
             $users_id = $post['users_id'];
 
-//            if (!empty($this->userConfig['level_member_upgrade']) && 1 == $this->userConfig['level_member_upgrade']) {
+//            if (!empty($this->usersConfig['level_member_upgrade']) && 1 == $this->usersConfig['level_member_upgrade']) {
+                /*会员级别到期天数*/
                 if (1 != $post['level'] && !preg_match("/^([0-9]+)$/i", $post['level_maturity_days_up'])) {
                     $this->error('请填写会员有效期天数！');
                 }
-                /*会员级别到期天数*/
                 $post['level_maturity_days_up'] = intval($post['level_maturity_days_up']);
                 $post['level_maturity_days_old'] = intval($post['level_maturity_days_old']);
                 if (0 >= $post['level_maturity_days_up']) {
@@ -386,8 +379,8 @@ class Member extends Base {
 
             unset($post['username']);
             $r = $this->users_db->where($users_where)->update($post);
-            if ($r) {
-                $row2 = $this->users_parameter_db->field('para_id,name,dtype')->getAllWithIndex('name');
+            if ($r !== false) {
+                $row2 = model('UsersParameter')->getList('para_id,name,dtype', [], 'name');
                 //兼容多选字段选择为空时保存失败
                 foreach ($row2 as $k => $v) {
                     if ($v['dtype'] == 'checkbox' && empty($ParaData[$v['name']])){
@@ -517,12 +510,11 @@ class Member extends Base {
         $assign_data['users_lock_model'] = config('global.users_lock_model');
 
         //订单信息
-        $assign_data['order_count'] = Db::name('shop_order')->where('order_status',3)->where('users_id',$users_id)->field('count(*) as count,sum(order_amount) as sum')->select();
+        $assign_data['order_count'] = Db::name('shop_order')->field('count(*) as count,sum(order_amount) as sum')->where(['order_status'=>3,'users_id'=>$users_id])->select();
         $assign_data['refund_count'] = Db::name('shop_order_service')
-            ->where('users_id',$users_id)
-            ->where('service_type',2)
-            ->where('status',7)
-            ->field('count(*) as count,sum(refund_price) as sum')->select();
+            ->field('count(*) as count,sum(refund_price) as sum')
+            ->where(['users_id'=>$users_id, 'service_type'=>2,'status'=>7])
+            ->select();
         $this->assign($assign_data);
 
         /*等保密码复杂度验证 start*/
@@ -598,13 +590,10 @@ class Member extends Base {
                 }
                 model('Member')->afterDel($users_ids);
                 $this->success('删除成功');
-            }else{
-                $this->error('删除失败');
             }
         }
-        $this->error('参数有误');
+        $this->error('删除失败');
     }
-
 
     // 级别列表
     public function level_index()
@@ -933,7 +922,7 @@ class Member extends Base {
             /*--end*/
 
             // 会员投稿设置
-            if (!empty($this->userConfig['users_open_release'])) {
+            if (!empty($this->usersConfig['users_open_release'])) {
                 unset($post['release_typeids']);
                 unset($post['users']['is_automatic_review']);
                 unset($post['users']['is_open_posts_count']);
@@ -978,15 +967,8 @@ class Member extends Base {
             $this->success('操作成功');
         }
 
-        // 获取会员配置信息
-        $this->assign('info',$this->userConfig);
-
-        // 获取会员配置信息
-        $this->assign('web_users_tpl_theme', tpCache('global.web_users_tpl_theme'));
-
         // 左侧菜单
-        $usersTplVersion = getUsersTplVersion();
-        $this->assign('usersTplVersion', $usersTplVersion);
+        $this->assign('usersTplVersion', getUsersTplVersion());
 
         /*允许发布文档列表的栏目*/
         $current_channel = [1,3,4,5]; // 允许投稿的模型
@@ -1130,8 +1112,14 @@ class Member extends Base {
 
         // 查询条件
         $condition = [
-            'a.cause_type' => 1,
+            // 'a.cause_type' => 1,
         ];
+
+        // 来源/用途
+        $cause_type_str = input('param.cause_type_str/s');
+        if (!empty($cause_type_str)) {
+            $condition['a.cause_type'] = ['IN', explode('_', $cause_type_str)]; 
+        }
 
         // 应用搜索条件
         $keywords = input('keywords/s');
@@ -1146,8 +1134,8 @@ class Member extends Base {
         if (!empty($level)) $condition['b.level'] = $level;
 
         // 订单状态搜索
-        $order_status = input('param.status/d');
-        if ($order_status) $condition['a.status'] = in_array($order_status, [2, 3]) ? ['IN', [2, 3]] : $order_status; 
+        // $order_status = input('param.status/d');
+        // if ($order_status) $condition['a.status'] = in_array($order_status, [2, 3]) ? ['IN', [2, 3]] : $order_status; 
 
         // 时间检索条件
         $begin = strtotime(input('param.add_time_begin/s'));
@@ -1172,7 +1160,7 @@ class Member extends Base {
             ->alias('a')
             ->join('__USERS__ b', 'a.users_id = b.users_id', 'LEFT')
             ->where($condition) 
-            ->order('a.moneyid desc')
+            ->order('a.add_time desc, a.moneyid desc')
             ->limit($Page->firstRow.','.$Page->listRows)
             ->select();
         $order_number_arr = [];
@@ -1390,7 +1378,7 @@ class Member extends Base {
             $input->SetOut_trade_no($order_number);
 
             // 处理微信配置数据
-            $pay_wechat_config = !empty($this->userConfig['pay_wechat_config']) ? $this->userConfig['pay_wechat_config'] : '';
+            $pay_wechat_config = !empty($this->usersConfig['pay_wechat_config']) ? $this->usersConfig['pay_wechat_config'] : '';
             $pay_wechat_config = unserialize($pay_wechat_config);
             $config_data['app_id'] = $pay_wechat_config['appid'];
             $config_data['mch_id'] = $pay_wechat_config['mchid'];
@@ -1431,7 +1419,7 @@ class Member extends Base {
 
             // 处理支付宝配置数据
             if (empty($alipay)) {
-                $pay_alipay_config = !empty($this->userConfig['pay_alipay_config']) ? $this->userConfig['pay_alipay_config'] : '';
+                $pay_alipay_config = !empty($this->usersConfig['pay_alipay_config']) ? $this->usersConfig['pay_alipay_config'] : '';
                 if (empty($pay_alipay_config)) {
                     return false;
                 }
@@ -1543,7 +1531,7 @@ class Member extends Base {
         $condition = array();
 
         $usersTplVersion = getUsersTplVersion();
-        if ('v2' == $usersTplVersion) {
+        if (in_array($usersTplVersion, ['v2','v5'])) {
             $condition['a.version'] = array('EQ', $usersTplVersion);
         } else {
             $condition['a.version'] = array('IN', ['weapp', $usersTplVersion]);
@@ -1710,11 +1698,13 @@ class Member extends Base {
                 ->alias('a')
                 ->join('__USERS_LEVEL__ b', 'a.level = b.level_id', 'LEFT')
                 ->where([
-                    'a.users_id'        => $users_id,
-                    'a.is_del'  => 0,
+                    'a.users_id' => $users_id,
+                    'a.is_del' => 0,
                 ])->find();
             if (!empty($users)) {
-                session('users_id',$users_id);
+                cookie('dealerParam', null);
+                session('dealerParam', null);
+                session('users_id', $users_id);
                 session('users_login_expire', getTime()); // 登录有效期
                 $url = get_homeurl($mca, $vars);
                 $this->redirect($url);             
@@ -2100,9 +2090,15 @@ class Member extends Base {
             $r = $this->users_db->where($where)->update($update);
             if ($r !== false) {
                 // 添加会员余额记录
+                $pay_cause_type_arr = config('global.pay_cause_type_arr');
+                $order_number = date('Ymd') . getTime() . rand(10,100); //订单生成规则
+                $insert['order_number'] = $order_number;
+                $insert['users_id'] = $users_id;
                 $insert['admin_id'] = session('admin_id');
-                $insert['cause'] = !empty($post['cause']) ? $post['cause'] : '';
+                $insert['cause'] = $pay_cause_type_arr[$cause_type];
                 $insert['cause_type'] = $cause_type;
+                $insert['pay_method'] = 'admin_pay';
+                $insert['pay_details'] = '';
                 $insert['status'] = 3;
                 $insert['add_time'] = $times;
                 $insert['update_time'] = $times;

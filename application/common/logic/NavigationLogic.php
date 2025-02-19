@@ -408,7 +408,7 @@ class NavigationLogic extends Model
     {
         return $ReturnData = [
             0  => [
-                'title' => '首页',
+                'title' => '网站首页',
                 'url'   => "web_cmsurl"
             ],
             1  => [

@@ -72,14 +72,6 @@ class Language extends Base
     public function index()
     {
         function_exists('set_time_limit') && set_time_limit(0); //防止备份数据过程超时
-        
-        /*修复多语言之前的坑，删除索引，兼容多语言的重名变量*/
-        try {
-            Db::execute('ALTER TABLE `ey_config` DROP INDEX `name`');
-        } catch (\Exception $e) {
-            
-        }
-        /*--end*/
 
         /*同步数据到模板变量*/
         $this->syn_langattr();
@@ -90,7 +82,7 @@ class Language extends Base
 
         $map = array();
         if (!empty($keywords)) {
-            $map['cn_title'] = array('LIKE', "%{$keywords}%");
+            $map['title'] = array('LIKE', "%{$keywords}%");
         }
 
         $language_db = Db::name('language');
@@ -159,12 +151,13 @@ class Language extends Base
     {
         //防止php超时
         function_exists('set_time_limit') && set_time_limit(0);
+        @ini_set('memory_limit','-1');
 
         $this->language_access(); // 多语言功能操作权限
 
         if (IS_POST) {
             $post = input('post.');
-            $mark = trim($post['mark']);
+            $mark = $post['mark'] = trim($post['mark']);
             $is_home_default = intval($post['is_home_default']);
 
             $count = $this->langModel->where('mark',$mark)->count();
@@ -238,7 +231,7 @@ class Language extends Base
             $post['id'] = eyIntval($post['id']);
             if(!empty($post['id'])){
                 $is_home_default = intval($post['is_home_default']);
-                $mark = trim($post['mark']);
+                $mark = $post['mark'] = trim($post['mark']);
 
                 $count = $this->langModel->where([
                     'mark'=>$mark,
@@ -1036,6 +1029,8 @@ class Language extends Base
             // 检测变量名
             if (preg_match('/^(sys)(\d+)$/i', $name)) {
                 $this->error('禁止使用sys+数字的变量名，请更换');
+            } else if (!preg_match('/^([\w\-]+)$/i', $name)) {
+                $this->error('仅支持字母、数字、下划线、连接符，不区分大小写');
             }
 
             $count = Db::name('language_pack')->where([
@@ -1261,8 +1256,12 @@ class Language extends Base
                 ])->getField('name');
 
             // 检测变量名
-            if ($old_name != $name && preg_match('/^(sys)(\d+)$/i', $name)) {
-                $this->error('禁止使用sys+数字的变量名，请更换');
+            if ($old_name != $name) {
+                if (preg_match('/^(sys)(\d+)$/i', $name)) {
+                    $this->error('禁止使用sys+数字的变量名，请更换');
+                } else if (!preg_match('/^([\w\-]+)$/i', $name)) {
+                    $this->error('仅支持字母、数字、下划线、连接符，不区分大小写');
+                }
             }
 
             $count = $languagepack_db->where([
@@ -1446,8 +1445,9 @@ class Language extends Base
     public function add_lang_syn_pack($mark = '', $c_lang = '')
     {
         if (!empty($mark) && !empty($c_lang)) {
+            $mark = trim($mark);
             $values = array(            
-                'lang'=>$mark, 
+                'lang'=>$mark,
             );
             $upgradeLogic = new \app\admin\logic\UpgradeLogic;
             $upgradeLogic->GetKeyData($values);
@@ -1476,6 +1476,7 @@ class Language extends Base
                 }
                 if (!empty($saveData)) {
                     $r = $this->langPackModel->saveAll($saveData);
+
                     if ($r) {
                         /*同步官方语言包最后一次同步的ID*/
                         $language_db = Db::name('language');
@@ -1598,19 +1599,28 @@ class Language extends Base
     public function sync()
     {
         function_exists('set_time_limit') && set_time_limit(0);
-
         if (IS_AJAX_POST) {
             $id = input('post.id/d');
             $is_jump = input('post.is_jump/d');
+            $is_frm = input('post.is_frm/d');
+            $is_lang = input('post.is_lang/w');
             $mark = Db::name('language')->where('id',$id)->value('mark');
             if (empty($mark)) $this->error('语言不存在!');
             $ArchivesLogic = new ArchivesLogic;
-            $res = $ArchivesLogic->batch_copy_all($mark,$is_jump);
+            if($is_frm==1){
+                $res = $ArchivesLogic->batch_copy_all($mark,$is_jump);
+            }else{
+                if(Db::name('language_archives_copy_log')->where(['lang'=>$mark])->find()){
+                    $res = $ArchivesLogic->batch_copy_part($mark,$is_jump);
+                }else{                    
+                    $this->error("同步【{$is_lang}】新文档失败！如【{$is_lang}】语言文档没有做过修改，请选择全部同步！<span class=\"red\">【不确定请先备份好数据库】</span>");
+                }           
+            }            
             if (false !== $res){
                 model('Arctype')->hand_type_count(['lang'=>$mark]);//统计栏目文档数量
-                $this->success('同步成功!');
+                $this->success("同步【{$is_lang}】成功!");
             }
         }
-        $this->error('同步失败!');
+        $this->error("同步【{$is_lang}】失败!");
     }
 }

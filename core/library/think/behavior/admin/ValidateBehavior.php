@@ -26,7 +26,6 @@ class ValidateBehavior {
         self::$controllerName = request()->controller();
         self::$moduleName = request()->module();
         if ('GET' == request()->method()) {
-            // file_put_contents ( DATA_PATH."log.txt", date ( "Y-m-d H:i:s" ) . "  " . var_export('core_ValidateBehavior',true) . "\r\n", FILE_APPEND );
             // 初始化
             $this->_initialize();
         }

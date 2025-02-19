@@ -10,7 +10,7 @@
                 {/eq}
 
                 {eq name="'Member@money_index'|is_check_access" value="1"}
-                    {if condition="1 == $userConfig.pay_open"}
+                    {if condition="1 == $usersConfig.pay_open"}
                         <li>
                             <a href="{:url('Member/money_index')}" {if condition="in_array($Think.const.ACTION_NAME, ['money_index', 'money_edit','media_index','upgrade_index'])"}class="current"{/if}>
                                 <span>订单管理</span>
@@ -20,7 +20,7 @@
                 {/eq}
 
                 {eq name="'UsersRelease@conf'|is_check_access" value="1"}
-                    {if condition="1 == $userConfig.users_open_release"}
+                    {if condition="1 == $usersConfig.users_open_release"}
                         <li>
                             <a href="{:url('UsersRelease/conf')}" {if condition="in_array($Think.const.CONTROLLER_NAME, ['UsersRelease'])"}class="current"{/if}>
                                 <span>会员投稿</span>

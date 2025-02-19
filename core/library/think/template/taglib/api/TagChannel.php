@@ -150,10 +150,10 @@ class TagChannel extends Base
             $result = Cache::get($cacheKey);
             if (empty($result)) {
                 if (isset($treeData[$typeid])) {
-                    /*栏目显示“全部”*/
+                    /*栏目显示“最新”*/
                     if ('all' == $showAllTxt) {
                         $allchildren = $treeData[$typeid];
-                        $allchildren['typename'] = '全部';
+                        $allchildren['typename'] = '最新';
                         $allchildren['children'] = [];
                         $children = $treeData[$typeid]['children'];
                         $children = array_merge([$allchildren], $children);
@@ -167,10 +167,10 @@ class TagChannel extends Base
                     if (1 == $arctypeInfo['grade'] && !empty($treeData[$arctypeInfo['parent_id']]['children'])) {
                         foreach ($treeData[$arctypeInfo['parent_id']]['children'] as $key => $val) {
                             if ($typeid == $val['id']) {
-                                /*栏目显示“全部”*/
+                                /*栏目显示“最新”*/
                                 if ('all' == $showAllTxt) {
                                     $allchildren = $val;
-                                    $allchildren['typename'] = '全部';
+                                    $allchildren['typename'] = '最新';
                                     $allchildren['children'] = [];
                                     $children = !empty($val['children']) ? $val['children'] : [];
                                     $children = array_merge([$allchildren], $children);

@@ -1651,11 +1651,13 @@ class Query
     public function group($group)
     {
         /*设置sql_mode为宽松模式，避免分组查询遇到问题 ONLY_FULL_GROUP_BY by 小虎哥*/
-        $system_sql_mode = config('ey_config.system_sql_mode');
-        if (stristr($system_sql_mode, 'ONLY_FULL_GROUP_BY')) {
-            $system_sql_mode = str_replace('ONLY_FULL_GROUP_BY', '', $system_sql_mode);
-            $system_sql_mode = str_replace(',,', ',', trim($system_sql_mode, ','));
-            Db::execute("SET sql_mode ='{$system_sql_mode}'");
+        if ($this->connection->getConfig('type') != 'dm') { // 达梦优化
+            $system_sql_mode = config('ey_config.system_sql_mode');
+            if (stristr($system_sql_mode, 'ONLY_FULL_GROUP_BY')) {
+                $system_sql_mode = str_replace('ONLY_FULL_GROUP_BY', '', $system_sql_mode);
+                $system_sql_mode = str_replace(',,', ',', trim($system_sql_mode, ','));
+                Db::execute("SET sql_mode ='{$system_sql_mode}'");
+            }
         }
         /*--end*/
         $this->options['group'] = $group;

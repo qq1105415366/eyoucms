@@ -2,71 +2,71 @@
 <script type="text/javascript" src="__PUBLIC__/plugins/Echarts/echarts.min.js"></script>
 <link href="__SKIN__/css/main_new.css?v={$version}" rel="stylesheet" type="text/css">
 <body style="overflow: auto; cursor: default; -moz-user-select: inherit;background-color:#F4F4F4; padding: 10px; ">
-	<div id="append_parent"></div>
-	<div id="ajaxwaitid"></div>
-	{include file="shop/left" /}
-	<div class="page" >
-		<div class="flexigrid">
-			<div class="mDiv">
-				<div class="ftitle">
-					<h3>数据统计</h3>
-				</div>
-			</div>
-			<div class="list-stats">
-				<div class="stats-con">
-					开始日期 &nbsp;<input type="text" class="input-txt" id="add_time" name="add_time" value="{$StartTime|date='Y-m-d H:i:s',###}" autocomplete="off">
-					结束日期 &nbsp;<input type="text" class="input-txt" id="add_time2" name="add_time" value="{$EndTime|date='Y-m-d H:i:s',###}" autocomplete="off">
-					&nbsp; &nbsp;
-					<a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 1);">一个月</a>
-					&nbsp; &nbsp;
-					<a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 3);">三个月</a>
-					&nbsp; &nbsp;
-					<a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 6);">六个月</a>
-					&nbsp; &nbsp;
-					<a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 9);">九个月</a>
-					&nbsp; &nbsp;
-					<a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 12);">一年</a>
-				</div>
-				<script type="text/javascript">
-					layui.use('laydate', function() {
-					  	var laydate = layui.laydate;
-					  	laydate.render({
-						  	elem: '#add_time', type: 'datetime',
-						  	change: function(value, date, endDate) {
-						  		// TimeProcessing(value);
-						  	},
-						  	done: function(value, date, endDate){
-						    	TimeProcessing(null, value);
-						  	}
-						});
+    <div id="append_parent"></div>
+    <div id="ajaxwaitid"></div>
+    {include file="shop/left" /}
+    <div class="page" >
+        <div class="flexigrid">
+            <div class="mDiv">
+                <div class="ftitle">
+                    <h3>数据统计</h3>
+                </div>
+            </div>
+            <div class="list-stats">
+                <div class="stats-con">
+                    开始日期 &nbsp;<input type="text" class="input-txt" id="add_time" name="add_time" value="{$StartTime|date='Y-m-d H:i:s',###}" autocomplete="off">
+                    结束日期 &nbsp;<input type="text" class="input-txt" id="add_time2" name="add_time" value="{$EndTime|date='Y-m-d H:i:s',###}" autocomplete="off">
+                    &nbsp; &nbsp;
+                    <a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 1);">一个月</a>
+                    &nbsp; &nbsp;
+                    <a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 3);">三个月</a>
+                    &nbsp; &nbsp;
+                    <a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 6);">六个月</a>
+                    &nbsp; &nbsp;
+                    <a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 9);">九个月</a>
+                    &nbsp; &nbsp;
+                    <a href="javascript:void(0);" onclick="TimeProcessing(this, null, null, 12);">一年</a>
+                </div>
+                <script type="text/javascript">
+                    layui.use('laydate', function() {
+                        var laydate = layui.laydate;
+                        laydate.render({
+                            elem: '#add_time', type: 'datetime',
+                            change: function(value, date, endDate) {
+                                // TimeProcessing(value);
+                            },
+                            done: function(value, date, endDate){
+                                TimeProcessing(null, value);
+                            }
+                        });
 
-						laydate.render({
-						  	elem: '#add_time2', type: 'datetime',
-						  	change: function(value, date, endDate) {
-						  		// TimeProcessing(null, null, value);
-						  	},
-						  	done: function(value, date, endDate){
-						    	TimeProcessing(null, null, value);
-						  	}
-						});
-					});
+                        laydate.render({
+                            elem: '#add_time2', type: 'datetime',
+                            change: function(value, date, endDate) {
+                                // TimeProcessing(null, null, value);
+                            },
+                            done: function(value, date, endDate){
+                                TimeProcessing(null, null, value);
+                            }
+                        });
+                    });
 
-					// 处理时间并查询数据
-					function TimeProcessing(obj, Start, End ,Year) {
-						Start = Start ? Start : $('#add_time').val();
-						End   = End ? End : $('#add_time2').val();
-						if (!Year && Start && End) {
-							if (End < Start) {
-								$('body').click();
-								layer.msg('结束日期不可早于开始日期', {icon: 2,time: 2000});
-								return false;
-							}
-							Year = 0;
-						}
-						if ((!End || !Start) && !Year) return false;
-						
-						var Url = "{:url('Statistics/GetTimeCycletData')}";
-						$.ajax({
+                    // 处理时间并查询数据
+                    function TimeProcessing(obj, Start, End ,Year) {
+                        Start = Start ? Start : $('#add_time').val();
+                        End   = End ? End : $('#add_time2').val();
+                        if (!Year && Start && End) {
+                            if (End < Start) {
+                                $('body').click();
+                                layer.msg('结束日期不可早于开始日期', {icon: 2,time: 2000});
+                                return false;
+                            }
+                            Year = 0;
+                        }
+                        if ((!End || !Start) && !Year) return false;
+                        
+                        var Url = "{:url('Statistics/GetTimeCycletData')}";
+                        $.ajax({
                             url  : Url,
                             type : 'post',
                             data : {StartNew:Start, EndNew:End, Year:Year, _ajax:1},
@@ -82,207 +82,207 @@
                                 if (res.data.Start) $('#add_time').val(res.data.Start);
                                 if (res.data.End) $('#add_time2').val(res.data.End);
                                 if (obj) {
-	                                $('.stats-con a').css('color', '');
-	                                $(obj).css('color', 'red');
+                                    $('.stats-con a').css('color', '');
+                                    $(obj).css('color', 'red');
                                 }
                             }
                         });
-					}
-				</script>
+                    }
+                </script>
 
-				<ul class="stats2">
-					<li>
-						<div class="card_box">
-							<div class="car_box_l fl">
-								<i class="card-icon fa fa-user"></i>
-							</div>
-							<div class="car_box_r fl">
-								<h1>用户数量</h1>
-								<p><cite id="UsersNum">{$CycletData.UsersNum}</cite></p>
-							</div>
-						</div>
-					</li>
-					<li>
-						<div class="card_box">
-							<div class="car_box_l fl">
-								<i class="card-icon fa fa-shopping-cart"></i>
-							</div>
-							<div class="car_box_r fl">
-								<h1>付款订单数</h1>
-								<p><cite id="PayOrderNum">{$CycletData.PayOrderNum}</cite></p>
-							</div>
-						</div>
-					</li>
-					<li>
-						<div class="card_box">
-							<div class="car_box_l fl">
-								<i class="card-icon fa fa-cubes"></i>
-							</div>
-							<div class="car_box_r fl">
-								<h1>商品数量</h1>
-								<p><cite id="ProductNum">{$CycletData.ProductNum}</cite></p>
-							</div>
-						</div>
-					</li>
-					<li>
-						<div class="card_box">
-							<div class="car_box_l fl">
-								<i class="card-icon fa fa-group"></i>
-							</div>
-							<div class="car_box_r fl">
-								<h1>消费人数</h1>
-								<p><cite id="OrderUsersNum">{$CycletData.OrderUsersNum}</cite></p>
-							</div>
-						</div>
-					</li>
-					<li>
-						<div class="card_box">
-							<div class="car_box_l fl">
-								<i class="card-icon fa fa-rmb"></i>
-							</div>
-							<div class="car_box_r fl">
-								<h1>付款订单总额</h1>
-								<p><cite id="OrderSales">{$CycletData.OrderSales}</cite></p>
-							</div>
-						</div>
-					</li>
-					<li>
-						<div class="card_box">
-							<div class="car_box_l fl">
-								<i class="card-icon fa fa-rmb"></i>
-							</div>
-							<div class="car_box_r fl">
-								<h1>用户充值总额</h1>
-								<p><cite id="UsersRecharge">{$CycletData.UsersRecharge}</cite></p>
-							</div>
-						</div>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
+                <ul class="stats2">
+                    <li>
+                        <div class="card_box">
+                            <div class="car_box_l fl">
+                                <i class="card-icon fa fa-user"></i>
+                            </div>
+                            <div class="car_box_r fl">
+                                <h1>用户数量</h1>
+                                <p><cite id="UsersNum">{$CycletData.UsersNum}</cite></p>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="card_box">
+                            <div class="car_box_l fl">
+                                <i class="card-icon fa fa-shopping-cart"></i>
+                            </div>
+                            <div class="car_box_r fl">
+                                <h1>付款订单数</h1>
+                                <p><cite id="PayOrderNum">{$CycletData.PayOrderNum}</cite></p>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="card_box">
+                            <div class="car_box_l fl">
+                                <i class="card-icon fa fa-cubes"></i>
+                            </div>
+                            <div class="car_box_r fl">
+                                <h1>商品数量</h1>
+                                <p><cite id="ProductNum">{$CycletData.ProductNum}</cite></p>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="card_box">
+                            <div class="car_box_l fl">
+                                <i class="card-icon fa fa-group"></i>
+                            </div>
+                            <div class="car_box_r fl">
+                                <h1>消费人数</h1>
+                                <p><cite id="OrderUsersNum">{$CycletData.OrderUsersNum}</cite></p>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="card_box">
+                            <div class="car_box_l fl">
+                                <i class="card-icon fa fa-rmb"></i>
+                            </div>
+                            <div class="car_box_r fl">
+                                <h1>付款订单总额</h1>
+                                <p><cite id="OrderSales">{$CycletData.OrderSales}</cite></p>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="card_box">
+                            <div class="car_box_l fl">
+                                <i class="card-icon fa fa-rmb"></i>
+                            </div>
+                            <div class="car_box_r fl">
+                                <h1>用户充值总额</h1>
+                                <p><cite id="UsersRecharge">{$CycletData.UsersRecharge}</cite></p>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-	<div class="page mt10">
-		<div class="flexigrid">
-			<div class="mDiv">
-				<div class="ftitle">
-					<h3>近七日交易走势</h3>
-				</div>
-			</div>
-			<div class="list-stats">
-				<div class="stats-con">
-					<div id="stats-box" style="width:90%;height:400px;margin: 0 auto;"></div>
+    <div class="page mt10">
+        <div class="flexigrid">
+            <div class="mDiv">
+                <div class="ftitle">
+                    <h3>近七日交易走势</h3>
+                </div>
+            </div>
+            <div class="list-stats">
+                <div class="stats-con">
+                    <div id="stats-box" style="width:90%;height:400px;margin: 0 auto;"></div>
 
-				</div>
-			</div>
-		</div>
-	</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-	<div class="stats-content">
-		<div class="stats-content-l fl">
-			<div class="flexigrid">
-				<div class="mDiv">
-					<div class="ftitle">
-						<h3>商品销售榜</h3>
-					</div>
-				</div>
-				<div class="list-stats">
-					<div class="stats-con">
-						<table border="" cellspacing="" cellpadding="" style="width: 100%;">
-							<thead>
-								<tr>
-									<th class="w100 tc">
-										<div>排名</div>
-									</th>
-									<th class="">
-										<div>商品</div>
-									</th>
-									<th class="w100 tc">
-										<div>销量</div>
-									</th>
-									<th class="w100 tc">
-										<div>销售额</div>
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{volist name="$OrderSalesList" id="vo"}
-									<tr>
-										<td>
-											<div class="tc">
-												{lt name="$i" value="4"}
-													<img src="__ROOT_DIR__/public/static/admin/images/0{$i}.png">
-												{else/}
-													{$i}
-												{/lt}
-											</div>
-										</td>
-										<td>
-											<div>
-												<a href="{:url('ShopProduct/edit', ['id'=>$vo.aid])}">{$vo.title}</a>
-												<a href="{$vo.arcurl}" target="_blank" style="color: red;">[预览]</a>
-											</div>
-										</td>
-										<td>
-											<div class="tc">{$vo.sales_num}</div>
-										</td>
-										<td>
-											<div class="tc">{$vo.sales_amount}</div>
-										</td>
-									</tr>
-								{/volist}
-							</tbody>
-						</table>
-					</div>
+    <div class="stats-content">
+        <div class="stats-content-l fl">
+            <div class="flexigrid">
+                <div class="mDiv">
+                    <div class="ftitle">
+                        <h3>商品销售榜</h3>
+                    </div>
+                </div>
+                <div class="list-stats">
+                    <div class="stats-con">
+                        <table border="" cellspacing="" cellpadding="" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="w100 tc">
+                                        <div>排名</div>
+                                    </th>
+                                    <th class="">
+                                        <div>商品</div>
+                                    </th>
+                                    <th class="w100 tc">
+                                        <div>销量</div>
+                                    </th>
+                                    <th class="w100 tc">
+                                        <div>销售额</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {volist name="$OrderSalesList" id="vo"}
+                                    <tr>
+                                        <td>
+                                            <div class="tc">
+                                                {lt name="$i" value="4"}
+                                                    <img src="__ROOT_DIR__/public/static/admin/images/0{$i}.png">
+                                                {else/}
+                                                    {$i}
+                                                {/lt}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <a href="{:url('ShopProduct/edit', ['id'=>$vo.aid])}">{$vo.title}</a>
+                                                <a href="{$vo.arcurl}" target="_blank" style="color: red;">[预览]</a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tc">{$vo.sales_num}</div>
+                                        </td>
+                                        <td>
+                                            <div class="tc">{$vo.sales_amount}</div>
+                                        </td>
+                                    </tr>
+                                {/volist}
+                            </tbody>
+                        </table>
+                    </div>
 
-				</div>
-			</div>
-		</div>
-		<div class="stats-content-r fr">
-			<div class="flexigrid">
-				<div class="mDiv">
-					<div class="ftitle">
-						<h3>用户消费榜</h3>
-					</div>
-				</div>
-				<div class="list-stats">
-					<div class="stats-con">
-						<table border="" cellspacing="" cellpadding="" style="width: 100%;">
-							<thead>
-								<tr>
-									<th class="w100 tc">
-										<div>排名</div>
-									</th>
-									<th class="">
-										<div>用户昵称</div>
-									</th>
-									<th class="w100 tc">
-										<div>实际消费金额</div>
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{volist name="$UserConsumption" id="vo"}
-									<tr>
-										<td>
-											<div class="tc">{lt name="$i" value="4"}<img src="__ROOT_DIR__/public/static/admin/images/0{$i}.png">{else/}{$i}{/lt}</div>
-										</td>
-										<td>
-											<div>{$vo.nickname}</div>
-										</td>
-										<td>
-											<div class="tc">{$vo.amount}</div>
-										</td>
-									</tr>
-								{/volist}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<script type="text/javascript">
+                </div>
+            </div>
+        </div>
+        <div class="stats-content-r fr">
+            <div class="flexigrid">
+                <div class="mDiv">
+                    <div class="ftitle">
+                        <h3>用户消费榜</h3>
+                    </div>
+                </div>
+                <div class="list-stats">
+                    <div class="stats-con">
+                        <table border="" cellspacing="" cellpadding="" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="w100 tc">
+                                        <div>排名</div>
+                                    </th>
+                                    <th class="">
+                                        <div>用户昵称</div>
+                                    </th>
+                                    <th class="w100 tc">
+                                        <div>实际消费金额</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {volist name="$UserConsumption" id="vo"}
+                                    <tr>
+                                        <td>
+                                            <div class="tc">{lt name="$i" value="4"}<img src="__ROOT_DIR__/public/static/admin/images/0{$i}.png">{else/}{$i}{/lt}</div>
+                                        </td>
+                                        <td>
+                                            <div>{$vo.nickname}</div>
+                                        </td>
+                                        <td>
+                                            <div class="tc">{$vo.amount}</div>
+                                        </td>
+                                    </tr>
+                                {/volist}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
         try{
             if (typeof(eval('is_conceal_1649209614'))=="function" && is_conceal_1649209614()){
                 $(".page").css("margin-left","");
@@ -300,93 +300,93 @@
                 $(".stats-content").css("width","calc(100% - 100px)");
             }
         }catch(e){}
-		function getBeforeDate(n) {
-	        var n = n;
-	        var d = new Date();
-	        var year = d.getFullYear();
-	        var mon = d.getMonth() + 1;
-	        var day = d.getDate();
-	        if(day <= n) {
-	            if(mon > 1) {
-	                mon = mon - 1;
-	            } else {
-	                year = year - 1;
-	                mon = 12;
-	            }
-	        }
-	        d.setDate(d.getDate() - n);
-	        year = d.getFullYear();
-	        mon = d.getMonth() + 1;
-	        day = d.getDate();
-	        s = year + "-" + (mon < 10 ? ('0' + mon) : mon) + "-" + (day < 10 ? ('0' + day) : day);
-	        return s;
-	    }
+        function getBeforeDate(n) {
+            var n = n;
+            var d = new Date();
+            var year = d.getFullYear();
+            var mon = d.getMonth() + 1;
+            var day = d.getDate();
+            if(day <= n) {
+                if(mon > 1) {
+                    mon = mon - 1;
+                } else {
+                    year = year - 1;
+                    mon = 12;
+                }
+            }
+            d.setDate(d.getDate() - n);
+            year = d.getFullYear();
+            mon = d.getMonth() + 1;
+            day = d.getDate();
+            s = year + "-" + (mon < 10 ? ('0' + mon) : mon) + "-" + (day < 10 ? ('0' + day) : day);
+            return s;
+        }
 
-		// 基于准备好的dom，初始化echarts实例
-		var myChart = echarts.init(document.getElementById('stats-box'));
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('stats-box'));
 
-		// 指定图表的配置项和数据
-		var option = {
-			color: ['#3398DB', '#6be6c1'],
-			title: {
-				text: ''
-			},
-			tooltip: {
-				trigger: 'axis',
-			},
-			legend: {
-				data: ['成交量', '成交额']
-			},
-			grid: {
-				left: '3%',
-				right: '4%',
-				bottom: '3%',
-				containLabel: true
-			},
-			toolbox: {
-				feature: {
-					saveAsImage: {}
-				}
-			},
-			xAxis: {
-				type: 'category',
-				boundaryGap: false,
-				data: [getBeforeDate(6), getBeforeDate(5), getBeforeDate(4), getBeforeDate(3), getBeforeDate(2), getBeforeDate(1), getBeforeDate(0)],
-				splitLine: {
-					show: true,
-					lineStyle: {
-						color: ['#eee'],
-						width: 1,
-						type: 'solid'
-					}
-				}
-			},
-			yAxis: {
-				type: 'value',
-				splitLine: {
-					show: true,
-					lineStyle: {
-						color: ['#eee'],
-						width: 1,
-						type: 'solid'
-					}
-				}
-			},
-			series: [{
-					name: '成交量',
-					type: 'line',
-					data: ['{$DealNum.0}','{$DealNum.1}','{$DealNum.2}','{$DealNum.3}','{$DealNum.4}','{$DealNum.5}','{$DealNum.6}'],
-				},
-				{
-					name: '成交额',
-					type: 'line',
-					data: ['{$DealAmount.0}','{$DealAmount.1}','{$DealAmount.2}','{$DealAmount.3}','{$DealAmount.4}','{$DealAmount.5}','{$DealAmount.6}'],
-				},
-			]
-		};
+        // 指定图表的配置项和数据
+        var option = {
+            color: ['#3398DB', '#6be6c1'],
+            title: {
+                text: ''
+            },
+            tooltip: {
+                trigger: 'axis',
+            },
+            legend: {
+                data: ['成交量', '成交额']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: [getBeforeDate(6), getBeforeDate(5), getBeforeDate(4), getBeforeDate(3), getBeforeDate(2), getBeforeDate(1), getBeforeDate(0)],
+                splitLine: {
+                    show: true,
+                    lineStyle: {
+                        color: ['#eee'],
+                        width: 1,
+                        type: 'solid'
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                splitLine: {
+                    show: true,
+                    lineStyle: {
+                        color: ['#eee'],
+                        width: 1,
+                        type: 'solid'
+                    }
+                }
+            },
+            series: [{
+                    name: '成交量',
+                    type: 'line',
+                    data: ['{$DealNum.0}','{$DealNum.1}','{$DealNum.2}','{$DealNum.3}','{$DealNum.4}','{$DealNum.5}','{$DealNum.6}'],
+                },
+                {
+                    name: '成交额',
+                    type: 'line',
+                    data: ['{$DealAmount.0}','{$DealAmount.1}','{$DealAmount.2}','{$DealAmount.3}','{$DealAmount.4}','{$DealAmount.5}','{$DealAmount.6}'],
+                },
+            ]
+        };
 
-		// 使用刚指定的配置项和数据显示图表。
-		myChart.setOption(option);
-	</script>
-	{include file="public/footer" /}
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+    </script>
+    {include file="public/footer" /}
 </body>

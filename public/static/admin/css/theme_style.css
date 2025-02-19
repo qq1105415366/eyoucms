@@ -80,7 +80,7 @@
     .layout-left .on-off-btn {background-color: #3398cc !important;}
 
     /*框架正在加载*/
-    .iframe_loading{width:100%;background:url(/test/public/static/admin/images/loading-0.gif) no-repeat center center;}
+    .iframe_loading{width:100%;background:url(/public/static/admin/images/loading-0.gif) no-repeat center center;}
     
     .layui-btn-normal {background-color: #3398cc;}
     .layui-laydate .layui-this{background-color: #3398cc !important;}
@@ -146,7 +146,4 @@
     .marketing_panel .marketing_list ul.marketing-nav li a .button button {
         color: #3398cc !important;
         border: 1px solid #3398cc !important;
-    }
-    button.layui-btn{
-        background-color: #3398cc !important;
     }

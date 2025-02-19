@@ -301,7 +301,7 @@
                 <div class="users-form-item  users-col-span-7">
                     <label class="users-form-item-label">{$vo.title}：</label>
                     <div class="users-form-item-content">
-                        <input type="text" class="input-txt" name="{$vo.fieldArr}[{$vo.name|default=''}]" id="{$vo.fieldArr}_{$vo.name|default=''}" value="{php}if(empty($vo['dfvalue'])){echo date('Y-m-d H:i:s');}else{echo $vo['dfvalue'];}{/php}">
+                        <input type="text" class="input-txt" name="{$vo.fieldArr}[{$vo.name|default=''}]" id="{$vo.fieldArr}_{$vo.name|default=''}" value="{php}if(empty($vo['dfvalue'])){echo date('Y-m-d H:i:s');}else{echo $vo['dfvalue'];}{/php}" autocomplete="off">
                         <span class="add-on input-group-addon">
                             <i class="glyphicon glyphicon-calendar fa fa-calendar"></i>
                         </span> 

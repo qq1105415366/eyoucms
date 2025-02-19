@@ -1,0 +1,56 @@
+{include file="public/layout" /}
+
+<body class="bodystyle" style="overflow-x: hidden; padding: 0; min-width: 674px; background: #fff;">
+<style type="text/css">
+    .ncap-form-default dd.opt { width: 79%; }
+</style>
+<div id="append_parent"></div>
+<div id="ajaxwaitid"></div>
+<div class="page" style="width: 664px; margin: 0 auto;">
+    <div class="flexigrid">
+        <div class="ncap-form-default">
+            <dl class="row">
+                <dt class="tit"> <label>系统退款单号</label> </dt> <dd class="opt"> {$result.out_refund_no_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>系统订单编号</label> </dt> <dd class="opt"> {$result.out_trade_no|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>微信订单编号</label> </dt> <dd class="opt"> {$result.transaction_id|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>微信退款单号</label> </dt> <dd class="opt"> {$result.refund_id_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>订单总金额(元)</label> </dt> <dd class="opt"> {$result.total_fee|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>申请退款额(元)</label> </dt> <dd class="opt"> {$result.refund_fee_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>实际退款额(元)</label> </dt> <dd class="opt"> {$result.refund_fee|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>退款状态</label> </dt> <dd class="opt"> {$result.refund_status_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>退款方式</label> </dt> <dd class="opt"> {$result.refund_channel_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>收款账户</label> </dt> <dd class="opt"> {$result.refund_recv_accout_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>退款扣款资金</label> </dt> <dd class="opt"> {$result.refund_account_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>退款提交时间</label> </dt> <dd class="opt"> {$result.update_time} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>退款完成时间</label> </dt> <dd class="opt"> {$result.refund_success_time_0|default='-'} </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit"> <label>退款说明</label> </dt> <dd class="opt"> {$result.refund_remark} </dd>
+            </dl>
+        </div>
+    </div>
+</div>

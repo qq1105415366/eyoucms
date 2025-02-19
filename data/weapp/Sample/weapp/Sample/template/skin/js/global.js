@@ -1579,7 +1579,7 @@ function check_title_repeat(obj,aid) {
 
 function set_author(value)
 {
-    layer.prompt({
+    top.layer.prompt({
             title:'设置作者默认名称',
             shade: layer_shade,
             btnAlign:'r',
@@ -1595,7 +1595,7 @@ function set_author(value)
                 success: function(res){
                     if (res.code == 1) {
                         $('#author').val(val);
-                        layer.msg(res.msg, {icon: 1, time:1000});
+                        top.layer.msg(res.msg, {icon: 1, time:1000});
                     } else {
                         showErrorMsg(res.msg);
                         return false;
@@ -1606,7 +1606,7 @@ function set_author(value)
                     return false;
                 }
             });
-            layer.close(index);
+            top.layer.close(index);
         }
     );
 }
@@ -1674,67 +1674,6 @@ function editor_handle_210607(val,type) {
         }
     }
 */
-}
-
-//城市分站 - 自动获取二级城市列表
-function set_city_list(cityid, siteid) {
-    var pid =  $("#province_id").val();
-    $.ajax({
-        url: eyou_basefile + "?m=admin&c=Citysite&a=ajax_get_region&_ajax=1",
-        type: 'POST',
-        dataType: 'JSON',
-        async: false,
-        data: {pid:pid,level:2,siteid:siteid},
-        success: function(res){
-            if (res.code === 1){
-                if (1 == res.data.isempty) {
-                    $("#city_id").hide();
-                } else {
-                    $("#city_id").show();
-                }
-                $("#city_id").empty();
-                $("#city_id").prepend(res.msg);
-                if (cityid > 0) {
-                    $("#city_id").val(cityid);
-                }
-                $('#area_id').hide().val(0);
-            }
-        },
-        error: function(e){
-            showErrorMsg(e.responseText);
-            return false;
-        }
-    });
-}
-
-//城市分站 - 自动获取三级乡镇列表
-function set_area_list(areaid) {
-    var pid =  $("#city_id").val();
-    $.ajax({
-        url: eyou_basefile + "?m=admin&c=Citysite&a=ajax_get_region&_ajax=1",
-        type: 'POST',
-        dataType: 'JSON',
-        async: false,
-        data: {pid:pid,level:3},
-        success: function(res){
-            if (res.code === 1){
-                if (1 == res.data.isempty) {
-                    $("#area_id").hide();
-                } else {
-                    $("#area_id").show();
-                }
-                $("#area_id").empty();
-                $("#area_id").prepend(res.msg);
-                if (areaid > 0) {
-                    $("#area_id").val(areaid);
-                }
-            }
-        },
-        error: function(e){
-            showErrorMsg(e.responseText);
-            return false;
-        }
-    });
 }
 
 /**

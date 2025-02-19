@@ -110,6 +110,7 @@ class App
                 Lang::detect();
             }
             $request->langset(Lang::range());
+
             // 加载系统语言包
             Lang::load([
                 THINK_PATH . 'lang' . DS . $request->langset() . EXT,

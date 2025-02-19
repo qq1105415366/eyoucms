@@ -33,6 +33,12 @@ class ModuleInitBehavior {
     }
 
     private function _initialize() {
+        if (file_exists('application/admin/logic/DdosLogic.php')) {
+            $ddosLogic = new \app\admin\logic\DdosLogic;
+            if (method_exists($ddosLogic, 'firewall_login_check')) {
+                $ddosLogic->firewall_login_check();
+            }
+        }
         $this->vertifyCode();
     }
 

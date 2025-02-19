@@ -150,7 +150,9 @@
                                 </div>
                                 <div class="goods-info">
                                     <p class="goods-title"><!-- <span class="shi">实</span> -->{$vo.product_name}</p>
-                                    <p class="goods-spec">{$vo.product_spec}</p>
+                                    {notempty name="$vo.spec_value_list"}
+                                    <p class="goods-spec">{volist name="$vo.spec_value_list" id="sp"}<span>{$sp.value}</span>{/volist}</p>
+                                    {/notempty}
                                 </div>
                             </div>
                         </td>

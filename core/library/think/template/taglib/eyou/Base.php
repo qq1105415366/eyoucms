@@ -91,6 +91,39 @@ class Base
      */
     static $archivesData = null;
 
+    /**
+     * 支付方式
+     * @var [type]
+     */
+    public $pay_method_arr = [
+        'wechat'     => 'WeChat',
+        'alipay'     => 'Alipay',
+        'artificial' => 'Manual recharge',
+        'balance'    => 'Balance',
+        'admin_pay'  => 'Backend',
+        'delivery_pay' => 'cash on delivery',
+        'Paypal'     => 'PayPal',
+        'UnionPay'   => 'UnionPay',
+        'noNeedPay'  => 'No payment required',
+        'tikTokPay'  => 'Tiktok',
+        'baiduPay'   => 'Baidu',
+        'Hupijiaopay' => 'Tiger skin pepper',
+        'PersonPay' => 'Alipay',
+    ];
+
+    /**
+     * 订单状态
+     * @var [type]
+     */
+    public $order_status_arr = [
+        -1  => 'closed',
+        0   => 'obligation',
+        1   => 'Pending shipment',
+        2   => 'Pending receipt of goods',
+        3   => 'Completed',
+        4   => 'Order Expires',
+    ];
+
     //构造函数
     function __construct()
     {
@@ -356,5 +389,42 @@ class Base
             }
         }
         return $condition;
+    }
+
+    // 如果存在分销插件则处理分销商商品URL(携带分销商参数，用于绑定分销商上下级)
+    public function handleDealerGoodsURL($result = [], $usersInfo = [], $isFind = false)
+    {
+        // 是否存在分销插件
+        $weappInfo = model('ShopPublicHandle')->getWeappInfo('DealerPlugin');
+        // 是否开启分销插件
+        if (!empty($weappInfo['status']) && 1 === intval($weappInfo['status'])) {
+            // URL模式(仅支持动态、伪静态)
+            $seoPseudo = tpCache('seo.seo_pseudo');
+            if (in_array($seoPseudo, [1, 3])) {
+                // 分销商用户信息
+                $usersInfo = !empty($usersInfo) ? $usersInfo : GetUsersLatestData();
+                $dealerInfo = !empty($usersInfo['dealer']) ? $usersInfo['dealer'] : [];
+                if (!empty($dealerInfo['users_id']) && !empty($dealerInfo['dealer_id']) && !empty($dealerInfo['dealer_status']) && 1 === intval($dealerInfo['dealer_status'])) {
+                    if (!empty($isFind)) $result[0] = $result;
+                    foreach ($result as $key => $value) {
+                        if (!empty($value['arcurl']) && !empty($value['current_channel']) && 2 === intval($value['current_channel'])) {
+                            // 分销商参数
+                            $dealerParam = base64_encode(json_encode($dealerInfo['users_id'] . '_eyoucms_' . $dealerInfo['dealer_id']));
+                            // 动态
+                            if (!empty($seoPseudo) && 1 === intval($seoPseudo)) {
+                                $result[$key]['arcurl'] = $value['arcurl'] . '&dealerParam=' . $dealerParam;
+                            }
+                            // 伪静态
+                            else if (!empty($seoPseudo) && 3 === intval($seoPseudo)) {
+                                $result[$key]['arcurl'] = $value['arcurl'] . '?dealerParam=' . $dealerParam;
+                            }
+                        }
+                    }
+                    if (!empty($isFind)) $result = $result[0];
+                }
+            }
+        }
+        // 返回参数
+        return $result;
     }
 }

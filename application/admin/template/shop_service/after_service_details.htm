@@ -346,10 +346,24 @@
                 <div class="lumping-content">
                     <div class="lumping-content-title">退款说明：</div> <div class="lumping-content-text">{eyou:empty name='$Service.refund_remark' /}-{eyou:else /}{$Service.refund_remark}{/eyou:empty}</div>
                 </div>
-                
+
                 <div class="lumping-content">
-                    <div class="lumping-content-title">退款方式：</div> <div class="lumping-content-text">{if condition="!empty($Service.manual_time) && 1 == $Service.manual_refund"}线下退款{else/}退款到余额{/if}</div>
+                    <div class="lumping-content-title">退款方式：</div> <div class="lumping-content-text">
+                        {if condition="!empty($Service.refund_way) && 1 == $Service.refund_way"}
+                        退款到余额
+                        {elseif condition="!empty($Service.refund_way) && 2 == $Service.refund_way"}
+                        线下退款
+                        {elseif condition="!empty($Service.refund_way) && 3 == $Service.refund_way"}
+                        原路退回(微信)
+                        {/if}
+                    </div>
                 </div>
+                {if condition="!empty($Service.refund_way) && 3 == $Service.refund_way" && 7 == $Service.status && 'wechat' == $Order.pay_name}
+                <div class="lumping-content">
+                    <div class="lumping-content-title">退款结果：</div>
+                    <div class="lumping-content-text"><a href="javascript:void(0);" data-href="{:url('ShopService/after_service_inquire', ['service_id' => $Service.service_id, 'order_terminal' => $Order.order_terminal])}" onclick="openFullframe(this, '微信退款详情', '800px', '90%');">查询退款详情</a></div>
+                </div>
+                {/if}
             </div>
             {/in}
 
@@ -422,7 +436,10 @@
                                     <img src="{$Details.product_img}">
                                 </div>
                                 <div class="goods-info">
-                                    <p class="goods-title">{$Details.product_name}</p><p class="goods-spec">{$Details.product_spec}</p>
+                                    <p class="goods-title">{$Details.product_name}</p>
+                                    {notempty name="$Details.spec_value_list"}
+                                    <p class="goods-spec">{volist name="$Details.spec_value_list" id="sp"}<span>{$sp.value}</span>{/volist}</p>
+                                    {/notempty}
                                 </div>
                             </div>
                         </td>
@@ -455,13 +472,18 @@
                 </div>
                 {/gt}
                 <div class="order-total-con actual-payment mt10">
-                    <div class="total-name"> 实付款： </div>
+                    <div class="total-name"> 商品实付款： </div>
                     <div class="total-value"> {empty name="$Order.points_shop_order"}￥{/empty}{$Details.product_subtotal} </div>
                 </div>
                 <div class="order-total-con">
-                    <div class="total-name"> 维权退款： </div>
+                    <div class="total-name"> 商品维权退款： </div>
                     <div class="total-value"> {empty name="$Order.points_shop_order"}￥{/empty}{$Service.refund_price} </div>
                 </div>
+                <div class="order-total-con">
+                    <div class="total-name"> 订单实付款： </div>
+                    <div class="total-value"> ￥{$Order.order_amount} </div>
+                </div>
+
             </div>
         </div>
     </div>

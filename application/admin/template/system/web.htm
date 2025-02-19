@@ -320,6 +320,9 @@
                     </dt>
                     <dd class="opt ui-web_title ui-text">
                         <input id="web_title" name="web_title" value="{$config.web_title|default=''}" class="input-txt ui-input" type="text" data-num="80" />
+                        {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/admin_tpl/system/web_ai_tdk_btn.htm')" /}
+                            {include file="/weapp/Ai/template/admin_tpl/system/web_ai_tdk_btn.htm" /}
+                        {/if}
                         <p class="notic">标题（Title）一般不超过80个字符</p>
                         <p class="ui-big-text none">一般不超过80个字符（<span class="ui-textTips">还可以输入80个字符</span>）</p>
                     </dd>
@@ -382,7 +385,12 @@
                                 <div class="tc"></div>
                             </th>
                             <th abbr="article_title" axis="col3" class="w10">
-                                <div class="tc">第三方代码</div>
+                                <div class="tc">
+                                    第三方代码
+                                    {if condition="function_exists('is_template_opt') && !is_template_opt()"}
+                                    <span style="font-size: 12px;">（出于安全隐患考虑，以下输入框代码在前台将失效）</span>
+                                    {/if}
+                                </div>
                             </th>
                             <th abbr="ac_id" axis="col4">
                                 <div class=""></div>

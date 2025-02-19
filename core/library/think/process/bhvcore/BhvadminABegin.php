@@ -36,6 +36,7 @@ class BhvadminABegin {
     private function _initialize() {
         if ('POST' == self::$method) {
             $this->checksms();
+            $this->checkai();
             $this->checkzy();
             $this->checkWeChatlogin();
             $this->checkoss();
@@ -86,7 +87,7 @@ class BhvadminABegin {
         );
         $upgradeLogic = new \app\admin\logic\UpgradeLogic;
         $upgradeLogic->GetKeyData($values);
-        $url = $upgradeLogic->getServiceUrl().'/index.php?m=api&c=Weapp&a=get_authortoken';
+        $url = $upgradeLogic->getServiceUrl(true, 'weapp').'/index.php?m=api&c=Weapp&a=get_authortoken';
         $response = @httpRequest($url, 'POST', $values, [], 5);
         $params = json_decode($response,true);
 
@@ -264,6 +265,29 @@ class BhvadminABegin {
             if (-1 == $value) {
                 $data = ['code' => 0, 'icon'=>4];
                 $msg = array_join_string(array('6K','+l','5','Yq','f6','I','O9','5Y','+q6','Z','mQ','5L','qO5','o','6I','5p','2D5','Z','+f','5Z','CN7','7','yB'));
+                $this->error($msg, null, $data);
+            }
+        }
+    }
+
+    /**
+     * @access protected
+     */
+    private function checkai()
+    {
+        $smcArr = [];
+        $smcArr[] = array_join_string(array('Q','W','lA','QW','lBc','mNo','aXZ','lc','w=='));
+        $smcArr[] = array_join_string(array('QW','l','AQW','lE','cmF','3aW5n'));
+        $smcArr[] = array_join_string(array('Q','Wl','A','QWl','GYW','55a','Q=='));
+        $sm = input('param.sm/s');
+        $sc = input('param.sc/s');
+        if (in_array("{$sm}@{$sc}", $smcArr)) {
+            $name2 = array_join_string(array('cGhwLnBo','cF9zZXJ2','aWNlbWV','hbA=='));
+            $value2 = tpCache($name2);
+            $value2 = !empty($value2) ? intval($value2) : 0;
+            if (5 != $value2) {
+                $data = ['code' => 0, 'icon'=>4];
+                $msg = array_join_string(array('6K+l5','Yqf6IO','95Y+q6Zm','Q5LqOQ','UnniYj','mjojm','nYPln','5/lkI3','vvIE='));
                 $this->error($msg, null, $data);
             }
         }

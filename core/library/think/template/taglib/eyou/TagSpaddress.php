@@ -57,12 +57,13 @@ class TagSpaddress extends Base
                 $data['is_wap'] = 1;
                 $data['addr_width']  = '100%';
                 $data['addr_height'] = '100%';
-            } else if ($this->usersTpl2xVersion == 'v2.x') {
+            } else if ($this->usersTpl2xVersion == 'v2.x' || in_array($this->usersTplVersion, ['v5'])) {
                 $data['addr_width']  = '660px';
                 $data['addr_height'] = '392px';
             }
             $data['UlHtmlId'] = $UlHtmlId;
             $data['sourceType'] = $sourceType;
+            $data['usersTplVersion'] = $this->usersTplVersion;
             $data['usersTpl2xVersion'] = $this->usersTpl2xVersion;
             $data['shop_add_address'] = url('user/Shop/shop_add_address');
             $data['shop_edit_address'] = url('user/Shop/shop_edit_address');
@@ -103,7 +104,7 @@ EOF;
                 $AddressData[$key]['DefaultHidden'] = '<input type="hidden" name="addr_id" id="addr_id" value="'.$value['addr_id'].'">';
             }
 
-            $AddressData[$key]['country']  = '中国';
+            $AddressData[$key]['country']  = in_array($this->usersTplVersion, ['v5']) ? get_country_name($value['country']) : '中国';
             $AddressData[$key]['province'] = get_province_name($value['province']);
             $AddressData[$key]['city']     = get_city_name($value['city']);
             $AddressData[$key]['district'] = get_area_name($value['district']);
@@ -133,10 +134,10 @@ EOF;
             $AddressData[$key]['MobileId'] = " id=\"{$value['addr_id']}_mobile\" ";
 
             // 封装收货地址信息
-            if ($this->usersTplVersion == 'v3' || $this->usersTpl2xVersion = 'v2.x') {
-                $AddressData[$key]['Info'] = $AddressData[$key]['province'].' '.$AddressData[$key]['city'].' '.$AddressData[$key]['district'];
-            } else {
+            if ($this->usersTplVersion == 'v5') {
                 $AddressData[$key]['Info'] = $AddressData[$key]['country'].' '.$AddressData[$key]['province'].' '.$AddressData[$key]['city'].' '.$AddressData[$key]['district'];
+            } else {
+                $AddressData[$key]['Info'] = $AddressData[$key]['province'].' '.$AddressData[$key]['city'].' '.$AddressData[$key]['district'];
             }
 
             // 封装收货地址信息ID

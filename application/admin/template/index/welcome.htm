@@ -35,8 +35,17 @@
 <div id="toolTipLayer" style="position: absolute; z-index: 9999; display: none; visibility: visible; left: 95px; top: 573px;"></div>
 <div id="append_parent"></div>
 <div id="ajaxwaitid"></div>
-{if condition="empty($system_explanation_welcome_2)"}
+{if condition="empty($ddos_scan_last_time) || empty($system_explanation_welcome_2) || empty($system_explanation_welcome_3)"}
 <div id="explanation_welcome" style="margin:10px 10px 0px 10px;">
+    {if condition="empty($ddos_scan_last_time)"}
+    <div class="explanation" style="color: rgb(44, 188, 163); background-color: #fff!important;  margin-top: 10px;">
+        <ul>
+            <li style="color: red;">
+                温馨提示：升级完成！欢迎使用{$version}，建议到安全中心给系统做一次安全检测，看看是否有安全隐患需要处理<a href="{:url('Security/index')}">【点击进入】</a>
+            </li>
+        </ul>
+    </div>
+    {/if}
     {if condition='empty($system_explanation_welcome_2)'}
     <div class="explanation" style="color: rgb(44, 188, 163); background-color: #fff!important;  margin-top: 10px;">
         <div class="title checkZoom" data-type="2">
@@ -48,6 +57,23 @@
         </ul>
     </div>
     {/if}
+    <!-- {if condition='empty($system_explanation_welcome_3)'}
+    <div class="explanation" style="color: rgb(44, 188, 163); background-color: #fff!important;  margin-top: 10px;">
+        <div class="title checkZoom" data-type="2">
+            <span title="不再提示" style="display: block;"></span>
+        </div>
+        <ul>
+            <li style="color: red;">
+                {if condition="empty($ddos_scan_last_time)"}
+                    您的网站还没定期检查
+                {else /}
+                    您的网站已有{$ddos_scan_expire_day}天没有定期检查
+                {/if}
+                ，请进入<a href="{:url('Security/index')}">【安全中心】</a>立即扫描。
+            </li>
+        </ul>
+    </div>
+    {/if} -->
 </div>
 {/if}
 <div class="warpper">
@@ -182,7 +208,7 @@
                                 <td>{$sys_info.phpv}</td>
                             </tr>
                             <tr>
-                                <td class="gray_bg">Mysql 版本：</td>
+                                <td class="gray_bg">{$sys_info['dbtype']|default=''} 版本：</td>
                                 <td>{$sys_info.mysql_version}</td>
                                 <td class="gray_bg">GD 版本：</td>
                                 <td>{$sys_info.gdinfo}</td>

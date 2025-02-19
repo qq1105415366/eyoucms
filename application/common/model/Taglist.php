@@ -51,7 +51,7 @@ class Taglist extends Model
         ];
         $result = Db::name('Taglist')->field($field)
             ->where(array('aid'=>$aid))
-            ->order('aid asc')
+            ->order('aid asc, update_time asc')
             ->select();
         if ($result) {
             $tag_arr = get_arr_column($result, 'tag');
@@ -95,28 +95,31 @@ class Taglist extends Model
      */
     public function savetags($aid = 0, $typeid = 0, $tag = '', $arcrank = 0, $opt = 'add')
     {
+        $rs = true;
         $tag = strip_tags(htmlspecialchars_decode($tag));
-
         if ($opt == 'add') {
             $tag = str_replace('，', ',', $tag);
             $tags = explode(',', $tag);
             $tags = array_map('trim', $tags);
             $tags = array_unique($tags);
-
             foreach($tags as $tag)
             {
                 $tag = trim($tag);
-                if($tag != stripslashes($tag))
-                {
+                if ($tag != stripslashes($tag)) {
                     continue;
                 }
-                $this->InsertOneTag($tag, $aid, $typeid,$arcrank);
+
+                $r = $this->InsertOneTag($tag, $aid, $typeid,$arcrank);
+                if ($rs !== false) {
+                    $rs = $r;
+                }
             }
         } else if ($opt == 'edit') {
-            $this->UpdateOneTag($aid, $typeid, $tag,$arcrank);
+            $rs = $this->UpdateOneTag($aid, $typeid, $tag,$arcrank);
         }
-
         \think\Cache::clear('taglist');
+
+        return $rs;
     }
 
     /**
@@ -159,18 +162,18 @@ class Taglist extends Model
             ]);
         } else {
             $rs = Db::name('tagindex')->where([
-                'tag' => $tag,
-                'lang' => get_admin_lang(),
-            ])->update([
-                'total' => Db::raw('total + 1'),
-                'update_time' => $addtime,
-                'lang' => get_admin_lang(),
-            ]);
+                    'tag' => $tag,
+                    'lang' => get_admin_lang(),
+                ])->update([
+                    'total' => Db::raw('total + 1'),
+                    'update_time' => $addtime,
+                    'lang' => get_admin_lang(),
+                ]);
             $tid = $row['id'];
         }
 
-        if ($rs) {
-            Db::name('taglist')->insert([
+        if ($rs !== false) {
+            $rs = Db::name('taglist')->insert([
                 'tid' => $tid,
                 'aid' => $aid,
                 'typeid' => $typeid,
@@ -181,6 +184,8 @@ class Taglist extends Model
                 'update_time' => $addtime,
             ]);
         }
+
+        return $rs;
     }
 
     /**
@@ -194,6 +199,7 @@ class Taglist extends Model
      */
     private function UpdateOneTag($aid, $typeid, $tags='', $arcrank = 0)
     {
+        $rs = true;
         $lang = get_admin_lang();
         $oldtag = $this->GetTags($aid);
         $oldtags = explode(',', $oldtag);
@@ -201,16 +207,28 @@ class Taglist extends Model
         $new_tags = explode(',', $tags);
         if(!empty($tags) || !empty($oldtags))
         {
+            // 原来的tag转成小写，匹配不区分大小写
+            $lower_oldtags = [];
+            foreach ($oldtags as $key => $val) {
+                $lower_oldtags[$key] = strtolower($val);
+            }
+            // 新的tag转成小写，匹配不区分大小写
+            $lower_newtags = [];
+            foreach ($new_tags as $key => $val) {
+                $lower_newtags[$key] = strtolower($val);
+            }
+
             foreach($new_tags as $tag)
             {
                 $tag = trim($tag);
-                if(empty($tag) || $tag != stripslashes($tag))
-                {
+                if (empty($tag) || $tag != stripslashes($tag)) {
                     continue;
                 }
-                if(!in_array($tag, $oldtags))
-                {
-                    $this->InsertOneTag($tag, $aid, $typeid,$arcrank);
+                if (!in_array(strtolower($tag), $lower_oldtags)) {
+                    $r = $this->InsertOneTag($tag, $aid, $typeid,$arcrank);
+                    if ($rs !== false) {
+                        $rs = $r;
+                    }
                 }
             }
 
@@ -223,34 +241,43 @@ class Taglist extends Model
                 unset($taglistRow[$key]);
             }
 
-            foreach($oldtags as $tag)
+            $time = getTime();
+            foreach ($oldtags as $key => $tag)
             {
-                if(!in_array($tag, $new_tags))
+                $update_time = $time + (false === array_search(strtolower($tag), $lower_newtags) ? 0 : array_search(strtolower($tag), $lower_newtags));
+                if(!in_array(strtolower($tag), $lower_newtags))
                 {
                     Db::name('taglist')->where(['aid'=>$aid,'tag'=>$tag])->delete();
                     $total = !empty($taglistRow[md5($tag)]) ? $taglistRow[md5($tag)]['total'] - 1 : 0;
                     if (0 < $total) {
-                        Db::name('tagindex')->where(['tag'=>$tag,'lang'=>$lang])->update([
+                        $r = Db::name('tagindex')->where(['tag'=>$tag,'lang'=>$lang])->update([
                                 'total' => $total,
-                                'update_time'  => getTime(),
+                                'update_time'  => $update_time,
                             ]);
                     } else {
-                        Db::name('tagindex')->where(['tag'=>$tag,'lang'=>$lang])->delete();
+                        $r = Db::name('tagindex')->where(['tag'=>$tag,'lang'=>$lang])->delete();
                     }
                 }
                 else
                 {
-                    Db::name('taglist')->where(['aid'=>$aid,'tag'=>$tag,'lang'=>$lang])->update([
+                    $r = Db::name('taglist')->where(['aid'=>$aid,'tag'=>$tag,'lang'=>$lang])->update([
                             'typeid' => $typeid,
-                            'update_time'  => getTime(),
+                            'update_time'  => $update_time,
                         ]);
-                    Db::name('taglist')->where(['aid'=>$aid])->update([
-                            'arcrank' => $arcrank,
-                            'update_time'  => getTime(),
-                        ]);
+                    if ($r !== false) {
+                        Db::name('taglist')->where(['aid'=>$aid])->update([
+                                'arcrank' => $arcrank,
+                            ]);
+                    }
+                }
+
+                if ($rs !== false) {
+                    $rs = $r;
                 }
             }
         }
+
+        return $rs;
     }
 
     /**

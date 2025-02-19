@@ -34,6 +34,23 @@ if (!function_exists('unifyPriceHandle')) {
     }
 }
 
+if (!function_exists('removeJsTagCode')) {
+    /**
+     * 去除JS标签代码
+     */
+    function removeJsTagCode($param = [])
+    {
+        // 处理去除
+        foreach ($param as $key => $value) {
+            if (!empty($key) && !empty($value)) {
+                $param[$key] = htmlspecialchars(preg_replace('/<script([^\>]*)>([\s\S]+)<\/script>/i', '', htmlspecialchars_decode($value)));
+            }
+        }
+        // 返回内容
+        return $param;
+    }
+}
+
 if (!function_exists('convert_arr_key')) {
     /**
      * 将数据库中查出的列表以指定的 id 作为数组的键名
@@ -123,44 +140,46 @@ if (!function_exists('get_auth_code')) {
      */
     function get_auth_code($type = 'bcrypt')
     {
-        $auth_code = '';
-        if ($type == 'bcrypt') { // crypt加密方式
-            $lang = get_current_lang(true);
-            $auth_code = \think\Db::name('config')->where(['name'=>'system_crypt_auth_code','inc_type'=>'system','lang'=>$lang])->value('value');
-            if (empty($auth_code)) {
-                $rand_str = md5(uniqid(rand(), true));
-                $rand_str = substr($rand_str, 0, 23);
-                $auth_code = '$2y$11$'.$rand_str;  //30位盐
-                /*多语言*/
-                if (is_language()) {
-                    $langRow = \think\Db::name('language')->order('id asc')->select();
-                    foreach ($langRow as $key => $val) {
-                        tpCache('system', ['system_crypt_auth_code' => $auth_code], $val['mark']);
+        static $auth_code = null;
+        if (null === $auth_code) {
+            if ($type == 'bcrypt') { // crypt加密方式
+                $lang = get_current_lang(true);
+                $auth_code = \think\Db::name('config')->where(['name'=>'system_crypt_auth_code','inc_type'=>'system','lang'=>$lang])->value('value');
+                if (empty($auth_code)) {
+                    $rand_str = md5(uniqid(rand(), true));
+                    $rand_str = substr($rand_str, 0, 23);
+                    $auth_code = '$2y$11$'.$rand_str;  //30位盐
+                    /*多语言*/
+                    if (is_language()) {
+                        $langRow = \think\Db::name('language')->order('id asc')->select();
+                        foreach ($langRow as $key => $val) {
+                            tpCache('system', ['system_crypt_auth_code' => $auth_code], $val['mark']);
+                        }
+                    } else { // 单语言
+                        tpCache('system', ['system_crypt_auth_code' => $auth_code]);
                     }
-                } else { // 单语言
-                    tpCache('system', ['system_crypt_auth_code' => $auth_code]);
+                    /*--end*/
                 }
-                /*--end*/
-            }
-        } else { // md5加密方式
-            $lang = get_current_lang(true);
-            $auth_code = \think\Db::name('config')->where(['name'=>'system_auth_code','inc_type'=>'system','lang'=>$lang])->value('value');
-            if (empty($auth_code)) {
-                $auth_code = \think\Config::get('AUTH_CODE');
-                /*多语言*/
-                if (is_language()) {
-                    $langRow = \think\Db::name('language')->order('id asc')->select();
-                    foreach ($langRow as $key => $val) {
-                        tpCache('system', ['system_auth_code' => $auth_code], $val['mark']);
+            } else { // md5加密方式
+                $lang = get_current_lang(true);
+                $auth_code = \think\Db::name('config')->where(['name'=>'system_auth_code','inc_type'=>'system','lang'=>$lang])->value('value');
+                if (empty($auth_code)) {
+                    $auth_code = \think\Config::get('AUTH_CODE');
+                    /*多语言*/
+                    if (is_language()) {
+                        $langRow = \think\Db::name('language')->order('id asc')->select();
+                        foreach ($langRow as $key => $val) {
+                            tpCache('system', ['system_auth_code' => $auth_code], $val['mark']);
+                        }
+                    } else { // 单语言
+                        tpCache('system', ['system_auth_code' => $auth_code]);
                     }
-                } else { // 单语言
-                    tpCache('system', ['system_auth_code' => $auth_code]);
+                    /*--end*/
                 }
-                /*--end*/
             }
         }
 
-        return $auth_code;
+        return empty($auth_code) ? '' : $auth_code;
     }
 }
 
@@ -235,10 +254,12 @@ if (!function_exists('clientIP')) {
     function clientIP()
     {
         $ip = request()->ip();
-        if (preg_match('/^((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1 -9]?\d))))$/', $ip))
+        if (request()->isValidIP($ip)) {
             return $ip;
-        else
+        }
+        else {
             return '';
+        }
     }
 }
 
@@ -311,21 +332,29 @@ if (!function_exists('delFile')) {
      *
      * @param string $path 目录路径
      * @param boolean $delDir 是否删除空目录
+     * @param array $ignore_files 忽略删除的文件列表 $ignore_files = ['.htaccess'];
      * @return boolean
      */
-    function delFile($path, $delDir = FALSE)
+    function delFile($path, $delDir = false, $ignore_files = [])
     {
         if (preg_match('/^(.+)\/$/i', $path)) {
             $path = rtrim($path, '/');
         }
 
-        if (!is_dir($path)) {return FALSE;}
+        if (!is_dir($path)) {return false;}
         
         $handle = @opendir($path);
         if ($handle) {
             while (false !== ($item = readdir($handle))) {
-                if ($item != "." && $item != "..")
-                    is_dir("$path/$item") ? delFile("$path/$item", $delDir) : @unlink("$path/$item");
+                if (!in_array($item, ['.','..'])) {
+                    if (is_dir("$path/$item")) {
+                        delFile("$path/$item", $delDir);
+                    } else {
+                        if (!in_array($item, $ignore_files)) {
+                            @unlink("$path/$item");
+                        }
+                    }
+                }
             }
             closedir($handle);
             if ($delDir) {
@@ -333,10 +362,20 @@ if (!function_exists('delFile')) {
             }
         } else {
             if (file_exists($path)) {
-                return @unlink($path);
-            } else {
-                return FALSE;
+                $is_del = true;
+                foreach ($ignore_files as $key => $val) {
+                    $path_tmp = str_replace('\\', '/', $path);
+                    $val_arr = explode('/', $path_tmp);
+                    $filename = end($val_arr);
+                    if (in_array($filename, $ignore_files)) {
+                        $is_del = false;
+                    }
+                }
+                if ($is_del) {
+                    return @unlink($path);
+                }
             }
+            return false;
         }
     }
 }
@@ -350,7 +389,7 @@ if (!function_exists('getDirFile')) {
      * @param array $arr_file 是否删除空目录
      * @return boolean
      */
-    function getDirFile($directory, $dir_name = '', &$arr_file = array())
+    function getDirFile($directory, $dir_name = '', &$arr_file = array(), &$total = 0, $ignore_dirs = [])
     {
         if (!file_exists($directory)) {
             return false;
@@ -358,19 +397,24 @@ if (!function_exists('getDirFile')) {
 
         $mydir = dir($directory);
         while ($file = $mydir->read()) {
-            if ((is_dir("$directory/$file")) AND ($file != ".") AND ($file != "..")) {
+            if (!in_array($file, ['.','..']) && is_dir("$directory/$file")) {
                 if ($dir_name) {
-                    getDirFile("$directory/$file", "$dir_name/$file", $arr_file);
+                    $dir_name_tmp = "$dir_name/$file";
                 } else {
-                    getDirFile("$directory/$file", "$file", $arr_file);
+                    $dir_name_tmp = $file;
+                }
+                if (!in_array($dir_name_tmp, $ignore_dirs)) {
+                    getDirFile("$directory/$file", $dir_name_tmp, $arr_file, $total, $ignore_dirs);
                 }
 
-            } else if (($file != ".") AND ($file != "..")) {
+            } else if (!in_array($file, ['.','..'])) {
+                $total +=1;
                 if ($dir_name) {
-                    $arr_file[] = "$dir_name/$file";
+                    $file_tmp = "$dir_name/$file";
                 } else {
-                    $arr_file[] = "$file";
+                    $file_tmp = "$file";
                 }
+                $arr_file[] = $file_tmp;
             }
         }
         $mydir->close();
@@ -517,6 +561,12 @@ if (!function_exists('httpRequest')) {
                 curl_setopt($ci, CURLOPT_CUSTOMREQUEST, $method); /* //设置请求方式 */
                 break;
         }
+
+        if (stristr($url, 'http://plugins.eyoucms.com')) {
+            if (stristr('https://', request()->scheme().':')) {
+                $url = str_replace('http://', 'https://', $url);
+            }
+        }
         $ssl = preg_match('/^https:\/\//i', $url) ? TRUE : FALSE;
         curl_setopt($ci, CURLOPT_URL, $url);
         if ($ssl) {
@@ -597,6 +647,12 @@ if (!function_exists('httpRequest2')) {
             default:
                 curl_setopt($ci, CURLOPT_CUSTOMREQUEST, $method); /* //设置请求方式 */
                 break;
+        }
+
+        if (stristr($url, 'http://plugins.eyoucms.com')) {
+            if (stristr('https://', request()->scheme().':')) {
+                $url = str_replace('http://', 'https://', $url);
+            }
         }
         $ssl = preg_match('/^https:\/\//i', $url) ? TRUE : FALSE;
         curl_setopt($ci, CURLOPT_URL, $url);
@@ -1384,7 +1440,8 @@ if (!function_exists('saveRemote')) {
      */
     function saveRemote($fieldName, $savePath = 'temp/', $is_water = 1)
     {
-        $allowFiles = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg", ".ico"];
+        $image_ext = config('global.image_ext');
+        $allowFiles = explode(',', '.'.str_replace(',', ',.', $image_ext));
         $web_basehost = tpCache('web.web_basehost');
         $parse_arr    = parse_url($web_basehost);
         $host  = request()->host(true);
@@ -1440,7 +1497,7 @@ if (!function_exists('saveRemote')) {
         }
         // 图片扩展名
         $fileType = substr($heads['Content-Type'], -4, 4);
-        if (!preg_match("#\.(jpg|jpeg|gif|png|ico|bmp|webp|svg)#i", $fileType)) {
+        if (!preg_match("#\.(".str_replace(',', '|', $image_ext).")#i", $fileType)) {
             $filext = str_ireplace('image/', '', $heads['Content-Type']);
             if ($fileType == 'image/gif' || $filext == 'gif') {
                 $fileType = ".gif";
@@ -1473,9 +1530,9 @@ if (!function_exists('saveRemote')) {
         }
 
         /*验证图片一句话木马*/
-        if (false === check_illegal($imgUrl,true)) {
+        if (false === check_illegal($imgUrl,true,trim($fileType, '.'))) {
             $data = array(
-                'state' => '疑似木马图片！！！',
+                'state' => '疑似木马图片！',
             );
             return json_encode($data);
         }
@@ -1555,6 +1612,26 @@ if (!function_exists('saveRemote')) {
             return json_encode($data);
         } else { //移动成功
             $imgurl = substr($file['fullName'], 1);
+            $realfilepath = realpath('.'.$imgurl);
+
+            // 检查文件的真实 MIME 类型
+            if (!check_image_mime_type($realfilepath)) {
+                @unlink($realfilepath);
+                $data = array(
+                    'state' => '疑似木马图片！',
+                );
+                return json_encode($data);
+            }
+
+            // 检查文件头部信息
+            if (!check_image_header($realfilepath)) {
+                @unlink($realfilepath);
+                $data = array(
+                    'state' => '疑似木马图片！',
+                );
+                return json_encode($data);
+            }
+
             $imageInfo = @getimagesize('.'.$imgurl);
             $data = array(
                 'state'    => 'SUCCESS',
@@ -1614,6 +1691,30 @@ if (!function_exists('func_common')) {
     function func_common($fileElementId = 'uploadImage', $path = 'allimg', $file_type = "", $postFiles = [],$compressConf = [])
     {
         $lang = get_current_lang();
+
+        if (is_dir('./weapp/Safe/')) {
+            $safeModel = new \weapp\Safe\model\SafeModel;
+            $rdata = $safeModel->is_pass_blockip();
+            if (empty($rdata['code'])) {
+                $data = $rdata['data'];
+                $is_prohibit = false;
+                if (!empty($data['prohibit_upload'])) {
+                    $is_prohibit = true;
+                }
+
+                if (true === $is_prohibit) {
+                    if ($lang == 'cn') {
+                        $errmsg = '已禁止上传功能';
+                    } else if ($lang == 'zh') {
+                        $errmsg = '已禁止上傳功能';
+                    } else {
+                        $errmsg = 'The upload function has been disabled';
+                    }
+                    return ['errcode' => 1, 'errmsg' => $errmsg];
+                }
+            }
+        }
+
         $file = !empty($postFiles) ? $postFiles : request()->file($fileElementId);
         if (empty($file)) {
             if ($lang == 'cn') {
@@ -1659,7 +1760,7 @@ if (!function_exists('func_common')) {
         /*--end*/
 
         /*验证图片一句话木马*/
-        if (false === check_illegal($file->getInfo('tmp_name'))) {
+        if (false === check_illegal($file->getInfo('tmp_name'), false, $ext)) {
             if ($lang == 'cn') {
                 $errmsg = '疑似木马图片';
             } else if ($lang == 'zh') {
@@ -1747,8 +1848,31 @@ if (!function_exists('func_common_doc')) {
     function func_common_doc($fileElementId = 'uploadFile', $path = 'soft', $file_type = "", $postFiles = [])
     {
         $lang = get_current_lang();
+
+        if (is_dir('./weapp/Safe/')) {
+            $safeModel = new \weapp\Safe\model\SafeModel;
+            $rdata = $safeModel->is_pass_blockip();
+            if (empty($rdata['code'])) {
+                $data = $rdata['data'];
+                $is_prohibit = false;
+                if (!empty($data['prohibit_upload'])) {
+                    $is_prohibit = true;
+                }
+
+                if (true === $is_prohibit) {
+                    if ($lang == 'cn') {
+                        $errmsg = '已禁止上传功能';
+                    } else if ($lang == 'zh') {
+                        $errmsg = '已禁止上傳功能';
+                    } else {
+                        $errmsg = 'The upload function has been disabled';
+                    }
+                    return ['errcode' => 1, 'errmsg' => $errmsg];
+                }
+            }
+        }
+
         $file = !empty($postFiles) ? $postFiles : request()->file($fileElementId);
-        
         if (empty($file)) {
             if ($lang == 'cn') {
                 $errmsg = '请选择上传文件';
@@ -2195,7 +2319,8 @@ if (!function_exists('getCmsVersion')) {
                 }
             }
         }
-        return $ver;
+
+        return file_exists('./data/conf/develop.txt') ? 'v9'.getTime() : $ver;
     }
 }
 
@@ -2222,7 +2347,8 @@ if (!function_exists('getVersion')) {
                 }
             }
         }
-        return $ver;
+
+        return file_exists('./data/conf/develop.txt') ? 'v9'.getTime() : $ver;
     }
 }
 
@@ -2247,6 +2373,18 @@ if (!function_exists('getWeappVersion')) {
     }
 }
 
+if (!function_exists('webXssKeyFile'))
+{
+    /**
+     * xss和网站防止被刷TXT
+     * @param  string $str [description]
+     * @return [type]      [description]
+     */
+    function webXssKeyFile() {
+        return DATA_PATH.'conf'.DS.'web_xss_filter.txt';
+    }
+}
+
 if (!function_exists('strip_sql')) {
     /**
      * 转换SQL关键字
@@ -2256,79 +2394,30 @@ if (!function_exists('strip_sql')) {
      */
     function strip_sql($string)
     {
-        static $web_xss_filter = null;
-        if (null === $web_xss_filter) {
-            $file = DATA_PATH.'conf'.DS.'web_xss_filter.txt';
-            if (file_exists($file)) {
-                $web_xss_filter = @file_get_contents($file);
+        static $data = null;
+        if (null === $data) {
+            if (file_exists(webXssKeyFile())) {
+                $content = @file_get_contents(webXssKeyFile());
+                $data = json_decode($content, true);
             }
         }
-        if (empty($web_xss_filter) && is_numeric($web_xss_filter)) {
+        $web_xss_filter = empty($data['web_xss_filter']) ? 0 : intval($data['web_xss_filter']);
+        $web_xss_words = empty($data['web_xss_words']) ? [] : explode(PHP_EOL, $data['web_xss_words']);
+        if ((empty($web_xss_filter) && is_numeric($web_xss_filter)) || empty($web_xss_words)) {
             return $string;
         }
 
-        $pattern_arr = array(
-            "/(\s+)union(\s+)/i",
-            "/\bselect\b/i",
-            "/\bupdate\b/i",
-            "/\bdelete\b/i",
-            "/\boutfile\b/i",
-            // "/\bor\b/i",
-            "/\bchar\b/i",
-            "/\bconcat\b/i",
-            "/\btruncate\b/i",
-            "/\bdrop\b/i",
-            "/\binsert\b/i",
-            "/\brevoke\b/i",
-            "/\bgrant\b/i",
-            "/\breplace\b/i",
-            // "/\balert\b/i",
-            "/\brename\b/i",
-            // "/\bmaster\b/i",
-            "/\bdeclare\b/i",
-            // "/\bsource\b/i",
-            // "/\bload\b/i",
-            // "/\bcall\b/i",
-            "/\bexec\b/i",
-            "/\bdelimiter\b/i",
-            "/\bphar\b\:/i",
-            "/\bphar\b/i",
-            "/\@(\s*)\beval\b/i",
-            "/\beval\b/i",
-            "/\bonerror\b/i",
-            "/\bscript\b/i",
-        );
-        $replace_arr = array(
-            'ｕｎｉｏｎ',
-            'ｓｅｌｅｃｔ',
-            'ｕｐｄａｔｅ',
-            'ｄｅｌｅｔｅ',
-            'ｏｕｔｆｉｌｅ',
-            // 'ｏｒ',
-            'ｃｈａｒ',
-            'ｃｏｎｃａｔ',
-            'ｔｒｕｎｃａｔｅ',
-            'ｄｒｏｐ',
-            'ｉｎｓｅｒｔ',
-            'ｒｅｖｏｋｅ',
-            'ｇｒａｎｔ',
-            'ｒｅｐｌａｃｅ',
-            // 'ａｌｅｒｔ',
-            'ｒｅｎａｍｅ',
-            // 'ｍａｓｔｅｒ',
-            'ｄｅｃｌａｒｅ',
-            // 'ｓｏｕｒｃｅ',
-            // 'ｌｏａｄ',
-            // 'ｃａｌｌ',
-            'ｅｘｅｃ',
-            'ｄｅｌｉｍｉｔｅｒ',
-            'ｐｈａｒ',
-            'ｐｈａｒ',
-            '＠ｅｖａｌ',
-            'ｅｖａｌ',
-            'ｏｎｅｒｒｏｒ',
-            'ｓｃｒｉｐｔ',
-        );
+        foreach ($web_xss_words as $words) {
+            if($words=='eval'){
+                $pattern_arr[] = "/\@(\s*)\b{$words}\b/i";
+                $replace_arr[] = '＠' . convertStrType($words, 'TODBC');
+            }else if($words=='phar'){
+                $pattern_arr[] = "/\b{$words}\b\:/i";
+                $replace_arr[] = convertStrType($words, 'TODBC');
+            }
+            $pattern_arr[] = "/\b{$words}\b/i";
+            $replace_arr[] = convertStrType($words, 'TODBC');
+        }
 
         return is_array($string) ? array_map('strip_sql', $string) : preg_replace($pattern_arr, $replace_arr, $string);
     }
@@ -2347,6 +2436,66 @@ if (!function_exists('get_weapp_class')) {
         $controller = !empty($controller) ? $controller : $name;
         $class      = WEAPP_DIR_NAME . "\\{$name}\\controller\\{$controller}";
         return $class;
+    }
+}
+
+if (!function_exists('convertStrType')) {
+    /**
+     * Notes:全角 半角相互转化
+     * @param $str
+     * @param $type string  TODBC 半角到全角 | TOSBC 全角到半角
+     */
+    function convertStrType($str, $type = 'TOSBC')
+    {
+        $dbc = array(
+            '０', '１', '２', '３', '４',
+            '５', '６', '７', '８', '９',
+            'Ａ', 'Ｂ', 'Ｃ', 'Ｄ', 'Ｅ',
+            'Ｆ', 'Ｇ', 'Ｈ', 'Ｉ', 'Ｊ',
+            'Ｋ', 'Ｌ', 'Ｍ', 'Ｎ', 'Ｏ',
+            'Ｐ', 'Ｑ', 'Ｒ', 'Ｓ', 'Ｔ',
+            'Ｕ', 'Ｖ', 'Ｗ', 'Ｘ', 'Ｙ',
+            'Ｚ', 'ａ', 'ｂ', 'ｃ', 'ｄ',
+            'ｅ', 'ｆ', 'ｇ', 'ｈ', 'ｉ',
+            'ｊ', 'ｋ', 'ｌ', 'ｍ', 'ｎ',
+            'ｏ', 'ｐ', 'ｑ', 'ｒ', 'ｓ',
+            'ｔ', 'ｕ', 'ｖ', 'ｗ', 'ｘ',
+            'ｙ', 'ｚ', '－', '　', '：',
+            '．', '，', '／', '％', '＃',
+            '！', '＠', '＆', '（', '）',
+            '＜', '＞', '＂', '＇', '？',
+            '［', '］', '｛', '｝', '＼',
+            '｜', '＋', '＝', '＿', '＾',
+            '￥', '￣', '｀'
+        );
+        $sbc = array( //半角
+            '0', '1', '2', '3', '4',
+            '5', '6', '7', '8', '9',
+            'A', 'B', 'C', 'D', 'E',
+            'F', 'G', 'H', 'I', 'J',
+            'K', 'L', 'M', 'N', 'O',
+            'P', 'Q', 'R', 'S', 'T',
+            'U', 'V', 'W', 'X', 'Y',
+            'Z', 'a', 'b', 'c', 'd',
+            'e', 'f', 'g', 'h', 'i',
+            'j', 'k', 'l', 'm', 'n',
+            'o', 'p', 'q', 'r', 's',
+            't', 'u', 'v', 'w', 'x',
+            'y', 'z', '-', ' ', ':',
+            '.', ',', '/', '%', ' #',
+            '!', '@', '&', '(', ')',
+            '<', '>', '"', '\'', '?',
+            '[', ']', '{', '}', '\\',
+            '|', '+', '=', '_', '^',
+            '￥', '~', '`'
+        );
+        if($type == 'TODBC'){ //半角到全角
+            return str_replace( $sbc, $dbc, $str );
+        }elseif($type == 'TOSBC'){ //全角到半角
+            return str_replace( $dbc, $sbc, $str );
+        }else{
+            return $str;
+        }
     }
 }
 
@@ -2800,6 +2949,143 @@ if (!function_exists('get_split_word')) {
     }
 }
 
+if (!function_exists('remote_file_to_local')) {
+    /**
+     *  远程文件本地化
+     *
+     * @access    public
+     * @param     string $body 内容
+     * @return    string
+     */
+    function remote_file_to_local($url = '')
+    {
+        $image_ext = config('global.image_ext');
+        $web_basehost = tpCache('web.web_basehost');
+        $parse_arr    = parse_url($web_basehost);
+        $host  = request()->host(true);
+
+        $dirname = UPLOAD_PATH . 'soft/' . date('Ymd/');
+
+        //创建目录失败
+        if (!file_exists($dirname) && !mkdir($dirname, 0777, true)) {
+            return $url;
+        } else if (!is_writeable($dirname)) {
+            return $url;
+        }
+        // 插件列表
+        static $weappList = null;
+        if (null === $weappList) {
+            $weappList = \think\Db::name('weapp')->where([
+                'status'    => 1,
+            ])->cache(true, EYOUCMS_CACHE_TIME, 'weapp')
+                ->getAllWithIndex('code');
+        }
+        $storageDomain = ''; // 第三方存储的域名
+        if (!empty($weappList['Qiniuyun']['data'])) {
+            $qnyData = json_decode($weappList['Qiniuyun']['data'], true);
+            if (!empty($qnyData['domain'])) {
+                $storageDomain = $qnyData['domain'];
+            }
+        } else if (!empty($weappList['AliyunOss']['data'])) {
+            $ossData = json_decode($weappList['AliyunOss']['data'], true);
+            if (!empty($ossData['domain'])) {
+                $storageDomain = $ossData['domain'];
+            }
+        } else if (!empty($weappList['Cos']['data'])) {
+            $cosData = json_decode($weappList['Cos']['data'], true);
+            if (!empty($cosData['domain'])) {
+                $storageDomain = $cosData['domain'];
+            }
+        }
+        $img_array = [$url];
+        $preg_root_dir = str_replace('/', '\/', ROOT_DIR);
+        foreach ($img_array as $key => $value) {
+            $imgUrl = trim($value);
+            $imgUrl = preg_replace('/#/', '', $imgUrl);
+            // 本站图片 / 根网址图片 / 第三方存储插件的图片
+            if (!empty($parse_arr['host'])){
+                if (preg_match("/\/\/({$host}{$preg_root_dir}|{$storageDomain}|{$parse_arr['host']}{$preg_root_dir})\//i", $imgUrl)) {
+                    continue;
+                }
+            }else{
+                if (preg_match("/\/\/({$host}{$preg_root_dir}|{$storageDomain})\//i", $imgUrl)) {
+                    continue;
+                }
+            }
+            // 不是合法链接
+            if (!preg_match("#^http(s?):\/\/#i", $imgUrl)) {
+                continue;
+            }
+
+            $heads = @get_headers($imgUrl, 1);
+
+            // 获取请求头并检测死链
+            if (empty($heads) || !(stristr($heads[0], "200") && !stristr($heads[0], "304"))) {
+                continue;
+            }
+            // 扩展名
+            $url_arr = explode('.',$value);
+            $count = count($url_arr);
+            $ext = $url_arr[$count-1];
+            $fileType = '.'.$ext;
+
+            //打开输出缓冲区并获取远程图片
+            ob_start();
+            $context = stream_context_create(
+                array('http' => array(
+                    'follow_location' => false // don't follow redirects
+                ))
+            );
+            readfile($imgUrl, false, $context);
+            $img = ob_get_contents();
+            ob_end_clean();
+            preg_match("/[\/]([^\/]*)[\.]?[^\.\/]*$/", $imgUrl, $m);
+
+            $file['name']     = session('admin_id') . '-' . dd2char(date("ymdHis") . mt_rand(100, 999)) . $fileType;
+            $url= $dirname . $file['name'];
+
+            //检查文件大小是否超出限制
+            if ($file['filesize'] >= 20480000) {
+                continue;
+            }
+
+            //移动文件
+            if (!(file_put_contents($url, $img) && file_exists($url))) { //移动失败
+                continue;
+            }
+
+            $realfilepath = realpath('./'.$url);
+            $url = ROOT_DIR . '/'.$url;
+
+            try {
+                /*同步到第三方对象存储空间*/
+                if (preg_match('/^(.*)\.('.str_replace(',', '|', $image_ext).')$/i', $url)) {
+
+                    // 检查文件的真实 MIME 类型
+                    if (!check_image_mime_type($realfilepath)) {
+                        @unlink($realfilepath);
+                        continue;
+                    }
+
+                    // 检查文件头部信息
+                    if (!check_image_header($realfilepath)) {
+                        @unlink($realfilepath);
+                        continue;
+                    }
+
+                    $bucket_data = SynImageObjectBucket($url, $weappList);
+                    if (!empty($bucket_data['url']) && is_string($bucket_data['url'])) {
+                        $url = $bucket_data['url'];
+                    }
+                }
+                /*end*/
+            } catch (\Exception $e) {}
+        }
+
+        return $url;
+    }
+}
+
 if (!function_exists('remote_to_local')) {
     /**
      *  远程图片本地化
@@ -2810,6 +3096,7 @@ if (!function_exists('remote_to_local')) {
      */
     function remote_to_local($body = '', $is_force = false)
     {
+        $image_ext = config('global.image_ext');
         $web_basehost = tpCache('web.web_basehost');
         $parse_arr    = parse_url($web_basehost);
         $host  = request()->host(true);
@@ -2819,7 +3106,7 @@ if (!function_exists('remote_to_local')) {
         $img_array = array_unique($img_array[1]);
         foreach ($img_array as $key => $val) {
             if (false === $is_force && preg_match("/^http(s?):\/\/(mmbiz.qpic.cn|thirdwx.qlogo.cn)\/(.*)\?wx_fmt=(\w+)&/", $val) == 1) {
-                unset($img_array[$key]);
+                // unset($img_array[$key]);
             }
         }
 
@@ -2890,7 +3177,7 @@ if (!function_exists('remote_to_local')) {
             }
             // 图片扩展名
             $fileType = substr($heads['Content-Type'], -4, 4);
-            if (!preg_match("#\.(jpg|jpeg|gif|png|ico|bmp|webp|svg)#i", $fileType)) {
+            if (!preg_match("#\.(".str_replace(',', '|', $image_ext).")#i", $fileType)) {
                 $filext = str_ireplace('image/', '', $heads['Content-Type']);
                 if ($fileType == 'image/gif' || $filext == 'gif') {
                     $fileType = ".gif";
@@ -2912,13 +3199,20 @@ if (!function_exists('remote_to_local')) {
             //格式验证(扩展名验证和Content-Type验证)，链接contentType是否正确
             $is_weixin_img = false;
             if (preg_match("/^http(s?):\/\/(mmbiz.qpic.cn|thirdwx.qlogo.cn)\/(.*)/", $imgUrl) != 1) {
-                $allowFiles = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".svg"];
+                $allowFiles = explode(',', '.'.str_replace(',', ',.', $image_ext));
                 if (!in_array($fileType, $allowFiles) || (isset($heads['Content-Type']) && !stristr($heads['Content-Type'], "image/"))) {
                     continue;
                 }
             } else {
                 $is_weixin_img = true;
+                // $imgUrl_vars = preg_replace('/^(.*)(\?wx_fmt=(\w+)\&(.*))$/i', '${2}', $value);
             }
+
+            /*验证图片一句话木马*/
+            if (false === check_illegal($imgUrl,true,trim($fileType, '.'))) {
+                continue;
+            }
+            /*--end*/
 
             //打开输出缓冲区并获取远程图片
             ob_start();
@@ -2950,14 +3244,22 @@ if (!function_exists('remote_to_local')) {
                 continue;
             }
 
-            $fileurl = ROOT_DIR . substr($file['fullName'], 1);
-            // if ($is_weixin_img == true) {
-            //     $fileurl .= "?";
-            // }
+            $filepath = substr($file['fullName'], 1);
+            $realfilepath = realpath('.'.$filepath);
 
-            /*            $search  = array("'".$imgUrl."'", '"'.$imgUrl.'"');
-                        $replace = array($fileurl, $fileurl);
-                        $body = str_replace($search, $replace, $body);*/
+            // 检查文件的真实 MIME 类型
+            if (!check_image_mime_type($realfilepath)) {
+                @unlink($realfilepath);
+                continue;
+            }
+
+            // 检查文件头部信息
+            if (!check_image_header($realfilepath)) {
+                @unlink($realfilepath);
+                continue;
+            }
+
+            $fileurl = ROOT_DIR . $filepath;
 
             // 添加水印
             try {
@@ -2998,6 +3300,65 @@ if (!function_exists('remote_to_local')) {
         // !empty($addData) && \think\Db::name('uploads')->insertAll($addData);
 
         return $body;
+    }
+}
+
+if (!function_exists('check_image_mime_type')) {
+    /**
+     * 检查文件扩展名和 MIME 类型
+     * @param  [type] $filePath [description]
+     * @return [type]           [description]
+     */
+    function check_image_mime_type($filePath)
+    {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $filePath);
+        finfo_close($finfo);
+
+        // 允许的图片 MIME 类型
+        $allowedMimeTypes = [
+            'image/jpeg',
+            'image/gif',
+            'image/bmp',
+            'image/x-icon',
+            'image/png',
+            'image/webp',
+            'image/svg+xml',
+        ];
+        return in_array($mimeType, $allowedMimeTypes);
+    }
+}
+
+if (!function_exists('check_image_header')) {
+    /**
+     * 检查文件头部信息
+     * @param  [type] $filePath [description]
+     * @return [type]           [description]
+     */
+    function check_image_header($filePath)
+    {
+        $handle = fopen($filePath, 'rb');
+        $header = fread($handle, 8);
+        fclose($handle);
+
+        // 允许的文件头部信息
+        $validHeaders = [
+            "\xFF\xD8" => 'jpeg', // JPEG
+            "\x47\x49\x46\x38\x37\x61" => 'gif', // GIF87a
+            "\x47\x49\x46\x38\x39\x61" => 'gif', // GIF89a
+            "\x42\x4D" => 'bmp', // BMP
+            "\x00\x00\x01\x00" => 'ico', // ICO
+            "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A" => 'png', // PNG
+            "RIFF" => 'webp', // WebP
+            '<?xml' => 'svg', // SVG
+            '<svg' => 'svg',
+        ];
+        foreach ($validHeaders as $validHeader => $format) {
+            if (strpos($header, $validHeader) === 0) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -3355,14 +3716,28 @@ if (!function_exists('check_illegal')) {
      * 检测上传图片是否包含有非法代码
      * @return mixed
      */
-    function check_illegal($image = '', $is_force = false)
+    function check_illegal($image = '', $is_force = false, $file_ext = '')
     {
         $weapp_check_illegal_open = tpCache('weapp.weapp_check_illegal_open');
         if ($is_force || (is_numeric($weapp_check_illegal_open) && strval($weapp_check_illegal_open) === '0')) {
             try {
                 $hexCode = file_get_contents($image);
-                if (preg_match('#file_put_contents#i', $hexCode) || preg_match('#__HALT_COMPILER()#i', $hexCode) || preg_match('#/script>#i', $hexCode) || preg_match('#<([^?]*)\?php#i', $hexCode) || preg_match('#<\?\=(\s+)#i', $hexCode) || preg_match('#(\s+)language(\s*)=(\s*)("|\')?php("|\')?#i', $hexCode)) {
-                    return false;
+                $patterns = [
+                    '/file_put_contents/i',
+                    '/__HALT_COMPILER\(\)/i',
+                    '/\/script>/i',
+                    '/<([^?]*)\?php/i',
+                    '/<\?\=(\s+)/i',
+                    '/(\s+)language(\s*)=(\s*)("|\')?php("|\')?/i',
+                ];
+                if ('svg' == trim($file_ext, '.')) {
+                    $patterns[] = '/(onload|onerror)=/i'; // 针对 SVG 可能存在的恶意事件
+                }
+                foreach ($patterns as $pattern) {
+                    if (preg_match($pattern, $hexCode)) {
+                        fclose($handle);
+                        return false;
+                    }
                 }
 //                if (file_exists($image)) {
 //                    $resource = fopen($image, 'rb');
@@ -3563,5 +3938,146 @@ if (!function_exists('filename_preg_match'))
         }
 
         return true;
+    }
+}
+
+if (!function_exists('getPayApiConfig'))
+{
+    /**
+     * 获取支付API配置信息
+     */
+    function getPayApiConfig($pay_id = 0, $pay_mark = '')
+    {
+        $payConfig = [];
+        if (!empty($pay_id) && !empty($pay_mark)) {
+            $where = [
+                'pay_id' => intval($pay_id),
+                'pay_mark' => trim($pay_mark)
+            ];
+            $payConfig = \think\Db::name('pay_api_config')->where($where)->getField('pay_info');
+        }
+        return !empty($payConfig) ? unserialize($payConfig) : [];
+    }
+}
+
+if (!function_exists('updatePayApiConfig'))
+{
+    /**
+     * 获取支付API配置信息
+     */
+    function updatePayApiConfig($pay_id = 0, $pay_mark = '', $pay_info = [])
+    {
+        $result = false;
+        if (!empty($pay_id) && !empty($pay_mark)) {
+            $where = [
+                'pay_id' => intval($pay_id),
+                'pay_mark' => trim($pay_mark)
+            ];
+            $update = [
+                'pay_info' => serialize($pay_info),
+                'update_time' => getTime(),
+            ];
+            $result = \think\Db::name('pay_api_config')->where($where)->update($update);
+        }
+        return !empty($result) ? true : false;
+    }
+}
+
+if (!function_exists('getOpenMiniCodeConfig'))
+{
+    /**
+     * 获取小程序配置信息
+     */
+    function getOpenMiniCodeConfig($get_type = '')
+    {
+        $payConfig = [];
+        if (!empty($get_type)) $payConfig = tpSetting("OpenMinicode.conf_" . $get_type);
+        if (empty($payConfig)) {
+            $result = model('ShopPublicHandle')->getWeappInfo('Suibian');
+            if (!empty($result)) {
+                $payConfig = \think\Db::name('weapp_applets_config_list')->where(['applets_type'=>1, 'applets_mark'=>'weixin'])->getField('applets_config');
+                return !empty($payConfig) ? unserialize($payConfig) : [];
+            }
+        } else {
+            return !empty($payConfig) ? json_decode($payConfig, true) : [];
+        }
+    }
+}
+
+if (!function_exists('isIPv4OrIPv6'))
+{
+    /**
+     * 判断是否属于ipv6
+     * @param  [type]  $ip [description]
+     * @return boolean     [description]
+     */
+    function isIPv4OrIPv6($ip) {
+        if (isIPv4($ip)) {
+            return 'ipv4';
+        } else if (isIPv6($ip)) {
+            return 'ipv6';
+        } else {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('isIPv6'))
+{
+    /**
+     * 判断是否属于ipv6
+     * @param  [type]  $ip [description]
+     * @return boolean     [description]
+     */
+    function isIPv6($ip) {
+        return request()->isValidIP($ip, 'ipv6');
+    }
+}
+
+if (!function_exists('isIPv4'))
+{
+    /**
+     * 判断是否属于ipv4
+     * @param  [type]  $ip [description]
+     * @return boolean     [description]
+     */
+    function isIPv4($ip) {
+        return request()->isValidIP($ip, 'ipv4');
+    }
+}
+
+if (!function_exists('ipv6InRange'))
+{
+    /**
+     * 判断ip是否属于某个ipv6范围
+     * @param  [type] $ip         [description]
+     * @param  [type] $rangeStart [description]
+     * @param  [type] $rangeEnd   [description]
+     * @return [type]             [description]
+     * 测试
+     *   $ipv6 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
+     *   $rangeStart = "2001:0db8:85a3:0000:0000:8a2e:0000:0000";
+     *   $rangeEnd = "2001:0db8:85a3:0000:0000:8a2e:ffff:ffff";
+     */
+    function ipv6InRange($ip, $rangeStart, $rangeEnd) {
+        // 将IPv6地址转换为二进制字符串
+        $ipBinary = inet_pton($ip);
+        $startBinary = inet_pton($rangeStart);
+        $endBinary = inet_pton($rangeEnd);
+
+        // 比较二进制字符串来确定IP是否在范围内
+        return ($ipBinary >= $startBinary && $ipBinary <= $endBinary);
+    }
+}
+
+if (!function_exists('containsFullwidthLetter'))
+{
+    /**
+     * 判断字符串是否含有全角字母
+     * @param  string $str [description]
+     * @return [type]      [description]
+     */
+    function containsFullwidthLetter($str = '') {
+        return preg_match('/[\x{FF21}-\x{FF3A}\x{FF41}-\x{FF5A}]/u', $str);
     }
 }

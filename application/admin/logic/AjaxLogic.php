@@ -460,7 +460,9 @@ class AjaxLogic extends Model
             $view->assign('global', tpCache('global'));
             $css = $view->fetch($file);
             $css = str_replace(['<style type="text/css">','</style>'], '', $css);
-            @chmod($file, 0755);
+            if (function_exists('chmod')) {
+                @chmod($file, 0755);
+            }
             $r = @file_put_contents(ROOT_PATH.'public/static/admin/css/theme_style.css', $css);
         }
 
@@ -476,37 +478,99 @@ class AjaxLogic extends Model
         
     }
 
-    // 评价主表评分由原先的(好评、中评、差评)转至实际星评数(1、2、3、4、5)(v1.6.1节点去掉--陈风任)
-    public function admin_logic_1651114275()
-    {
-        $Prefix = config('database.prefix');
-        $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'shop_order_comment\'');
-        if (!empty($isTable)) {
-            $orderCommentTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}shop_order_comment");
-            $orderCommentTableInfo = get_arr_column($orderCommentTableInfo, 'Field');
-            if (!empty($orderCommentTableInfo) && !in_array('is_new_comment', $orderCommentTableInfo)){
-                $sql = "ALTER TABLE `{$Prefix}shop_order_comment` ADD COLUMN `is_new_comment`  tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否新版评价：0否，1是' AFTER `is_anonymous`;";
-                @Db::execute($sql);
-                schemaTable('shop_order_comment');
-            }
-        }
-    }
-
     public function admin_logic_1623036205()
     {
-        $getTableInfo = [];
-        $Prefix = config('database.prefix');
-
         $arr = [
-            ROOT_PATH."application/admin/model/UsersLevel.php",
-            ROOT_PATH."core/library/think/verify/bgs/3e.jpg",
-            ROOT_PATH."public/plugins/Ueditor/lang/en/images/imglabel1.png",
-            ROOT_PATH."public/plugins/Ueditor/lang/zh-cn/images/mfusisc.png",
-            ROOT_PATH."public/plugins/Ueditor/dialogs/template/images/prel2.png",
-            ROOT_PATH."public/html/article_pay.htm",
-            ROOT_PATH."public/html/download_pay.htm",
-            ROOT_PATH."public/html/comment",
-            ROOT_PATH."public/static/common/js/jquery.tools.min.js",
+            ROOT_PATH."application/weapp",
+            ROOT_PATH."data/model/application/admin",
+            ROOT_PATH."data/model/custom_model_path/recruit.filelist.txt",
+            ROOT_PATH."data/weapp/Sample/weapp/Sample/behavior/weapp",
+            ROOT_PATH."data/weapp/Sample/template/plugins/sample/index.htm",
+            ROOT_PATH."public/static/admin/js/qtip",
+            ROOT_PATH."application/admin/controller/OrderVerify.php",
+            ROOT_PATH."application/admin/controller/Recruit.php",
+            ROOT_PATH."application/admin/logic/AuthModularLogic.php",
+            ROOT_PATH."application/admin/logic/AuthRoleLogic.php",
+            ROOT_PATH."application/admin/logic/NavigationLogic.php",
+            ROOT_PATH."application/admin/model/FormField.php",
+            ROOT_PATH."application/admin/model/Recruit.php",
+            ROOT_PATH."application/admin/template/admin/admin_pwd.htm",
+            ROOT_PATH."application/admin/template/admin/admin_pwd_ajax.htm",
+            ROOT_PATH."application/admin/template/admin/login_double.htm",
+            ROOT_PATH."application/admin/template/ajax/new_appoint_tplfile.htm",
+            ROOT_PATH."application/admin/template/archives/left.htm",
+            ROOT_PATH."application/admin/template/channeltype/field_management.htm",
+            ROOT_PATH."application/admin/template/encodes/theme_conf.htm",
+            ROOT_PATH."application/admin/template/field/bar.htm",
+            ROOT_PATH."application/admin/template/field/modelfield.htm",
+            ROOT_PATH."application/admin/template/foreign/htmlfilename_handel.htm",
+            ROOT_PATH."application/admin/template/foreign/htmlfilename_index.htm",
+            ROOT_PATH."application/admin/template/foreign/seo_desc_handel.htm",
+            ROOT_PATH."application/admin/template/form/view_form_data.htm",
+            ROOT_PATH."application/admin/template/guestbook/btn.htm",
+            ROOT_PATH."application/admin/template/index/switch_map_new.htm",
+            ROOT_PATH."application/admin/template/index/theme_add_welcome_tplfile.htm",
+            ROOT_PATH."application/admin/template/level/level_bar.htm",
+            ROOT_PATH."application/admin/template/member/ajax_set_oauth_config.htm",
+            ROOT_PATH."application/admin/template/member/pay_set.htm",
+            ROOT_PATH."application/admin/template/order_verify",
+            ROOT_PATH."application/admin/template/product/btn.htm",
+            ROOT_PATH."application/admin/template/recruit",
+            ROOT_PATH."application/admin/template/security/ajax_force_verify.htm",
+            ROOT_PATH."application/admin/template/system/clearCache.htm",
+            ROOT_PATH."application/admin/template/system/customvar_add.htm",
+            ROOT_PATH."application/admin/template/system/customvar_edit.htm",
+            ROOT_PATH."application/admin/template/system/customvar_recycle.htm",
+            ROOT_PATH."application/admin/template/system/oss.htm",
+            ROOT_PATH."application/admin/template/system/pay_set.htm",
+            ROOT_PATH."application/admin/template/system/region.htm",
+            ROOT_PATH."application/admin/template/uploadify/site.htm",
+            ROOT_PATH."application/api/controller/Count.php",
+            ROOT_PATH."application/common/common.php",
+            ROOT_PATH."core/library/think/behavior/admin/WeappBehavior.php",
+            ROOT_PATH."core/library/think/template/taglib/api/TagPickUpPointsList.php",
+            ROOT_PATH."core/library/think/template/taglib/eyou/TagForm.php",
+            ROOT_PATH."core/library/think/template/taglib/eyou/TagLogin.php",
+            ROOT_PATH."public/plugins/bootstrap/img/Thumbs.db",
+            ROOT_PATH."public/plugins/Ueditor/third-party/snapscreen/UEditorSnapscreen.exe",
+            ROOT_PATH."public/static/admin/css/login_double.css",
+            ROOT_PATH."public/static/admin/font/css/font-awesome.css",
+            ROOT_PATH."public/static/admin/images/admin.png",
+            ROOT_PATH."public/static/admin/images/ajaxLoader.gif",
+            ROOT_PATH."public/static/admin/images/channel_bg.gif",
+            ROOT_PATH."public/static/admin/images/circle_level_bg.png",
+            ROOT_PATH."public/static/admin/images/cms_edit_bg.png",
+            ROOT_PATH."public/static/admin/images/cms_edit_bg_line.png",
+            ROOT_PATH."public/static/admin/images/combine_img2.png",
+            ROOT_PATH."public/static/admin/images/cut_bg.png",
+            ROOT_PATH."public/static/admin/images/ddn.png",
+            ROOT_PATH."public/static/admin/images/down.gif",
+            ROOT_PATH."public/static/admin/images/iframe_bg.png",
+            ROOT_PATH."public/static/admin/images/login_formBg.png",
+            ROOT_PATH."public/static/admin/images/login_icon.png",
+            ROOT_PATH."public/static/admin/images/logo-login.png",
+            ROOT_PATH."public/static/admin/images/size.gif",
+            ROOT_PATH."public/static/admin/images/size_channel.gif",
+            ROOT_PATH."public/static/admin/images/socp.png",
+            ROOT_PATH."public/static/admin/images/subbag.png",
+            ROOT_PATH."public/static/admin/images/theme/default.png",
+            ROOT_PATH."public/static/admin/images/up.gif",
+            ROOT_PATH."public/static/admin/images/user1-128x128.jpg",
+            ROOT_PATH."public/static/admin/images/uup.png",
+            ROOT_PATH."public/static/admin/images/vertline.gif",
+            ROOT_PATH."public/static/admin/images/xianbg.png",
+            ROOT_PATH."public/static/admin/js/jquery.purebox.js",
+            ROOT_PATH."public/static/common/js/jquery.editable.min.js",
+            ROOT_PATH."public/static/common/js/tag_login.js",
+            ROOT_PATH."vendor/PHPExcel.zip",
+            ROOT_PATH."vendor/phpmailer/.gitattributes",
+            ROOT_PATH."vendor/phpmailer/.gitignore",
+            ROOT_PATH."vendor/phpmailer/.scrutinizer.yml",
+            ROOT_PATH."vendor/phpmailer/.travis.yml",
+            ROOT_PATH."vendor/phpmailer/changelog.md",
+            ROOT_PATH."vendor/phpmailer/README.md",
+            ROOT_PATH."vendor/phpmailer/SECURITY.md",
+            ROOT_PATH."vendor/phpmailer/travis.phpunit.xml.dist",
         ];
         foreach ($arr as $key => $val) {
             if (is_dir($val)) {
@@ -517,8 +581,2777 @@ class AjaxLogic extends Model
                 @unlink($val);
             }
         }
+        
+        // 同步模板的付费选择支付文件到前台模板指定位置
+        $this->copy_tplpayfile();
+        // 自动更新插件里的jquery文件为最新版本，修复jquery漏洞
+        $this->copy_jquery();
+        // 升级v1.6.7版本要处理的数据
+        $this->eyou_v167_handle_data();
+        // 升级后，清理缓存文件
+        // $this->upgrade_clear_cache();
+        // 升级v1.7.0版本要处理的数据
+        $this->eyou_v170_handle_data();
+        // 升级v1.7.1版本要处理的数据
+        $this->eyou_v171_handle_data();
+    }
 
-        Db::name("admin_menu")->where(['menu_id'=>2004006])->update(['param'=>'|mt20|1|menu|1']);
+    // 升级v1.7.1版本要处理的数据
+    private function eyou_v171_handle_data()
+    {
+        // 表前缀
+        $Prefix = config('database.prefix');
+        
+        $syn_admin_logic_1732008365 = tpSetting('syn.syn_admin_logic_1732008365', [], 'cn');
+        if (empty($syn_admin_logic_1732008365)) {
+            $r = true;
+            $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'language_archives_copy_log\'');
+            if (empty($isTable)) {
+                $tableSql = <<<EOF
+CREATE TABLE IF NOT EXISTS `{$Prefix}language_archives_copy_log` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `channel` int(10) DEFAULT '0',
+  `typeid` int(10) DEFAULT '0' COMMENT '分类ID',
+  `new_typeid` int(10) DEFAULT '0',
+  `oldid` int(10) DEFAULT '0',
+  `newid` int(10) DEFAULT '0',
+  `lang` varchar(20) DEFAULT '' COMMENT '生成语言',
+  `add_time` int(11) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `index_oldid` (`oldid`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+EOF;
+                try{
+                    $r = @Db::execute($tableSql);
+                }catch(\Exception $e){
+                    if (stristr($e->getMessage(), 'Storage engine MyISAM is disabled')) {
+                        $tableSql = str_replace('ENGINE=MyISAM', 'ENGINE=InnoDB', $tableSql);
+                        $r = @Db::execute($tableSql);
+                    }
+                }
+            }
+            if ($r !== false) {
+                schemaTable('language_archives_copy_log');
+                tpSetting('syn', ['syn_admin_logic_1732008365'=>1], 'cn');
+            }
+        }
+
+        $syn_admin_logic_1732517850 = tpSetting('syn.syn_admin_logic_1732517850', [], 'cn');
+        if (empty($syn_admin_logic_1732517850)) {
+            try{
+                $param = [];
+                // 编辑器防注入
+                $param['web_xss_filter'] = tpCache('web.web_xss_filter');
+                $web_xss_words = ['union','delete','outfile','char','concat','truncate','insert','revoke','grant','replace','rename','declare','exec','delimiter','phar','eval','onerror','script'];
+                $param['web_xss_words'] = implode(PHP_EOL, $web_xss_words);
+                // 网站防止被刷
+                $param['web_anti_brushing'] = tpCache('web.web_anti_brushing');
+                $param['web_anti_words'] = implode(PHP_EOL, ['wd']);
+                /*-------------------后台安全配置 end-------------------*/
+                $langRow = \think\Db::name('language')->order('id asc')->select();
+                foreach ($langRow as $key => $val) {
+                    tpCache('web', $param, $val['mark']);
+                }
+                // 存储文件
+                $content = json_encode($param);
+                $tfile = webXssKeyFile();
+                $fp = @fopen($tfile,'w');
+                if(!$fp) {
+                    @file_put_contents($tfile, $content);
+                }
+                else {
+                    fwrite($fp, $content);
+                    fclose($fp);
+                }
+                tpSetting('syn', ['syn_admin_logic_1732517850'=>1], 'cn');
+            }catch(\Exception $e){}
+        }
+        
+        // 处理上个版本升级后，导航数据因为标签底层改动，缓存问题导致不显示
+        $syn_admin_logic_1732586784 = tpSetting('syn.syn_admin_logic_1732586784', [], 'cn');
+        if (empty($syn_admin_logic_1732586784)) {
+            try {
+                $upgradeTime = Db::name('config')->where(['name'=>'system_version', 'value'=>'v1.7.0'])->order('update_time asc')->value('update_time');
+                if ($upgradeTime < 1732587428) {
+                    delFile(rtrim(RUNTIME_PATH, '/'));
+                }
+            } catch (\Exception $e) {
+                
+            }
+            tpSetting('syn', ['syn_admin_logic_1732586784'=>1], 'cn');
+        }
+
+        $syn_admin_logic_1735088029 = tpSetting('syn.syn_admin_logic_1735088029', [], 'cn');
+        if (empty($syn_admin_logic_1735088029)) {
+            try{
+                $r = true;
+                Db::name('users_menu')->where(['version'=>'v5'])->delete();
+                $saveData = Db::name('users_menu')->field('id', true)->where(['version'=>'v2'])->select();
+                if (!empty($saveData)) {
+                    $addData = [];
+                    foreach ($saveData as $key => $val) {
+                        $val['version'] = 'v5';
+                        $addData[] = $val;
+                    }
+                    $r = Db::name('users_menu')->insertAll($addData);
+                }
+                if ($r !== false) {
+                    tpSetting('syn', ['syn_admin_logic_1735088029'=>1], 'cn');
+                }
+            }catch(\Exception $e){}
+        }
+
+        // 处理国家表数据
+        $this->syn_handle_country();
+    }
+
+    /**
+     * 处理国家表数据
+     * @return [type] [description]
+     */
+    private function syn_handle_country()
+    {
+        $admin_logic_1735200508 = tpSetting('syn.admin_logic_1735200508', [], 'cn');
+        if (empty($admin_logic_1735200508)) {
+            $r = true;
+            $Prefix = config('database.prefix');
+            $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'country\'');
+            if (empty($isTable)) {
+                $tableSql = <<<EOF
+CREATE TABLE `{$Prefix}country` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `name` varchar(255) NOT NULL DEFAULT '' COMMENT '名称',
+  `code` varchar(50) NOT NULL DEFAULT '' COMMENT '编码',
+  `continent` varchar(50) NOT NULL DEFAULT '' COMMENT '所属大洲',
+  `sort_order` int(11) unsigned DEFAULT '0' COMMENT '排序',
+  `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态(0:禁用; 1:启用;)',
+  `add_time` int(11) unsigned DEFAULT '0' COMMENT '添加时间',
+  `update_time` int(11) unsigned DEFAULT '0' COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='国家列表';
+EOF;
+                try{
+                    $r = @Db::execute($tableSql);
+                }catch(\Exception $e){
+                    if (stristr($e->getMessage(), 'Storage engine MyISAM is disabled')) {
+                        $tableSql = str_replace('ENGINE=MyISAM', 'ENGINE=InnoDB', $tableSql);
+                        $r = @Db::execute($tableSql);
+                    }
+                }
+            }
+            if ($r !== false) {
+                schemaTable('country');
+                Db::name('country')->where(['id'=>['gt', 0]])->delete(true);
+                $saveData = [
+                    [
+                        "id" => 1,
+                        "name" => "中国",
+                        "code" => "CN",
+                        "continent" => "AS",
+                        "sort_order" => 1,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1732173305,
+                    ],
+                    [
+                        "id" => 2,
+                        "name" => "Afghanistan",
+                        "code" => "AF",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 3,
+                        "name" => "Albania",
+                        "code" => "AL",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 4,
+                        "name" => "Algeria",
+                        "code" => "DZ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 5,
+                        "name" => "American Samoa",
+                        "code" => "AS",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 6,
+                        "name" => "Andorra",
+                        "code" => "AD",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 7,
+                        "name" => "Angola",
+                        "code" => "AO",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 8,
+                        "name" => "Anguilla",
+                        "code" => "AI",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 9,
+                        "name" => "Antarctica",
+                        "code" => "AQ",
+                        "continent" => "AN",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 10,
+                        "name" => "Antigua and Barbuda",
+                        "code" => "AG",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 11,
+                        "name" => "Argentina",
+                        "code" => "AR",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 12,
+                        "name" => "Armenia",
+                        "code" => "AM",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 13,
+                        "name" => "Aruba",
+                        "code" => "AW",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 14,
+                        "name" => "Australia",
+                        "code" => "AU",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 15,
+                        "name" => "Austria",
+                        "code" => "AT",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 16,
+                        "name" => "Azerbaijan",
+                        "code" => "AZ",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 17,
+                        "name" => "Bahamas",
+                        "code" => "BS",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 18,
+                        "name" => "Bahrain",
+                        "code" => "BH",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 19,
+                        "name" => "Bangladesh",
+                        "code" => "BD",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 20,
+                        "name" => "Barbados",
+                        "code" => "BB",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 21,
+                        "name" => "Belarus",
+                        "code" => "BY",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 22,
+                        "name" => "Belgium",
+                        "code" => "BE",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 23,
+                        "name" => "Belize",
+                        "code" => "BZ",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 24,
+                        "name" => "Benin",
+                        "code" => "BJ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 25,
+                        "name" => "Bermuda",
+                        "code" => "BM",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 26,
+                        "name" => "Bhutan",
+                        "code" => "BT",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 27,
+                        "name" => "Bolivia",
+                        "code" => "BO",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 28,
+                        "name" => "Bosnia and Herzegovina",
+                        "code" => "BA",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 29,
+                        "name" => "Botswana",
+                        "code" => "BW",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 30,
+                        "name" => "Bouvet Island",
+                        "code" => "BV",
+                        "continent" => "AN",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 31,
+                        "name" => "Brazil",
+                        "code" => "BR",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 32,
+                        "name" => "British Indian Ocean Territory",
+                        "code" => "IO",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 33,
+                        "name" => "Brunei Darussalam",
+                        "code" => "BN",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 34,
+                        "name" => "Bulgaria",
+                        "code" => "BG",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 35,
+                        "name" => "Burkina Faso",
+                        "code" => "BF",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 36,
+                        "name" => "Burundi",
+                        "code" => "BI",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 37,
+                        "name" => "Cambodia",
+                        "code" => "KH",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 38,
+                        "name" => "Cameroon",
+                        "code" => "CM",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 39,
+                        "name" => "Canada",
+                        "code" => "CA",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 40,
+                        "name" => "Cape Verde",
+                        "code" => "CV",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 41,
+                        "name" => "Cayman Islands",
+                        "code" => "KY",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 42,
+                        "name" => "Central African Republic",
+                        "code" => "CF",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 43,
+                        "name" => "Chad",
+                        "code" => "TD",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 44,
+                        "name" => "Chile",
+                        "code" => "CL",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 45,
+                        "name" => "Christmas Island",
+                        "code" => "CX",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 46,
+                        "name" => "Cocos (Keeling) Islands",
+                        "code" => "CC",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 47,
+                        "name" => "Colombia",
+                        "code" => "CO",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 48,
+                        "name" => "Comoros",
+                        "code" => "KM",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 49,
+                        "name" => "Congo",
+                        "code" => "CG",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 50,
+                        "name" => "Cook Islands",
+                        "code" => "CK",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 51,
+                        "name" => "Costa Rica",
+                        "code" => "CR",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 52,
+                        "name" => "Cote D'Ivoire",
+                        "code" => "CI",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 53,
+                        "name" => "Croatia",
+                        "code" => "HR",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 54,
+                        "name" => "Cuba",
+                        "code" => "CU",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 55,
+                        "name" => "Cyprus",
+                        "code" => "CY",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 56,
+                        "name" => "Czech Republic",
+                        "code" => "CZ",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 57,
+                        "name" => "Denmark",
+                        "code" => "DK",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 58,
+                        "name" => "Djibouti",
+                        "code" => "DJ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 59,
+                        "name" => "Dominica",
+                        "code" => "DM",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 60,
+                        "name" => "Dominican Republic",
+                        "code" => "DO",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 61,
+                        "name" => "East Timor",
+                        "code" => "TL",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 62,
+                        "name" => "Ecuador",
+                        "code" => "EC",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 63,
+                        "name" => "Egypt",
+                        "code" => "EG",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 64,
+                        "name" => "El Salvador",
+                        "code" => "SV",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 65,
+                        "name" => "Equatorial Guinea",
+                        "code" => "GQ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 66,
+                        "name" => "Eritrea",
+                        "code" => "ER",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 67,
+                        "name" => "Estonia",
+                        "code" => "EE",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 68,
+                        "name" => "Ethiopia",
+                        "code" => "ET",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 69,
+                        "name" => "Falkland Islands (Malvinas)",
+                        "code" => "FK",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 70,
+                        "name" => "Faroe Islands",
+                        "code" => "FO",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 71,
+                        "name" => "Fiji",
+                        "code" => "FJ",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 72,
+                        "name" => "Finland",
+                        "code" => "FI",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 73,
+                        "name" => "France, Metropolitan",
+                        "code" => "FR",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 74,
+                        "name" => "French Guiana",
+                        "code" => "GF",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 75,
+                        "name" => "French Polynesia",
+                        "code" => "PF",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 76,
+                        "name" => "French Southern Territories",
+                        "code" => "TF",
+                        "continent" => "AN",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 77,
+                        "name" => "Gabon",
+                        "code" => "GA",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 78,
+                        "name" => "Gambia",
+                        "code" => "GM",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 79,
+                        "name" => "Georgia",
+                        "code" => "GE",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 80,
+                        "name" => "Germany",
+                        "code" => "DE",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 81,
+                        "name" => "Ghana",
+                        "code" => "GH",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 82,
+                        "name" => "Gibraltar",
+                        "code" => "GI",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 83,
+                        "name" => "Greece",
+                        "code" => "GR",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 84,
+                        "name" => "Greenland",
+                        "code" => "GL",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 85,
+                        "name" => "Grenada",
+                        "code" => "GD",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 86,
+                        "name" => "Guadeloupe",
+                        "code" => "GP",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 87,
+                        "name" => "Guam",
+                        "code" => "GU",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 88,
+                        "name" => "Guatemala",
+                        "code" => "GT",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 89,
+                        "name" => "Guinea",
+                        "code" => "GN",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 90,
+                        "name" => "Guinea-Bissau",
+                        "code" => "GW",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 91,
+                        "name" => "Guyana",
+                        "code" => "GY",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 92,
+                        "name" => "Haiti",
+                        "code" => "HT",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 93,
+                        "name" => "Heard and Mc Donald Islands",
+                        "code" => "HM",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 94,
+                        "name" => "Honduras",
+                        "code" => "HN",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 95,
+                        "name" => "Hungary",
+                        "code" => "HU",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 96,
+                        "name" => "Iceland",
+                        "code" => "IS",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 97,
+                        "name" => "India",
+                        "code" => "IN",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 98,
+                        "name" => "Indonesia",
+                        "code" => "ID",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 99,
+                        "name" => "Iran (Islamic Republic of)",
+                        "code" => "IR",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 100,
+                        "name" => "Iraq",
+                        "code" => "IQ",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 101,
+                        "name" => "Ireland",
+                        "code" => "IE",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 102,
+                        "name" => "Israel",
+                        "code" => "IL",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 103,
+                        "name" => "Italy",
+                        "code" => "IT",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 104,
+                        "name" => "Jamaica",
+                        "code" => "JM",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 105,
+                        "name" => "Japan",
+                        "code" => "JP",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 106,
+                        "name" => "Jordan",
+                        "code" => "JO",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 107,
+                        "name" => "Kazakhstan",
+                        "code" => "KZ",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 108,
+                        "name" => "Kenya",
+                        "code" => "KE",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 109,
+                        "name" => "Kiribati",
+                        "code" => "KI",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 110,
+                        "name" => "North Korea",
+                        "code" => "KP",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 111,
+                        "name" => "South Korea",
+                        "code" => "KR",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 112,
+                        "name" => "Kuwait",
+                        "code" => "KW",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 113,
+                        "name" => "Kyrgyzstan",
+                        "code" => "KG",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 114,
+                        "name" => "Lao People's Democratic Republic",
+                        "code" => "LA",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 115,
+                        "name" => "Latvia",
+                        "code" => "LV",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 116,
+                        "name" => "Lebanon",
+                        "code" => "LB",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 117,
+                        "name" => "Lesotho",
+                        "code" => "LS",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 118,
+                        "name" => "Liberia",
+                        "code" => "LR",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 119,
+                        "name" => "Libyan Arab Jamahiriya",
+                        "code" => "LY",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 120,
+                        "name" => "Liechtenstein",
+                        "code" => "LI",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 121,
+                        "name" => "Lithuania",
+                        "code" => "LT",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 122,
+                        "name" => "Luxembourg",
+                        "code" => "LU",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 123,
+                        "name" => "FYROM",
+                        "code" => "MK",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 124,
+                        "name" => "Madagascar",
+                        "code" => "MG",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 125,
+                        "name" => "Malawi",
+                        "code" => "MW",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 126,
+                        "name" => "Malaysia",
+                        "code" => "MY",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 127,
+                        "name" => "Maldives",
+                        "code" => "MV",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 128,
+                        "name" => "Mali",
+                        "code" => "ML",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 129,
+                        "name" => "Malta",
+                        "code" => "MT",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 130,
+                        "name" => "Marshall Islands",
+                        "code" => "MH",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 131,
+                        "name" => "Martinique",
+                        "code" => "MQ",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 132,
+                        "name" => "Mauritania",
+                        "code" => "MR",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 133,
+                        "name" => "Mauritius",
+                        "code" => "MU",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 134,
+                        "name" => "Mayotte",
+                        "code" => "YT",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 135,
+                        "name" => "Mexico",
+                        "code" => "MX",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 136,
+                        "name" => "Micronesia, Federated States of",
+                        "code" => "FM",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 137,
+                        "name" => "Moldova, Republic of",
+                        "code" => "MD",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 138,
+                        "name" => "Monaco",
+                        "code" => "MC",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 139,
+                        "name" => "Mongolia",
+                        "code" => "MN",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 140,
+                        "name" => "Montserrat",
+                        "code" => "MS",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 141,
+                        "name" => "Morocco",
+                        "code" => "MA",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 142,
+                        "name" => "Mozambique",
+                        "code" => "MZ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 143,
+                        "name" => "Myanmar",
+                        "code" => "MM",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 144,
+                        "name" => "Namibia",
+                        "code" => "NA",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 145,
+                        "name" => "Nauru",
+                        "code" => "NR",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 146,
+                        "name" => "Nepal",
+                        "code" => "NP",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 147,
+                        "name" => "Netherlands",
+                        "code" => "NL",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 148,
+                        "name" => "Netherlands Antilles",
+                        "code" => "AN",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 149,
+                        "name" => "New Caledonia",
+                        "code" => "NC",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 150,
+                        "name" => "New Zealand",
+                        "code" => "NZ",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 151,
+                        "name" => "Nicaragua",
+                        "code" => "NI",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 152,
+                        "name" => "Niger",
+                        "code" => "NE",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 153,
+                        "name" => "Nigeria",
+                        "code" => "NG",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 154,
+                        "name" => "Niue",
+                        "code" => "NU",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 155,
+                        "name" => "Norfolk Island",
+                        "code" => "NF",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 156,
+                        "name" => "Northern Mariana Islands",
+                        "code" => "MP",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 157,
+                        "name" => "Norway",
+                        "code" => "NO",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 158,
+                        "name" => "Oman",
+                        "code" => "OM",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 159,
+                        "name" => "Pakistan",
+                        "code" => "PK",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 160,
+                        "name" => "Palau",
+                        "code" => "PW",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 161,
+                        "name" => "Panama",
+                        "code" => "PA",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 162,
+                        "name" => "Papua New Guinea",
+                        "code" => "PG",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 163,
+                        "name" => "Paraguay",
+                        "code" => "PY",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 164,
+                        "name" => "Peru",
+                        "code" => "PE",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 165,
+                        "name" => "Philippines",
+                        "code" => "PH",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 166,
+                        "name" => "Pitcairn",
+                        "code" => "PN",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 167,
+                        "name" => "Poland",
+                        "code" => "PL",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 168,
+                        "name" => "Portugal",
+                        "code" => "PT",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 169,
+                        "name" => "Puerto Rico",
+                        "code" => "PR",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 170,
+                        "name" => "Qatar",
+                        "code" => "QA",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 171,
+                        "name" => "Reunion",
+                        "code" => "RE",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 172,
+                        "name" => "Romania",
+                        "code" => "RO",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 173,
+                        "name" => "Russian Federation",
+                        "code" => "RU",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 174,
+                        "name" => "Rwanda",
+                        "code" => "RW",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 175,
+                        "name" => "Saint Kitts and Nevis",
+                        "code" => "KN",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 176,
+                        "name" => "Saint Lucia",
+                        "code" => "LC",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 177,
+                        "name" => "Saint Vincent and the Grenadines",
+                        "code" => "VC",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 178,
+                        "name" => "Samoa",
+                        "code" => "WS",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 179,
+                        "name" => "San Marino",
+                        "code" => "SM",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 180,
+                        "name" => "Sao Tome and Principe",
+                        "code" => "ST",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 181,
+                        "name" => "Saudi Arabia",
+                        "code" => "SA",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 182,
+                        "name" => "Senegal",
+                        "code" => "SN",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 183,
+                        "name" => "Seychelles",
+                        "code" => "SC",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 184,
+                        "name" => "Sierra Leone",
+                        "code" => "SL",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 185,
+                        "name" => "Singapore",
+                        "code" => "SG",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 186,
+                        "name" => "Slovak Republic",
+                        "code" => "SK",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 187,
+                        "name" => "Slovenia",
+                        "code" => "SI",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 188,
+                        "name" => "Solomon Islands",
+                        "code" => "SB",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 189,
+                        "name" => "Somalia",
+                        "code" => "SO",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 190,
+                        "name" => "South Africa",
+                        "code" => "ZA",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 191,
+                        "name" => "South Georgia &amp; South Sandwich Islands",
+                        "code" => "GS",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 192,
+                        "name" => "Spain",
+                        "code" => "ES",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 193,
+                        "name" => "Sri Lanka",
+                        "code" => "LK",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 194,
+                        "name" => "St. Helena",
+                        "code" => "SH",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 195,
+                        "name" => "St. Pierre and Miquelon",
+                        "code" => "PM",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 196,
+                        "name" => "Sudan",
+                        "code" => "SD",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 197,
+                        "name" => "Suriname",
+                        "code" => "SR",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 198,
+                        "name" => "Svalbard and Jan Mayen Islands",
+                        "code" => "SJ",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 199,
+                        "name" => "Swaziland",
+                        "code" => "SZ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 200,
+                        "name" => "Sweden",
+                        "code" => "SE",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 201,
+                        "name" => "Switzerland",
+                        "code" => "CH",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 202,
+                        "name" => "Syrian Arab Republic",
+                        "code" => "SY",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 203,
+                        "name" => "Tajikistan",
+                        "code" => "TJ",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 204,
+                        "name" => "Tanzania, United Republic of",
+                        "code" => "TZ",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 205,
+                        "name" => "Thailand",
+                        "code" => "TH",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 206,
+                        "name" => "Togo",
+                        "code" => "TG",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 207,
+                        "name" => "Tokelau",
+                        "code" => "TK",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 208,
+                        "name" => "Tonga",
+                        "code" => "TO",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 209,
+                        "name" => "Trinidad and Tobago",
+                        "code" => "TT",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 210,
+                        "name" => "Tunisia",
+                        "code" => "TN",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 211,
+                        "name" => "Turkey",
+                        "code" => "TR",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 212,
+                        "name" => "Turkmenistan",
+                        "code" => "TM",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 213,
+                        "name" => "Turks and Caicos Islands",
+                        "code" => "TC",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 214,
+                        "name" => "Tuvalu",
+                        "code" => "TV",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 215,
+                        "name" => "Uganda",
+                        "code" => "UG",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 216,
+                        "name" => "Ukraine",
+                        "code" => "UA",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 217,
+                        "name" => "United Arab Emirates",
+                        "code" => "AE",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 218,
+                        "name" => "United Kingdom",
+                        "code" => "GB",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 219,
+                        "name" => "United States",
+                        "code" => "US",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 220,
+                        "name" => "United States Minor Outlying Islands",
+                        "code" => "UM",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 221,
+                        "name" => "Uruguay",
+                        "code" => "UY",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 222,
+                        "name" => "Uzbekistan",
+                        "code" => "UZ",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 223,
+                        "name" => "Vanuatu",
+                        "code" => "VU",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 224,
+                        "name" => "Vatican City State (Holy See)",
+                        "code" => "VA",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 225,
+                        "name" => "Venezuela",
+                        "code" => "VE",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 226,
+                        "name" => "Viet Nam",
+                        "code" => "VN",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 227,
+                        "name" => "Virgin Islands (British)",
+                        "code" => "VG",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 228,
+                        "name" => "Virgin Islands (U.S.)",
+                        "code" => "VI",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 229,
+                        "name" => "Wallis and Futuna Islands",
+                        "code" => "WF",
+                        "continent" => "OA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 230,
+                        "name" => "Western Sahara",
+                        "code" => "EH",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 231,
+                        "name" => "Yemen",
+                        "code" => "YE",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1732173279,
+                    ],
+                    [
+                        "id" => 232,
+                        "name" => "Democratic Republic of Congo",
+                        "code" => "CD",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 233,
+                        "name" => "Zambia",
+                        "code" => "ZM",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 234,
+                        "name" => "Zimbabwe",
+                        "code" => "ZW",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 235,
+                        "name" => "Montenegro",
+                        "code" => "ME",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 236,
+                        "name" => "Serbia",
+                        "code" => "RS",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 237,
+                        "name" => "Aaland Islands",
+                        "code" => "AX",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 238,
+                        "name" => "Bonaire, Sint Eustatius and Saba",
+                        "code" => "BQ",
+                        "continent" => "SA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 239,
+                        "name" => "Curacao",
+                        "code" => "CW",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 240,
+                        "name" => "Palestinian Territory, Occupied",
+                        "code" => "PS",
+                        "continent" => "AS",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 241,
+                        "name" => "South Sudan",
+                        "code" => "SS",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 242,
+                        "name" => "St. Barthelemy",
+                        "code" => "BL",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 243,
+                        "name" => "St. Martin (French part)",
+                        "code" => "MF",
+                        "continent" => "NA",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 244,
+                        "name" => "Canary Islands",
+                        "code" => "IC",
+                        "continent" => "AF",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 245,
+                        "name" => "Ascension Island (British)",
+                        "code" => "AC",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 246,
+                        "name" => "Kosovo, Republic of",
+                        "code" => "XK",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 247,
+                        "name" => "Isle of Man",
+                        "code" => "IM",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 248,
+                        "name" => "Tristan da Cunha",
+                        "code" => "TA",
+                        "continent" => "NULL",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 249,
+                        "name" => "Guernsey",
+                        "code" => "GG",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                    [
+                        "id" => 250,
+                        "name" => "Jersey",
+                        "code" => "JE",
+                        "continent" => "EU",
+                        "sort_order" => 100,
+                        "status" => 1,
+                        "add_time" => 1704038400,
+                        "update_time" => 1704038400,
+                    ],
+                ];
+                $r = Db::name('country')->insertAll($saveData);
+                if ($r !== false) {
+                    tpSetting('syn', ['admin_logic_1735200508'=>1], 'cn');
+                }
+            }
+        }
+    }
+
+    // 升级v1.7.0版本要处理的数据
+    private function eyou_v170_handle_data()
+    {
+        $this->syn_handle_twofactor_tpl();
+    }
+
+    /**
+     * 同步双因子登录的模板
+     * @return [type] [description]
+     */
+    private function syn_handle_twofactor_tpl()
+    {
+        $syn_admin_logic_1727423349 = tpSetting('syn.syn_admin_logic_1727423349', [], 'cn');
+        if (empty($syn_admin_logic_1727423349)) {
+            try{
+                $r = true;
+                Db::name('sms_template')->where(['send_scene'=>30])->delete();
+                $saveData = Db::name('sms_template')->field('tpl_id', true)->where(['send_scene'=>2])->select();
+                if (!empty($saveData)) {
+                    $addData = [];
+                    foreach ($saveData as $key => $val) {
+                        $val['tpl_title'] = '后台登录';
+                        $val['send_scene'] = 30;
+                        // $val['sms_sign'] = '';
+                        // $val['sms_tpl_code'] = '';
+                        // if (2 == $val['sms_type']) {
+                        //     $val['tpl_content'] = '验证码为 {1} ，请在30分钟内输入验证。';
+                        // } else {
+                        //     $val['tpl_content'] = '验证码为 ${content} ，请在30分钟内输入验证。';
+                        // }
+                        $val['is_open'] = 1;
+                        $addData[] = $val;
+                    }
+                    $r = Db::name('sms_template')->insertAll($addData);
+                }
+                if ($r !== false) {
+                    tpSetting('syn', ['syn_admin_logic_1727423349'=>1], 'cn');
+                }
+            }catch(\Exception $e){}
+        }
+
+        $syn_admin_logic_1727423350 = tpSetting('syn.syn_admin_logic_1727423350', [], 'cn');
+        if (empty($syn_admin_logic_1727423350)) {
+            try{
+                $r = true;
+                Db::name('smtp_tpl')->where(['send_scene'=>30])->delete();
+                $saveData = Db::name('smtp_tpl')->field('tpl_id', true)->where(['send_scene'=>2])->select();
+                if (!empty($saveData)) {
+                    $addData = [];
+                    foreach ($saveData as $key => $val) {
+                        $val['tpl_name'] = '后台登录';
+                        $val['tpl_title'] = '后台登录验证码，请查收！';
+                        $val['send_scene'] = 30;
+                        $val['is_open'] = 1;
+                        $addData[] = $val;
+                    }
+                    $r = Db::name('smtp_tpl')->insertAll($addData);
+                }
+                if ($r !== false) {
+                    tpSetting('syn', ['syn_admin_logic_1727423350'=>1], 'cn');
+                }
+            }catch(\Exception $e){}
+        }
+    }
+
+    /**
+     * 升级后，清理缓存文件
+     * @return [type] [description]
+     */
+    private function upgrade_clear_cache()
+    {
+        $version = getVersion();
+        $syn_admin_logic_1726881989 = tpSetting('syn.syn_admin_logic_1726881989', [], 'cn');
+        if ($syn_admin_logic_1726881989 != $version) {
+            try {
+                delFile(rtrim(RUNTIME_PATH, '/'));
+                tpSetting('syn', ['syn_admin_logic_1726881989' => $version], 'cn');
+            } catch (\Exception $e) {}
+        }
+    }
+
+    /**
+     * 自动更新插件里的jquery文件为最新版本，修复jquery漏洞
+     * @return [type] [description]
+     */
+    private function copy_jquery()
+    {
+        $list = glob('weapp/*/template/skin/js/jquery.js');
+        if (!empty($list)) {
+            $list[] = 'public/static/common/diyminipro/js/jquery.min.js';
+            $minilist = glob('weapp/*/template/*/js/jquery.min.js');
+            if (!empty($minilist)) {
+                $list = array_merge($list, $minilist);
+            }
+            foreach ($list as $key => $val) {
+                if (file_exists('./'.$val)) {
+                    @copy(realpath('public/static/admin/js/jquery.js'), realpath($val));
+                }
+            }
+        }
     }
     
     /*
@@ -555,1469 +3388,73 @@ class AjaxLogic extends Model
             Db::name("admin_menu")->insertAll($insert_data);
         }
     }
-    
-    //1.5.9相关
-    public function admin_logic_1658220528(){
-        $Prefix = config('database.prefix');
-        $archivesTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}archives");
-        $archivesTableInfo = get_arr_column($archivesTableInfo, 'Field');
-        if (!empty($archivesTableInfo) && !in_array('virtual_sales', $archivesTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}archives` ADD COLUMN `virtual_sales`  int(10) NULL DEFAULT 0 COMMENT '商品虚拟销售量' AFTER `sales_num`;";
-            @Db::execute($sql);
-        }
-        if (!empty($archivesTableInfo) && !in_array('sales_all', $archivesTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}archives` ADD COLUMN `sales_all`  int(10) NULL DEFAULT 0 COMMENT '虚拟总销量' AFTER `virtual_sales`;";
-            @Db::execute($sql);
-        }
-        schemaTable('archives');
-
-        $guestbookTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}guestbook");
-        $guestbookTableInfo = get_arr_column($guestbookTableInfo, 'Field');
-        if (!empty($guestbookTableInfo) && !in_array('users_id', $guestbookTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}guestbook` ADD COLUMN `users_id`  int(11) NULL DEFAULT 0 COMMENT '用户id' AFTER `channel`;";
-            @Db::execute($sql);
-            schemaTable('guestbook');
-        }
-
-        try {
-            $specTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}product_spec_data_handle");
-            $specTableInfo = convert_arr_key($specTableInfo, 'Field');
-            if (!empty($specTableInfo['spec_id']['Key'])) {
-                $sql = "ALTER TABLE `{$Prefix}product_spec_data_handle` DROP PRIMARY KEY;";
-                @Db::execute($sql);
-                $sql = "ALTER TABLE `{$Prefix}product_spec_data_handle` MODIFY COLUMN `spec_id`  int(10) NULL DEFAULT 0 COMMENT '对应 product_spec_data 数据表' FIRST ;";
-                @Db::execute($sql);
-                schemaTable('product_spec_data_handle');
-            }
-        } catch (\Exception $e) {
-            
-        }
-        
-        $searchTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}search_word");
-        $searchTableInfo = get_arr_column($searchTableInfo, 'Field');
-        if (!empty($searchTableInfo) && !in_array('users_id', $searchTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}search_word` ADD COLUMN `users_id`  int(11) NULL DEFAULT 0 COMMENT '用户id' AFTER `sort_order`;";
-            @Db::execute($sql);
-        }
-        if (!empty($searchTableInfo) && !in_array('ip', $searchTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}search_word` ADD COLUMN `ip`  varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT 'ip' AFTER `users_id`;";
-            @Db::execute($sql);
-            schemaTable('search_word');
-        }
-        if (!empty($searchTableInfo) && !in_array('is_hot', $searchTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}search_word` ADD COLUMN `is_hot`  tinyint(1) NULL DEFAULT 0 COMMENT '是否热搜' AFTER `ip`;";
-            @Db::execute($sql);
-            schemaTable('search_word');
-        }
-
-        $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'search_locking\'');
-        if (empty($isTable)) {
-            $tableSql = <<<EOF
-CREATE TABLE IF NOT EXISTS `{$Prefix}search_locking` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
-  `users_id` int(10) DEFAULT '0' COMMENT '用户ID',
-  `ip` varchar(20) DEFAULT '' COMMENT 'ip',
-  `locking_time` int(11) DEFAULT '0' COMMENT '锁定时间',
-  `add_time` int(11) DEFAULT '0' COMMENT '新增时间',
-  `update_time` int(11) DEFAULT '0' COMMENT '更新时间',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='搜索记录锁定表';
-EOF;
-            $r = @Db::execute($tableSql);
-            if ($r !== false) {
-                schemaTable('search_locking');
-            }
-        }
-
-        // 优化主表字段的长度
-        $admin_logic_1673941712 = tpSetting('syn.admin_logic_1673941712', [], 'cn');
-        if (empty($admin_logic_1673941712)) {
-            @Db::execute("ALTER TABLE `{$Prefix}archives` MODIFY COLUMN `htmlfilename`  varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '自定义文件名' AFTER `collection`");
-            tpSetting('syn', ['admin_logic_1673941712'=>1], 'cn');
-        }
-        
-        // 积分字段优化
-        $admin_logic_1676854942 = tpSetting('syn.admin_logic_1676854942', [], 'cn');
-        if (empty($admin_logic_1676854942)) {
-            @Db::execute("ALTER TABLE `{$Prefix}users_score` MODIFY COLUMN `score`  varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '积分' AFTER `reply_id`");
-            tpSetting('syn', ['admin_logic_1676854942'=>1], 'cn');
-        }
-
-        // 更新旧的商品虚拟总销量
-        $this->handleProductSalesAll();
-
-        // 同步模板的付费选择支付文件到前台模板指定位置
-        $this->copy_tplpayfile();
-
-        // 新增海外地区
-        $this->add_haiwai_region();
-        // 新增河南济源市地区
-        $this->add_henan_jiyuan_region();
-
-        // 默认收货后可维权时间
-        $admin_logic_1678762367 = tpSetting('syn.admin_logic_1678762367', [], 'cn');
-        if (empty($admin_logic_1678762367)) {
-            getUsersConfigData('order', ['order_right_protect_time' => 7]);
-            tpSetting('syn', ['admin_logic_1678762367'=>1], 'cn');
-        }
-
-        Db::name("admin_menu")->where(['menu_id'=>2004018])->update(['title'=>'留言中心']);
-        Db::name("region")->where(['id'=>10961])->update(['name'=>'新吴区', 'initial'=>'X']);
-        Db::name("region")->where(['id'=>10962])->update(['name'=>'梁溪区', 'initial'=>'L']);
-        Db::name("region")->where(['id'=>['IN',['10969','10976']]])->delete();
-
-        // 升级v1.6.3版本要处理的数据
-        $this->eyou_v163_handle_data();
-        // 升级v1.6.4版本要处理的数据
-        $this->eyou_v164_handle_data();
-        // 升级v1.6.5版本要处理的数据
-        $this->eyou_v165_handle_data();
-        // 升级v1.6.6版本要处理的数据
-        $this->eyou_v166_handle_data();
-        // 升级v1.6.7版本要处理的数据
-        $this->eyou_v167_handle_data();
-    }
-
-    // 升级v1.6.3版本要处理的数据
-    private function eyou_v163_handle_data()
-    {
-        // 主题风格同步兼容旧版本数据
-        $this->theme_syn_olddata();
-
-        // 处理站点状态的模板页面
-        $admin_logic_1687676445 = tpSetting('syn.admin_logic_1687676445', [], 'cn');
-        if (empty($admin_logic_1687676445)) {
-            $webConfig = tpCache('web');
-            if (empty($webConfig['web_status_tpl'])) {
-                /*多语言*/
-                $web_basehost = empty($webConfig['web_basehost']) ? request()->domain() : $webConfig['web_basehost'];
-                $web_basehost = preg_replace('/^(([^\:\.]+):)?(\/\/)?([^\/\:]*)(\:\d+)?(.*)$/i', '${1}${3}${4}${5}', $web_basehost);
-                $web_status_tpl = $web_basehost.ROOT_DIR.'/public/close.html';
-                if (is_language()) {
-                    $langRow = \think\Db::name('language')->order('id asc')
-                        ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                        ->select();
-                    foreach ($langRow as $key => $val) {
-                        tpCache('web', ['web_status_tpl'=>$web_status_tpl], $val['mark']);
-                    }
-                } else {
-                    tpCache('web', ['web_status_tpl'=>$web_status_tpl]);
-                }
-                /*--end*/
-            }
-            tpSetting('syn', ['admin_logic_1687676445'=>1], 'cn');
-        }
-        
-        // 处理编辑器常用配置
-        $admin_logic_1687767523 = tpSetting('syn.admin_logic_1687767523', [], 'cn');
-        if (empty($admin_logic_1687767523)) {
-            $editor = tpSetting('editor', [], get_default_lang());
-            if (!empty($editor['editor_select']) || !empty($editor['editor_remote_img_local']) || !empty($editor['editor_img_clear_link'])) {
-                /*多语言*/
-                if (is_language()) {
-                    $langRow = \think\Db::name('language')->order('id asc')
-                        ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                        ->select();
-                    foreach ($langRow as $key => $val) {
-                        tpSetting('editor', $editor, $val['mark']);
-                    }
-                } else {
-                    tpSetting('editor',$editor);
-                }
-                /*--end*/
-            }
-            tpSetting('syn', ['admin_logic_1687767523'=>1], 'cn');
-        }
-
-        // 搜索敏感词默认值
-        $admin_logic_1685584104 = tpSetting('syn.admin_logic_1685584104', [], 'cn');
-        if (empty($admin_logic_1685584104)) {
-            $searchConf = tpCache('search');
-            if (!isset($searchConf['search_tabu_words'])) {
-                $search_tabu_words = ['<','>','"',';',',','@','&','#','\\','*'];
-                $searchConf['search_tabu_words'] = implode(PHP_EOL, $search_tabu_words);
-            }
-            /*多语言*/
-            if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
-                foreach ($langRow as $key => $val) {
-                    tpCache('search', $searchConf, $val['mark']);
-                }
-            } else {
-                tpCache('search', $searchConf);
-            }
-            /*--end*/
-            tpSetting('syn', ['admin_logic_1685584104'=>1], 'cn');
-        }
-
-        // 初始化消息通知公众号模板的数据
-        $admin_logic_1682579646 = tpSetting('syn.admin_logic_1682579646', [], 'cn');
-        if (empty($admin_logic_1682579646)) {
-            $info1 = [
-                'tpl_title' => '留言表单',
-                'template_title' => '客户需求提交成功通知',
-                'template_code' => 0,
-                'template_id' => '',
-                'tpl_data' => '{"keywordsList":[{"name":"\u9700\u6c42\u9879\u76ee","example":"\u57ce\u4e61\u73af\u536b\u4e00\u4f53\u5316\u62db\u6807\u65b9\u6848\u5b9a\u5236","rule":"thing7"},{"name":"\u9700\u6c42\u65f6\u95f4","example":"2023\u5e7410\u670831\u65e5 12:23:34","rule":"time6"}]}',
-                'send_scene' => 1,
-                'is_open' => 0,
-                'info' => '客户提交留言后立即发送',
-                'lang' => get_main_lang(),
-                'add_time' => getTime(),
-                'update_time' => getTime(),
-            ];
-            $info9 = [
-                'tpl_title' => '订单付款',
-                'template_title' => '订单支付成功提醒',
-                'template_code' => 0,
-                'template_id' => '',
-                'tpl_data' => '{"keywordsList":[{"name":"\u8ba2\u5355\u7f16\u53f7","example":"202304301347362851008422","rule":"character_string3"},{"name":"\u4ea7\u54c1\u540d\u79f0","example":"RS\u8d27\u6b3e","rule":"thing11"},{"name":"\u8ba2\u5355\u91d1\u989d","example":"\uffe599.99","rule":"amount4"},{"name":"\u652f\u4ed8\u65f6\u95f4","example":"2022-10-23 14:23:26","rule":"time7"}]}',
-                'send_scene' => 9,
-                'is_open' => 0,
-                'info' => '买家付款成功后立即发送',
-                'lang' => get_main_lang(),
-                'add_time' => getTime(),
-                'update_time' => getTime(),
-            ];
-            /*多语言*/
-            $data = [];
-            if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
-                foreach ($langRow as $key => $val) {
-                    $info1['lang'] = $val['mark'];
-                    $data[] = $info1;
-
-                    $info9['lang'] = $val['mark'];
-                    $data[] = $info9;
-                }
-            } else {
-                $data[] = $info1;
-                $data[] = $info9;
-            }
-            /*--end*/
-            $r = Db::name('wechat_template')->insertAll($data);
-            if ($r !== false) {
-                tpSetting('syn', ['admin_logic_1682579646'=>1], 'cn');
-            }
-        }
-
-        // 处理网站防止被刷的默认开关值
-        $admin_logic_1682580429 = tpSetting('syn.admin_logic_1682580429', [], 'cn');
-        if (empty($admin_logic_1682580429)) {
-            /*多语言*/
-            if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
-                foreach ($langRow as $key => $val) {
-                    tpCache('web', ['web_anti_brushing'=>'0'], $val['mark']);
-                }
-            } else {
-                tpCache('web', ['web_anti_brushing'=>'0']);
-            }
-            /*--end*/
-            tpSetting('syn', ['admin_logic_1682580429'=>1], 'cn');
-        }
-    }
-
-    // 升级v1.6.4版本要处理的数据
-    private function eyou_v164_handle_data()
-    {
-        $Prefix = config('database.prefix');
-
-        // 删除大数据影响的索引
-        $admin_logic_1689071584 = tpSetting('syn.admin_logic_1689071584', [], 'cn');
-        if (empty($admin_logic_1689071584)) {
-            try {
-                @Db::execute("ALTER TABLE `{$Prefix}archives` DROP INDEX `aid`;");
-            } catch (\Exception $e) {
-                
-            }
-            tpSetting('syn', ['admin_logic_1689071584'=>1], 'cn');
-        }
-    }
-
-    // 升级v1.6.5版本要处理的数据
-    private function eyou_v165_handle_data()
-    {
-        // $this->eyou_v165_del_func();
-        $this->syn_handle_table_data();
-        $this->syn_handle_formdata();
-        $this->syn_handle_linksgroupdata();
-        $this->syn_handle_recycle_switch();
-        $this->syn_handle_foreign_pack();
-        $this->syn_handle_tougao_tpl();
-        $this->syn_handle_update_archives();
-        $this->syn_handle_create_index();
-    }
-
-    // 升级v1.6.6版本要处理的数据
-    private function eyou_v166_handle_data()
-    {
-        $this->syn_handle166_table_data();
-        $this->syn_handle_shop_product_attrlist();
-        $this->syn_handle_shop_product_attribute();
-    }
 
     // 升级v1.6.7版本要处理的数据
     private function eyou_v167_handle_data()
     {
         $Prefix = config('database.prefix');
-        $adminTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}admin");
-        $adminTableInfo = get_arr_column($adminTableInfo, 'Field');
-        if (!empty($adminTableInfo) && !in_array('wechat_appid', $adminTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}admin` ADD COLUMN `wechat_appid`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '公众号appid' AFTER `desc`;";
-            @Db::execute($sql);
-        }
-        if (!empty($adminTableInfo) && !in_array('union_id', $adminTableInfo)){
-            $sql = "ALTER TABLE `{$Prefix}admin` ADD COLUMN `union_id`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '微信用户的unionId' AFTER `wechat_open_id`;";
-            @Db::execute($sql);
-        }
-        schemaTable('admin');
 
-        // 编辑器防注入是否开启与关闭
-        $syn_admin_logic_1714458348 = tpSetting('syn.syn_admin_logic_1714458348', [], 'cn');
-        if (empty($syn_admin_logic_1714458348)) {
-            try {
-                $web_xss_filter = (int)tpCache('web.web_xss_filter');
-                $tfile = DATA_PATH.'conf'.DS.'web_xss_filter.txt';
-                $fp = @fopen($tfile,'w');
-                if(!$fp) {
-                    @file_put_contents($tfile, $web_xss_filter);
-                }
-                else {
-                    fwrite($fp, $web_xss_filter);
-                    fclose($fp);
-                }
-
-                tpSetting('syn', ['syn_admin_logic_1714458348' => 1], 'cn');
-            } catch (\Exception $e) {
-            }
-        }
-    }
-
-    /**
-     * 同步处理在添加多语言时，新商品参数分组没有同步到其他语言里
-     * @return [type] [description]
-     */
-    private function syn_handle_shop_product_attrlist()
-    {
-        $admin_logic_1712548559 = tpSetting('syn.admin_logic_1712548559', [], 'cn');
-        if (empty($admin_logic_1712548559)) {
-            $r = true;
-            $main_lang = get_main_lang();
-            $attrlistRow = Db::name('shop_product_attrlist')->order('lang asc, list_id asc')->select();
-
-            $languageAttributeList = Db::name('language_attribute')->where(['attr_group'=>'shop_product_attrlist'])->order('attr_name asc')->getAllWithIndex('attr_name');
-            $addData = [];
-            foreach ($attrlistRow as $key => $val) {
-                if ($main_lang == $val['lang']) {
-                    if (!isset($languageAttributeList['attrlist_'.$val['list_id']])) {
-                        $addData[] = [
-                            'attr_title' => $val['list_name'],
-                            'attr_name' => "attrlist_{$val['list_id']}",
-                            'attr_group' => 'shop_product_attrlist',
-                            'add_time' => getTime(),
-                            'update_time' => getTime(),
-                        ];
-                    }
+        // 售后数据表加入原路退回功能需要的字段
+        if (config('database.type') == 'dm') { // 达梦优化
+            $serviceTableInfo = Db::query("SELECT COLUMN_NAME,DATA_TYPE,DATA_DEFAULT,NULLABLE FROM ALL_TAB_COLS WHERE TABLE_NAME = '{$Prefix}shop_order_service'");
+            $serviceTableInfo = get_arr_column($serviceTableInfo, 'COLUMN_NAME');   
+            if (!empty($serviceTableInfo) && !in_array('refund_way', $serviceTableInfo)) {
+                $sql = "ALTER TABLE `{$Prefix}shop_order_service` ADD COLUMN `refund_way` TINYINT NOT NULL DEFAULT 0;";                
+                if (@Db::execute($sql)) {
+                    $sql = "comment ON COLUMN `{$Prefix}shop_order_service`.`refund_way` IS '退款方式(1:退款到余额; 2:线下退款; 3:原路退回(微信))';";
+                    @Db::execute($sql);
                 }
             }
-            if (!empty($addData)) {
-                $r = Db::name('language_attribute')->insertAll($addData);
-            }
-
-            if ($r !== false) {
-                $languageAttrList = Db::name('language_attr')->where(['attr_group'=>'shop_product_attrlist'])->order('lang asc, attr_name asc')->getAllWithIndex('attr_value');
-                $addData = [];
-                foreach ($attrlistRow as $key => $val) {
-                    if (!isset($languageAttrList[$val['list_id']])) {
-                        $addData[] = [
-                            'attr_name' => "attrlist_{$val['list_id']}",
-                            'attr_value' => $val['list_id'],
-                            'attr_group' => 'shop_product_attrlist',
-                            'lang' => $val['lang'],
-                            'add_time' => getTime(),
-                            'update_time' => getTime(),
-                        ];
-                    }
-                }
-                if (!empty($addData)) {
-                    $r = Db::name('language_attr')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['admin_logic_1712548559'=>1], 'cn');
-                }
-            }
-        }
-    }
-
-    /**
-     * 同步处理在添加多语言时，新商品参数值没有同步到其他语言里
-     * @return [type] [description]
-     */
-    private function syn_handle_shop_product_attribute()
-    {
-        $admin_logic_1712548812 = tpSetting('syn.admin_logic_1712548812', [], 'cn');
-        if (empty($admin_logic_1712548812)) {
-            $r = true;
-            $main_lang = get_main_lang();
-            $attributeRow = Db::name('shop_product_attribute')->order('lang asc, attr_id asc')->select();
-
-            $languageAttributeList = Db::name('language_attribute')->where(['attr_group'=>'shop_product_attribute'])->order('attr_name asc')->getAllWithIndex('attr_name');
-            $addData = [];
-            foreach ($attributeRow as $key => $val) {
-                if ($main_lang == $val['lang']) {
-                    if (!isset($languageAttributeList['attribute_'.$val['attr_id']])) {
-                        $addData[] = [
-                            'attr_title' => $val['attr_name'],
-                            'attr_name' => "attribute_{$val['attr_id']}",
-                            'attr_group' => 'shop_product_attribute',
-                            'add_time' => getTime(),
-                            'update_time' => getTime(),
-                        ];
-                    }
-                }
-            }
-            if (!empty($addData)) {
-                $r = Db::name('language_attribute')->insertAll($addData);
-            }
-
-            if ($r !== false) {
-                $languageAttrList = Db::name('language_attr')->where(['attr_group'=>'shop_product_attribute'])->order('lang asc, attr_name asc')->getAllWithIndex('attr_value');
-                $addData = [];
-                foreach ($attributeRow as $key => $val) {
-                    if (!isset($languageAttrList[$val['attr_id']])) {
-                        $addData[] = [
-                            'attr_name' => "attribute_{$val['attr_id']}",
-                            'attr_value' => $val['attr_id'],
-                            'attr_group' => 'shop_product_attribute',
-                            'lang' => $val['lang'],
-                            'add_time' => getTime(),
-                            'update_time' => getTime(),
-                        ];
-                    }
-                }
-                if (!empty($addData)) {
-                    $r = Db::name('language_attr')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['admin_logic_1712548812'=>1], 'cn');
-                }
-            }
-        }
-    }
-
-    private function syn_handle166_table_data()
-    {
-        $Prefix = config('database.prefix');
-
-        $syn_admin_logic_1706842286 = tpSetting('syn.syn_admin_logic_1706842286', [], 'cn');
-        if (empty($syn_admin_logic_1706842286)) {
-            try {
-                $foreignData = tpSetting('foreign', [], 'cn');
-                if (!empty($foreignData['foreign_is_status'])) {
-                    $foreignData['foreign_authorize'] = 1;
-                    tpSetting('foreign', $foreignData, 'cn');
-                }
-
-                $data = Db::name('channeltype')->where(['id'=>1])->value('data');
-                $data = empty($data) ? [] : json_decode($data, true);
-                if (!empty($data['is_article_pay'])) {
-                    tpSetting('system', ['system_is_article_pay'=>$data['is_article_pay']], 'cn');
-                }
-
-                tpSetting('syn', ['syn_admin_logic_1706842286' => 1], 'cn');
-            } catch (\Exception $e) {
-            }
-        }
-
-        /*$syn_admin_logic_1703473857 = tpSetting('syn.syn_admin_logic_1703473857', [], 'cn');
-        if (empty($syn_admin_logic_1703473857)) {
-            try{
-                $r = true;
-                Db::name('arcrank')->where(['rank'=>-2])->delete();
-                $saveData = Db::name('arcrank')->field('id', true)->where(['rank'=>0])->select();
-                if (!empty($saveData)) {
-                    $addData = [];
-                    foreach ($saveData as $key => $val) {
-                        $val['rank'] = -2;
-                        $val['name'] = '退回稿件';
-                        $addData[] = $val;
-                    }
-                    $r = Db::name('arcrank')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['syn_admin_logic_1703473857'=>1], 'cn');
-                }
-            }catch(\Exception $e){}
-        }*/
-
-        // 退回稿件
-        $tableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}archives");
-        $tableInfo = get_arr_column($tableInfo, 'Field');
-        if (!empty($tableInfo) && !in_array('reason', $tableInfo)){
-            try {
-                $sql = "ALTER TABLE `{$Prefix}archives` ADD COLUMN `reason`  text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '退回原因' AFTER `editor_img_clear_link`;";
+        }else{
+            $serviceTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}shop_order_service");
+            $serviceTableInfo = get_arr_column($serviceTableInfo, 'Field');
+            if (!empty($serviceTableInfo) && !in_array('refund_way', $serviceTableInfo)) {
+                $sql = "ALTER TABLE `{$Prefix}shop_order_service` ADD COLUMN `refund_way`  tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '退款方式(1:退款到余额; 2:线下退款; 3:原路退回(微信))' AFTER `refund_note`;";
                 @Db::execute($sql);
-                @Db::execute("UPDATE `{$Prefix}archives` SET `reason`='';");
-                schemaTable('archives');
-            } catch (\Exception $e) {}
+            }
         }
+        schemaTable('shop_order_service');
 
-
-        // WAP底部菜单 内置多一条数据(一共5条)
-        $syn_admin_logic_1703647730 = tpSetting('syn.syn_admin_logic_1703647730', [], 'cn');
-        if (empty($syn_admin_logic_1703647730)) {
+        // 修复外贸助手的文案错误
+        $syn_admin_logic_1719815413 = tpSetting('syn.syn_admin_logic_1719815413', [], 'cn');
+        if (empty($syn_admin_logic_1719815413)) {
             try {
-                $r = true;
-                $users_bottom_menu_count = Db::name('users_bottom_menu')->count();
-                if (5 > $users_bottom_menu_count) {
-                    $insert = [
-                        'title' => '自定义',
-                        'icon' => 'xingxing',
-                        'display' => 0,
-                        'add_time' => getTime(),
-                        'update_time' => getTime(),
-                    ];
-                    $r = Db::name('users_bottom_menu')->insert($insert);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['syn_admin_logic_1703647730' => 1], 'cn');
-                }
+                Db::name('foreign_pack')->where(['name'=>'users7','value'=>'%已存在！'])->update(['value'=>'%s已存在！']);
+                Db::name('foreign_pack')->where(['name'=>'users7','value'=>'% already exists!'])->update(['value'=>'%s already exists!']);
+                tpSetting('syn', ['syn_admin_logic_1719815413' => 1], 'cn');
             } catch (\Exception $e) {
             }
         }
 
-        $tableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}users_menu");
-        $tableInfo = get_arr_column($tableInfo, 'Field');
-        if (!empty($tableInfo) && !in_array('type', $tableInfo)){
+        // 修复消息推送的多余数据
+        $syn_admin_logic_1721179406 = tpSetting('syn.syn_admin_logic_1721179406', [], 'cn');
+        if (empty($syn_admin_logic_1721179406)) {
             try {
-                $sql = "ALTER TABLE `{$Prefix}users_menu` ADD COLUMN `type` tinyint(3) NULL DEFAULT 0 COMMENT '左侧菜单类型' AFTER `update_time`;";
-                @Db::execute($sql);
-                schemaTable('users_menu');
-                $pc_user_left_menu_config = Config::get('global.pc_user_left_menu_config');
-                $users_menu_list = Db::name('users_menu')->where('version','neq','weapp')->select();
-                foreach ($users_menu_list as $key => $val){
-                    foreach ($pc_user_left_menu_config as $k => $v){
-                        if ($val['mca'] == $v['mca']){
-                            Db::name('users_menu')->where('id',$val['id'])->update(['type'=>$v['id'],'update_time'=>getTime()]);
+                $tpl_ids = [];
+                $markList = Db::name('language')->field('mark')->getAllWithIndex('mark');
+                $result = Db::name('wechat_template')->order('send_scene asc, lang asc, tpl_id asc')->select();
+                $result = group_same_key($result, 'send_scene');
+                foreach ($result as $key => $val) {
+                    $mark_arr = $markList;
+                    foreach ($val as $_k => $_v) {
+                        if (isset($mark_arr[$_v['lang']])) {
+                            $tpl_ids[] = $_v['tpl_id'];
+                            unset($mark_arr[$_v['lang']]);
+                        }
+                        if (empty($mark_arr)) {
+                            break;
                         }
                     }
                 }
-            } catch (\Exception $e) {}
-        }
-
-        // 栏目文章数量统计
-        $syn_admin_logic_1707201289 = tpSetting('syn.syn_admin_logic_1707201289', [], 'cn');
-        if (empty($syn_admin_logic_1707201289)) {
-            try {
-                model('Arctype')->hand_type_count();//统计栏目文档数量
-                tpSetting('syn', ['syn_admin_logic_1707201289' => 1], 'cn');
-            } catch (\Exception $e) {
-            }
-        }
-    }
-
-    private function syn_handle_table_data()
-    {
-        $Prefix = config('database.prefix');
-
-        $admin_logic_1701050542 = tpSetting('syn.admin_logic_1701050542', [], 'cn');
-        if (empty($admin_logic_1701050542)) {
-            $data = [
-                'seo_uphtml_after_home13' => 1,
-                'seo_uphtml_after_channel13' => 1,
-                'seo_uphtml_after_pernext13' => 1,
-            ];
-            /*多语言*/
-            if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
-                foreach ($langRow as $key => $val) {
-                    tpCache('seo', $data, $val['mark']);
-                }
-            } else {
-                tpCache('seo', $data);
-            }
-            /*--end*/
-            tpSetting('syn', ['admin_logic_1701050542'=>1], 'cn');
-        }
-
-        $admin_logic_1701855768 = tpSetting('syn.admin_logic_1701855768', [], 'cn');
-        if (empty($admin_logic_1701855768)) {
-            $data = [
-                'seo_uphtml_editafter_home' => 0,
-                'seo_uphtml_editafter_channel' => 0,
-                'seo_uphtml_editafter_pernext' => (int)tpCache('seo.seo_uphtml_after_pernext'),
-            ];
-            /*多语言*/
-            if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
-                foreach ($langRow as $key => $val) {
-                    tpCache('seo', $data, $val['mark']);
-                }
-            } else {
-                tpCache('seo', $data);
-            }
-            /*--end*/
-            tpSetting('syn', ['admin_logic_1701855768'=>1], 'cn');
-        }
-
-        $admin_logic_1700638990 = tpSetting('syn.admin_logic_1700638990', [], 'cn');
-        if (empty($admin_logic_1700638990)) {
-            $pay_open = (int) Db::name('users_config')->where(['name'=>'pay_open'])->value('value');
-            //同步会员中心手机端底部菜单开关
-            Db::name('users_bottom_menu')->where([
-                    'mca'   => ['IN',['user/Pay/pay_account_recharge']]
-                ])->update([
-                    'status'    => $pay_open,
-                    'update_time'   => getTime(),
-                ]);
-            tpSetting('syn', ['admin_logic_1700638990'=>1], 'cn');
-        }
-
-        $admin_logic_1700789211 = tpSetting('syn.admin_logic_1700789211', [], 'cn');
-        if (empty($admin_logic_1700789211)) {
-            try {
-                $count = Db::name('foreign_pack')->where(['name'=>'page6','type'=>1,'lang'=>'cn'])->count();
-                if (empty($count)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('1', 'page6', '第%s页', 'cn', '100', '1543890216', '1543890216');");
-                }
-            } catch (\Exception $e) {}
-            try {
-                $count = Db::name('foreign_pack')->where(['name'=>'page6','type'=>1,'lang'=>'en'])->count();
-                if (empty($count)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('1', 'page6', '%s', 'en', '100', '1543890216', '1543890216');");
-                }
-            } catch (\Exception $e) {}
-            tpSetting('syn', ['admin_logic_1700789211'=>1], 'cn');
-        }
-
-        try {
-            $tableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}users_recharge_pack");
-            $tableInfo = get_arr_column($tableInfo, 'Field');
-            if (!empty($tableInfo) && !in_array('pack_pay_prices', $tableInfo)){
-                $sql = "ALTER TABLE `{$Prefix}users_recharge_pack` ADD COLUMN `pack_pay_prices`  decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '会员充值套餐购买价格' AFTER `pack_face_value`;";
-                @Db::execute($sql);
-                if (in_array('pack_pay_prices', $tableInfo) && in_array('pack_buy_prices', $tableInfo)){
-                    @Db::execute("UPDATE `{$Prefix}users_recharge_pack` SET `pack_pay_prices`=`pack_buy_prices`;");
-                }
-                schemaTable('users_recharge_pack');
-            }
-            if (!empty($tableInfo) && in_array('pack_buy_prices', $tableInfo)){
-                $sql = "ALTER TABLE `{$Prefix}users_recharge_pack` DROP COLUMN `pack_buy_prices`;";
-                @Db::execute($sql);
-                schemaTable('users_recharge_pack');
-            }
-        } catch (\Exception $e) {}
-    }
-
-    /**
-     * 创建索引
-     * @return [type] [description]
-     */
-    private function syn_handle_create_index()
-    {
-        $admin_logic_1700621159 = tpSetting('syn.admin_logic_1700621159', [], 'cn');
-        if (empty($admin_logic_1700621159)) {
-            $Prefix = config('database.prefix');
-            try {
-                @Db::execute("CREATE INDEX `add_time` ON `{$Prefix}archives`(`add_time`) USING BTREE ;");
-            } catch (\Exception $e) {}
-            try {
-                @Db::execute("CREATE INDEX `union_id` ON `{$Prefix}users`(`union_id`) USING BTREE ;");
-            } catch (\Exception $e) {}
-            try {
-                @Db::execute("CREATE INDEX `username` ON `{$Prefix}users`(`username`) USING BTREE ;");
-            } catch (\Exception $e) {}
-            try {
-                @Db::execute("CREATE INDEX `mobile` ON `{$Prefix}users`(`mobile`) USING BTREE ;");
-            } catch (\Exception $e) {}
-            try {
-                @Db::execute("CREATE INDEX `open_id` ON `{$Prefix}users`(`open_id`) USING BTREE ;");
-            } catch (\Exception $e) {}
-            try {
-                @Db::execute("CREATE INDEX `users_id` ON `{$Prefix}users_list`(`users_id`) USING BTREE ;");
-            } catch (\Exception $e) {}
-            tpSetting('syn', ['admin_logic_1700621159'=>1], 'cn');
-        }
-    }
-
-    /**
-     * 更新 远程图片本地化/清除非本站链接
-     * @return [type] [description]
-     */
-    private function syn_handle_update_archives()
-    {
-        $syn_admin_logic_1700106425 = tpSetting('syn.syn_admin_logic_1700106425', [], 'cn');
-        if (empty($syn_admin_logic_1700106425)) {
-            try{
-                $Prefix = config('database.prefix');
-                $editor = tpSetting('editor');
-                $editor_remote_img_local = !isset($editor['editor_remote_img_local']) ? 1 : intval($editor['editor_remote_img_local']);
-                $editor_img_clear_link = !isset($editor['editor_img_clear_link']) ? 1 : intval($editor['editor_img_clear_link']);
-                @Db::execute("UPDATE `{$Prefix}archives` SET `editor_remote_img_local`={$editor_remote_img_local};");
-                @Db::execute("UPDATE `{$Prefix}archives` SET `editor_img_clear_link`={$editor_img_clear_link};");
-                tpSetting('syn', ['syn_admin_logic_1700106425'=>1], 'cn');
-            }catch(\Exception $e){}
-        }
-    }
-
-    /**
-     * 同步投稿提醒的模板
-     * @return [type] [description]
-     */
-    private function syn_handle_tougao_tpl()
-    {
-        $syn_admin_logic_1700016487 = tpSetting('syn.syn_admin_logic_1700016487', [], 'cn');
-        if (empty($syn_admin_logic_1700016487)) {
-            try{
-                $r = true;
-                Db::name('sms_template')->where(['send_scene'=>20])->delete();
-                $saveData = Db::name('sms_template')->field('tpl_id', true)->where(['send_scene'=>0])->select();
-                if (!empty($saveData)) {
-                    $addData = [];
-                    foreach ($saveData as $key => $val) {
-                        $val['tpl_title'] = '投稿提醒';
-                        $val['send_scene'] = 20;
-                        $val['sms_sign'] = '';
-                        $val['sms_tpl_code'] = '';
-                        $val['tpl_content'] = '您有新的会员投稿，请查看！';
-                        $val['is_open'] = 0;
-                        $addData[] = $val;
-                    }
-                    $r = Db::name('sms_template')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['syn_admin_logic_1700016487'=>1], 'cn');
-                }
-            }catch(\Exception $e){}
-        }
-
-        $syn_admin_logic_1700016488 = tpSetting('syn.syn_admin_logic_1700016488', [], 'cn');
-        if (empty($syn_admin_logic_1700016488)) {
-            try{
-                $r = true;
-                Db::name('smtp_tpl')->where(['send_scene'=>20])->delete();
-                $saveData = Db::name('smtp_tpl')->field('tpl_id', true)->where(['send_scene'=>2])->select();
-                if (!empty($saveData)) {
-                    $addData = [];
-                    foreach ($saveData as $key => $val) {
-                        $val['tpl_name'] = '投稿提醒';
-                        $val['tpl_title'] = '您有新的投稿文档，请及时查看！';
-                        $val['send_scene'] = 20;
-                        $val['is_open'] = 0;
-                        $addData[] = $val;
-                    }
-                    $r = Db::name('smtp_tpl')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['syn_admin_logic_1700016488'=>1], 'cn');
-                }
-            }catch(\Exception $e){}
-        }
-
-        $syn_admin_logic_1700016489 = tpSetting('syn.syn_admin_logic_1700016489', [], 'cn');
-        if (empty($syn_admin_logic_1700016489)) {
-            try{
-                $r = true;
-                Db::name('users_notice_tpl')->where(['send_scene'=>20])->delete();
-                $saveData = Db::name('users_notice_tpl')->field('tpl_id', true)->where(['send_scene'=>1])->select();
-                if (!empty($saveData)) {
-                    $addData = [];
-                    foreach ($saveData as $key => $val) {
-                        $val['tpl_name'] = '投稿提醒';
-                        $val['tpl_title'] = '您有新的投稿文档，请及时查看！';
-                        $val['send_scene'] = 20;
-                        $val['is_open'] = 0;
-                        $addData[] = $val;
-                    }
-                    $r = Db::name('users_notice_tpl')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['syn_admin_logic_1700016489'=>1], 'cn');
-                }
-            }catch(\Exception $e){}
-        }
-    }
-
-    /**
-     * 处理外贸助手功能数据表
-     * @return [type] [description]
-     */
-    private function syn_handle_foreign_pack()
-    {
-        $Prefix = config('database.prefix');
-        $admin_logic_1707029785 = tpSetting('syn.admin_logic_1707029785', [], 'cn');
-        if (empty($admin_logic_1707029785)) {
-            try {
-                $row = Db::name('foreign_pack')->column('name');
-                if (empty($row) || !in_array('system1', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system1', '图', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system1', 'pic', 'en', '100', '1543890216', '1543890216');");
-                }
-                if (empty($row) || !in_array('system2', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system2', '确定', 'cn', '100', '1543890216', '1704164971');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system2', 'ok', 'en', '100', '1543890216', '1706859563');");
-                }
-                if (empty($row) || !in_array('system3', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system3', '取消', 'cn', '100', '1543890216', '1704164971');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system3', 'cancel', 'en', '100', '1543890216', '1704164971');");
-                }
-                if (empty($row) || !in_array('users1', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users1', '您的购物车还没有商品！', 'cn', '100', '1543890216', '1704164971');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users1', 'Your shopping cart doesn\'t have any products yet!', 'en', '100', '1543890216', '1704164971');");
-                }
-                if (empty($row) || !in_array('system4', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system4', '提示', 'cn', '100', '1543890216', '1704164971');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system4', 'prompt', 'en', '100', '1543890216', '1704164971');");
-                }
-                if (empty($row) || !in_array('users2', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users2', '%s不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users2', '%s cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users3', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users3', '%s格式不正确！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users3', '%s Incorrect format!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users4', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users4', '邮箱验证码已被使用或超时，请重新发送！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users4', 'The email verification code has been used or timed out. Please resend it!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users5', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users5', '邮箱验证码不正确，请重新输入！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users5', 'The email verification code is incorrect, please re-enter!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users6', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users6', '短信验证码不正确，请重新输入！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users6', 'The SMS verification code is incorrect, please re-enter!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users7', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users7', '%已存在！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users7', '% already exists!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system5', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system5', '是', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system5', 'yes', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system6', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system6', '否', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system6', 'no', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users8', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users8', '签到成功', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users8', 'Successful check-in', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users9', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users9', '今日已签过到', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users9', 'Signed in today', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system7', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system7', '请至少选择一项！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system7', 'Please select at least one item!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users10', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users10', '是否删除该收藏？', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users10', 'Do you want to delete this collection?', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users11', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users11', '确认批量删除收藏？', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users11', 'Confirm bulk deletion of favorites?', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system8', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system8', '正在处理', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system8', 'Processing', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system9', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system9', '请勿刷新页面', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system9', 'Do not refresh', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users12', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users12', '每日签到', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users12', 'Daily Attendance', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system10', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system10', '上传成功', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system10', 'Upload successful', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users13', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users13', '充值金额不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users13', 'Recharge amount cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users14', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users14', '请输入正确的充值金额！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users14', 'Please enter the correct recharge amount!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users15', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users15', '请选择支付方式！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users15', 'Please choose a payment method!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users16', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users16', '用户名不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users16', 'The username cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users17', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users17', '用户名不正确！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users17', 'The username is incorrect!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users18', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users18', '密码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users18', 'Password cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users19', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users19', '图片验证码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users19', 'The image verification code cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users20', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users20', '图片验证码错误', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users20', 'Image verification code error', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users21', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users21', '前台禁止管理员登录！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users21', 'The front desk prohibits administrators from logging in!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users22', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users22', '该会员尚未激活，请联系管理员！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users22', 'This member has not been activated yet. Please contact the administrator!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users23', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users23', '管理员审核中，请稍等！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users23', 'Administrator review in progress, please wait!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users24', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users24', '登录成功', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users24', 'Login succeeded', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users25', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users25', '密码不正确！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users25', 'The password is incorrect!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users26', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users26', '该用户名不存在，请注册！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users26', 'The username does not exist, please register!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users27', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users27', '看不清？点击更换验证码', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users27', 'Can\'t see clearly? Click to change the verification code', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users28', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users28', '手机号码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users28', 'Mobile phone number cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users29', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users29', '手机号码格式不正确！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users29', 'The phone number format is incorrect!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users30', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users30', '手机验证码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users30', 'Mobile verification code cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users31', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users31', '手机验证码已失效！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users31', 'The mobile verification code has expired!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users32', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users32', '手机号码已经注册！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users32', 'The phone number has been registered!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users33', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users33', '用户名为系统禁止注册！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users33', 'The username is prohibited from registration by the system!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users34', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users34', '请输入2-30位的汉字、英文、数字、下划线等组合', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users34', 'Please enter a combination of Chinese characters, English characters, numbers, underscores, etc. that are 2-30 digits long', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users35', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users35', '登录密码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users35', 'Login password cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users36', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users36', '重复密码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users36', 'The duplicate password cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users37', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users37', '用户名已存在', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users37', 'The username already exists', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users38', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users38', '两次密码输入不一致！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users38', 'The two password inputs are inconsistent!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users39', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users39', '注册成功，正在跳转中……', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users39', 'Registration successful, jumping in progress……', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users40', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users40', '注册成功，等管理员激活才能登录！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users40', 'Registration successful, wait for administrator activation before logging in!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users41', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users41', '注册成功，请登录！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users41', 'Registration successful, please log in!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system11', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system11', '操作失败', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system11', 'Operation failed', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system12', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system12', '操作成功', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system12', 'Operation successful', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users42', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users42', '昵称不可为纯空格', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users42', 'Nicknames cannot be pure spaces', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users43', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users43', '原密码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users43', 'The original password cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users44', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users44', '新密码不能为空！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users44', 'The new password cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users45', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users45', '手机号码不存在，不能找回密码！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users45', 'Mobile phone number does not exist, password cannot be retrieved!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users46', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users46', '手机号码未绑定，不能找回密码！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users46', 'Mobile phone number is not bound, password cannot be retrieved!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users47', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users47', '手机验证码已被使用或超时，请重新发送！', 'cn', '100', '1543890216', '1543890216');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users47', 'The mobile verification code has been used or timed out. Please resend it!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users48', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users48', '晚上好～', 'cn', '100', '1543890216', '1706580800');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users48', 'Good evening~', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users49', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users49', '早上好～', 'cn', '100', '1543890216', '1706580800');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users49', 'Good morning~', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('users50', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users50', '下午好～', 'cn', '100', '1543890216', '1706580800');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('4', 'users50', 'Good afternoon~', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system13', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system13', '含有敏感词，禁止搜索！', 'cn', '100', '1543890216', '1706580800');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system13', 'Contains sensitive words, search prohibited!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system14', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system14', '过度频繁搜索，离解禁还有%s分钟！', 'cn', '100', '1543890216', '1706580800');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system14', 'Excessive frequent searches, with %s minutes left before lifting the ban!', 'en', '100', '1543890216', '1706580800');");
-                }
-                if (empty($row) || !in_array('system15', $row)) {
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system15', '关键词不能为空！', 'cn', '100', '1543890216', '1706580800');");
-                    @Db::execute("INSERT INTO `{$Prefix}foreign_pack` (`type`, `name`, `value`, `lang`, `sort_order`, `add_time`, `update_time`) VALUES ('3', 'system15', 'Keywords cannot be empty!', 'en', '100', '1543890216', '1706580800');");
-                }
-                model('ForeignPack')->updateLangFile();
-                \think\Cache::clear('foreign_pack');
-                tpSetting('syn', ['admin_logic_1707029785'=>1], 'cn');
-            } catch (\Exception $e) {
+                if (!empty($tpl_ids)) {
+                    Db::name('wechat_template')->where(['tpl_id'=>['NOTIN', $tpl_ids]])->delete();
+                }
+                Db::name('wechat_template')->where(['send_scene'=>1])->update(['tpl_title'=>'新表单']);
+                Db::name('wechat_template')->where(['send_scene'=>9])->update(['tpl_title'=>'新订单']);
                 
+                tpSetting('syn', ['syn_admin_logic_1721179406' => 1], 'cn');
+            } catch (\Exception $e) {
             }
-        }
-    }
-
-    /**
-     * 处理回收站开关，多语言情况下同步
-     * @return [type] [description]
-     */
-    private function syn_handle_recycle_switch()
-    {
-        $admin_logic_1698799687 = tpSetting('syn.admin_logic_1698799687', [], 'cn');
-        if (empty($admin_logic_1698799687)) {
-            $web_recycle_switch = Db::name('setting')->where(['name'=>'recycle_switch', 'inc_type'=>'recycle'])->value('value');
-            $web_recycle_switch = intval($web_recycle_switch);
-            /*多语言*/
-            if (is_language()) {
-                $langRow = \think\Db::name('language')->order('id asc')
-                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                    ->select();
-                foreach ($langRow as $key => $val) {
-                    tpCache('web', ['web_recycle_switch'=>$web_recycle_switch], $val['mark']);
-                }
-            } else {
-                tpCache('web', ['web_recycle_switch'=>$web_recycle_switch]);
-            }
-            /*--end*/
-            tpSetting('syn', ['admin_logic_1698799687'=>1], 'cn');
-        }
-    }
-
-    /**
-     * 同步处理在添加多语言时，友情链接分组没有同步到其他语言里
-     * @return [type] [description]
-     */
-    private function syn_handle_linksgroupdata()
-    {
-        $admin_logic_1698733259 = tpSetting('syn.admin_logic_1698733259', [], 'cn');
-        if (empty($admin_logic_1698733259)) {
-            $r = true;
-            $main_lang = get_main_lang();
-            $linksGroupList = Db::name('links_group')->order('lang asc, id asc')->select();
-
-            $languageAttributeList = Db::name('language_attribute')->where(['attr_group'=>'links_group'])->order('attr_name asc')->getAllWithIndex('attr_name');
-            $addData = [];
-            foreach ($linksGroupList as $key => $val) {
-                if ($main_lang == $val['lang']) {
-                    if (!isset($languageAttributeList['linksgroup'.$val['id']])) {
-                        $addData[] = [
-                            'attr_title' => $val['group_name'],
-                            'attr_name' => "linksgroup{$val['id']}",
-                            'attr_group' => 'links_group',
-                            'add_time' => getTime(),
-                            'update_time' => getTime(),
-                        ];
-                    }
-                }
-            }
-            if (!empty($addData)) {
-                $r = Db::name('language_attribute')->insertAll($addData);
-            }
-
-            if ($r !== false) {
-                $languageAttrList = Db::name('language_attr')->where(['attr_group'=>'links_group'])->order('lang asc, attr_name asc')->getAllWithIndex('attr_value');
-                $addData = [];
-                foreach ($linksGroupList as $key => $val) {
-                    if (!isset($languageAttrList[$val['id']])) {
-                        $addData[] = [
-                            'attr_name' => "linksgroup{$val['id']}",
-                            'attr_value' => $val['id'],
-                            'attr_group' => 'links_group',
-                            'lang' => $val['lang'],
-                            'add_time' => getTime(),
-                            'update_time' => getTime(),
-                        ];
-                    }
-                }
-                if (!empty($addData)) {
-                    $r = Db::name('language_attr')->insertAll($addData);
-                }
-                if ($r !== false) {
-                    tpSetting('syn', ['admin_logic_1698733259'=>1], 'cn');
-                }
-            }
-        }
-    }
-
-    /**
-     * 同步处理在添加多语言时，表单属性没有同步到其他语言里
-     * @return [type] [description]
-     */
-    private function syn_handle_formdata()
-    {
-        $admin_logic_1698716726 = tpSetting('syn.admin_logic_1698716726', [], 'cn');
-        if (empty($admin_logic_1698716726)) {
-            $r = true;
-            $formAttributeList = Db::name('guestbook_attribute')->where(['form_type'=>1])->order('typeid asc, attr_id asc')->select();
-            $languageAttrList = Db::name('language_attr')->where(['attr_group'=>'form_attribute'])->order('lang asc, attr_name asc')->getAllWithIndex('attr_value');
-            $addData = [];
-            foreach ($formAttributeList as $key => $val) {
-                if (!isset($languageAttrList[$val['attr_id']])) {
-                    $addData[] = [
-                        'attr_name' => "attr_{$val['attr_id']}",
-                        'attr_value' => $val['attr_id'],
-                        'attr_group' => 'form_attribute',
-                        'lang' => $val['lang'],
-                        'add_time' => getTime(),
-                        'update_time' => getTime(),
-                    ];
-                }
-            }
-            if (!empty($addData)) {
-                $r = Db::name('language_attr')->insertAll($addData);
-            }
-            if ($r !== false) {
-                tpSetting('syn', ['admin_logic_1698716726'=>1], 'cn');
-            }
-        }
-    }
-
-    // 移除没有使用的功能模块，在index控制器也在用，要一起去掉
-    public function eyou_v165_del_func()
-    {
-        // $admin_logic_1694048251 = tpSetting('syn.admin_logic_1694048251', [], 'cn');
-        // if (empty($admin_logic_1694048251)) {
-        //     $shopLogic = new \app\admin\logic\ShopLogic;
-        //     // 列出营销功能里已使用的模块
-        //     $marketFunc = $shopLogic->marketLogic();
-        //     if (empty($marketFunc)) {
-        //         Db::name('admin_menu')->where(['menu_id'=>2008005])->update(['is_menu'=>0, 'update_time'=>getTime()]);
-        //     }
-        //     // 列出功能地图里已使用的模块
-        //     $useFunc = $shopLogic->useFuncLogic();
-        //     if (!in_array('memgift', $useFunc)) {
-        //         Db::name('admin_menu')->where(['menu_id'=>2004023])->update(['is_menu'=>0, 'update_time'=>getTime()]);
-        //     }
-
-        //     tpSetting('syn', ['admin_logic_1694048251'=>1], 'cn');
-        // }
-    }
-
-    private function add_haiwai_region()
-    {
-        $admin_logic_1677555001 = tpSetting('syn.admin_logic_1677555001', [], 'cn');
-        if (empty($admin_logic_1677555001)) {
-            $count = Db::name('region')->where(['name'=>'海外','level'=>1])->count();
-            if (empty($count)) {
-                $insertid1 = Db::name('region')->insertGetId([
-                        'name' => '海外',
-                        'level' => 1,
-                        'parent_id' => 0,
-                        'initial' => 'H',
-                    ]);
-                if (!empty($insertid1)) {
-                    $insertid2 = Db::name('region')->insertGetId([
-                            'name' => '海外',
-                            'level' => 2,
-                            'parent_id' => $insertid1,
-                            'initial' => 'H',
-                        ]);
-                    if (!empty($insertid2)) {
-                        Db::name('region')->insertGetId([
-                                'name' => '海外',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'H',
-                            ]);
-                    }
-                    tpSetting('syn', ['admin_logic_1677555001'=>1], 'cn');
-                }
-            }
-        }
-    }
-
-    private function add_henan_jiyuan_region()
-    {
-        $admin_logic_1698388181 = tpSetting('syn.admin_logic_1698388181', [], 'cn');
-        if (empty($admin_logic_1698388181)) {
-            $count = Db::name('region')->where(['name'=>'济源市','parent_id'=>21387])->count();
-            if (empty($count)) {
-                $insertid2 = Db::name('region')->insertGetId([
-                        'name' => '济源市',
-                        'level' => 2,
-                        'parent_id' => 21387,
-                        'initial' => 'J',
-                    ]);
-                if (!empty($insertid2)) {
-                    Db::name('region')->insertAll([
-                            [
-                                'name' => '沁园街道',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'Q',
-                            ],
-                            [
-                                'name' => '济水街道',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'J',
-                            ],
-                            [
-                                'name' => '北海街道',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'B',
-                            ],
-                            [
-                                'name' => '天坛街道',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'T',
-                            ],
-                            [
-                                'name' => '玉泉街道',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'Y',
-                            ],
-                            [
-                                'name' => '克井镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'K',
-                            ],
-                            [
-                                'name' => '五龙口镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'W',
-                            ],
-                            [
-                                'name' => '轵城镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'Z',
-                            ],
-                            [
-                                'name' => '承留镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'C',
-                            ],
-                            [
-                                'name' => '邵原镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'S',
-                            ],
-                            [
-                                'name' => '坡头镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'P',
-                            ],
-                            [
-                                'name' => '梨林镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'L',
-                            ],
-                            [
-                                'name' => '大峪镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'D',
-                            ],
-                            [
-                                'name' => '思礼镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'S',
-                            ],
-                            [
-                                'name' => '王屋镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'W',
-                            ],
-                            [
-                                'name' => '下冶镇',
-                                'level' => 3,
-                                'parent_id' => $insertid2,
-                                'initial' => 'X',
-                            ],
-                        ]);
-                    tpSetting('syn', ['admin_logic_1698388181'=>1], 'cn');
-                }
-            }
-        }
-    }
-
-    // 添加商城订单主表字段(消费获得积分数(obtain_scores)；订单是否已赠送积分(is_obtain_scores))
-    public function admin_logic_1677653220()
-    {
-        $Prefix = config('database.prefix');
-        // 订单表字段查询
-        $shopOrderTableInfo = Db::query("SHOW COLUMNS FROM {$Prefix}shop_order");
-        $shopOrderTableInfo = get_arr_column($shopOrderTableInfo, 'Field');
-
-        // 订单是否允许申请售后维权
-        if (!empty($shopOrderTableInfo) && !in_array('allow_service', $shopOrderTableInfo)) {
-            $sql0 = "ALTER TABLE `{$Prefix}shop_order` ADD COLUMN `allow_service`  tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '订单是否允许申请售后维权，0=允许申请维权，1=不允许申请维权' AFTER `confirm_time`";
-            @Db::execute($sql0);
-            schemaTable('shop_order');
-        }
-
-        // 消费获得积分数
-        if (!empty($shopOrderTableInfo) && !in_array('obtain_scores', $shopOrderTableInfo)) {
-            $sql1 = "ALTER TABLE `{$Prefix}shop_order` ADD COLUMN `obtain_scores`  int(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT '消费获得积分数' AFTER `allow_service`;";
-            @Db::execute($sql1);
-            schemaTable('shop_order');
-        }
-
-        // 该订单是否已赠送积分
-        if (!empty($shopOrderTableInfo) && !in_array('is_obtain_scores', $shopOrderTableInfo)) {
-            $sql2 = "ALTER TABLE `{$Prefix}shop_order` ADD COLUMN `is_obtain_scores`  tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '该订单是否已赠送积分，0=未赠送，1=已赠送' AFTER `obtain_scores`;";
-            @Db::execute($sql2);
-            schemaTable('shop_order');
-        }
-    }
-
-    // 更新会员积分数据表，积分类型字段 type
-    public function admin_logic_1680749290()
-    {
-        $admin_logic_1680749290 = tpSetting('syn.admin_logic_1680749290', [], 'cn');
-        if (empty($admin_logic_1680749290)) {
-            // 表前缀
-            $Prefix = config('database.prefix');
-            // 会员积分表更新
-            $sql = "ALTER TABLE `{$Prefix}users_score` MODIFY COLUMN `type`  tinyint(2) NULL DEFAULT 1 COMMENT '类型:1-提问,2-回答,3-最佳答案4-悬赏退回,5-每日签到,6-管理员编辑,7-问题悬赏/获得悬赏,8-消费赠送积分,9-积分兑换/退回,10-登录赠送积分' AFTER `id`;";
-            @Db::execute($sql);
-            schemaTable('users_score');
-            // 增加会员登录日志表
-            $isTable = Db::query('SHOW TABLES LIKE \''.$Prefix.'users_login_log\'');
-            if (empty($isTable)) {
-                $tableSql = <<<EOF
-CREATE TABLE IF NOT EXISTS `{$Prefix}users_login_log` (
-  `log_id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '会员日志自增ID',
-  `users_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '会员ID',
-  `log_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '日志时间，年月日(例:20230406)',
-  `log_count` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '日志次数',
-  `add_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
-  `update_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
-  PRIMARY KEY (`log_id`),
-  UNIQUE KEY `users_id` (`users_id`) USING BTREE
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='会员登录日志';
-EOF;
-                $result = @Db::execute($tableSql);
-                if ($result !== false) schemaTable('users_login_log');
-            }
-            // 设置已完成执行
-            tpSetting('syn', ['admin_logic_1680749290'=>1], 'cn');
-        }
-    }
-
-    /**
-     * 更新旧的商品虚拟总销量
-     * @return [type] [description]
-     */
-    private function handleProductSalesAll()
-    {
-        $admin_logic_1675243579 = tpSetting('syn.admin_logic_1675243579', [], 'cn');
-        if (empty($admin_logic_1675243579)) {
-            $productList = Db::name('archives')->field('aid,sales_num,virtual_sales,sales_all')
-                ->where(['channel'=>2])
-                ->select();
-            if (!empty($productList)) {
-                $specList = Db::name('product_spec_data')->field('aid,count(aid) as total')
-                    ->group('aid')
-                    ->getAllWithIndex('aid');
-                $salesList = Db::name('product_spec_value')->field('aid,sum(spec_sales_num) as spec_sales_num,count(aid) as spec_counts')
-                    ->group('aid')
-                    ->getAllWithIndex('aid');
-                $saveData = [];
-                foreach ($productList as $key => $val) {
-                    if (!empty($specList[$val['aid']]['total'])) { // 多规格
-                        $spec_counts = empty($salesList[$val['aid']]['spec_counts']) ? 0 : $salesList[$val['aid']]['spec_counts'];
-                        $spec_sales_num = empty($salesList[$val['aid']]['spec_sales_num']) ? 0 : $salesList[$val['aid']]['spec_sales_num'];
-                        $saveData[] = [
-                            'aid' => $val['aid'],
-                            'sales_all' => $spec_sales_num, // + ($spec_counts * $val['virtual_sales']),
-                        ];
-                    } else {
-                        $saveData[] = [
-                            'aid' => $val['aid'],
-                            'sales_all' => $val['sales_num'] + $val['virtual_sales'],
-                        ];
-                    }
-                }
-                if (!empty($saveData)) {
-                    model('Archives')->saveAll($saveData);
-                }
-            }
-            tpSetting('syn', ['admin_logic_1675243579'=>1], 'cn');
         }
     }
 
@@ -2076,127 +3513,6 @@ EOF;
                 }
                 if (in_array($channel, [0,2]) && !file_exists($dest_path.'comment_list.htm') && file_exists($source_path.'mobile/system/comment_list.htm')) {
                     @copy($source_path.'mobile/system/comment_list.htm', $dest_path.'comment_list.htm');
-                }
-            }
-        }
-    }
-
-    public function admin_logic_1685094852()
-    {
-        $syn_admin_logic_1685094852 = tpSetting('syn.admin_logic_1685094852', [], 'cn');
-        if (empty($syn_admin_logic_1685094852)) {
-            $articlePay = Db::name('article_pay')->field('id, size, update_time')->select();
-            if (!empty($articlePay)) {
-                foreach ($articlePay as $key => $value) {
-                    $value['size'] = intval(floatval($value['size']) * floatval(1024));
-                    $value['update_time'] = getTime();
-                    Db::name('article_pay')->where('id', $value['id'])->update($value);
-                }
-            }
-            tpSetting('syn', ['admin_logic_1685094852'=>1], 'cn');
-        }
-    }
-
-    // 运费模板数据同步--陈风任
-    public function admin_logic_1687687709()
-    {
-        $syn_admin_logic_1687687709 = tpSetting('syn.admin_logic_1687687709', [], 'cn');
-        if (empty($syn_admin_logic_1687687709)) {
-            // 查询地址表是否存在海外区域
-            $where = [
-                'level' => 1,
-                'name' => '海外',
-                'parent_id' => 0,
-            ];
-            $region = Db::name('region')->where($where)->find();
-
-            // 查询运费模板表是否已添加海外区域
-            $where = [
-                'province_id' => $region['id'],
-                'template_region' => $region['name'],
-            ];
-            $template = Db::name('shop_shipping_template')->where($where)->find();
-
-            // 判断是否需要添加运费模板数据
-            if (!empty($region) && empty($template)) {
-                // 添加运费模板数据
-                $insert = [
-                    'update_time' => getTime(),
-                    'province_id' => $region['id'],
-                    'template_region' => $region['name'],
-                ];
-                Db::name('shop_shipping_template')->insert($insert);
-            }
-
-            tpSetting('syn', ['admin_logic_1687687709'=>1], 'cn');
-        }
-    }
-
-    /**
-     * 主题风格同步兼容旧版本数据
-     * @return [type] [description]
-     */
-    private function theme_syn_olddata()
-    {
-        $admin_logic_1681199467 = tpSetting('syn.admin_logic_1681199467', [], 'cn');
-        if (empty($admin_logic_1681199467)) {
-            $count = Db::name('admin_theme')->where(['is_system'=>0,'theme_type'=>1])->count();
-            if (empty($count)) {
-                $globalConfig = tpCache('global');
-                // 后台logo/登录logo
-                if (-1 == $globalConfig['web_is_authortoken']) {
-                    if (empty($globalConfig['web_adminlogo'])) {
-                        $globalConfig['web_adminlogo'] = ROOT_DIR.'/public/static/admin/images/logo_ey.png';
-                    }
-                    if (empty($globalConfig['web_loginlogo'])) {
-                        $globalConfig['web_loginlogo'] = ROOT_DIR.'/public/static/admin/images/login-logo_ey.png';
-                    }
-                } else {
-                    if (empty($globalConfig['web_adminlogo'])) {
-                        $globalConfig['web_adminlogo'] = ROOT_DIR.'/public/static/admin/images/logo.png';
-                    }
-                    if (empty($globalConfig['web_loginlogo'])) {
-                        if ($globalConfig['php_servicemeal'] >= 2) {
-                            $globalConfig['web_loginlogo'] = ROOT_DIR.'/public/static/admin/images/login-logo_zy.png';
-                        } else {
-                            $globalConfig['web_loginlogo'] = ROOT_DIR.'/public/static/admin/images/login-logo.png';
-                        }
-                    }
-                }
-                $addData = [
-                    'theme_type' => 1,
-                    'theme_title' => '默认主题',
-                    'theme_pic' => ROOT_DIR.'/public/static/admin/images/theme/theme_pic_default.png',
-                    'theme_color_model' => empty($globalConfig['web_theme_color_model']) ? 1 : $globalConfig['web_theme_color_model'],
-                    'theme_main_color' => empty($globalConfig['web_theme_color']) ? '#3398cc' : $globalConfig['web_theme_color'],
-                    'theme_assist_color' => empty($globalConfig['web_assist_color']) ? '#2189be' : $globalConfig['web_assist_color'],
-                    'login_logo' => empty($globalConfig['web_loginlogo']) ? ROOT_DIR.'/public/static/admin/login/login-logo.png' : $globalConfig['web_loginlogo'],
-                    'login_bgimg_model' => empty($globalConfig['web_loginbgimg_model']) ? 1 : $globalConfig['web_loginbgimg_model'],
-                    'login_bgimg' => empty($globalConfig['web_loginbgimg']) ? ROOT_DIR.'/public/static/admin/loginbg/login-bg-1.png' : $globalConfig['web_loginbgimg'],
-                    'login_tplname' => '',
-                    'admin_logo' => empty($globalConfig['web_adminlogo']) ? ROOT_DIR.'/public/static/admin/logo/logo.png' : $globalConfig['web_adminlogo'],
-                    'welcome_tplname' => '',
-                    'is_system' => 0,
-                    'sort_order' => 100,
-                    'lang' => get_admin_lang(),
-                    'add_time' => getTime(),
-                    'update_time' => getTime(),
-                ];
-                $theme_id = Db::name('admin_theme')->insertGetId($addData);
-                if (!empty($theme_id)) {
-                    /*多语言*/
-                    if (is_language()) {
-                        $langRow = \think\Db::name('language')->order('id asc')
-                            ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                            ->select();
-                        foreach ($langRow as $key => $val) {
-                            tpCache('web', ['web_theme_styleid'=>$theme_id], $val['mark']);
-                        }
-                    } else {
-                        tpCache('web', ['web_theme_styleid'=>$theme_id]);
-                    }
-                    /*--end*/
-                    tpSetting('syn', ['admin_logic_1681199467'=>1], 'cn');
                 }
             }
         }

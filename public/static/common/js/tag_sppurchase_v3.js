@@ -564,7 +564,9 @@ function SpecSelect(spec_mark_id, spec_value_id, discount_price, spec_image) {
             if (document.getElementById('sales_num')) {
                 document.getElementById('sales_num').innerText = SpecData[i]['spec_sales_num'];
             }
-            // 替换规格库存
+            if (document.getElementById('stock_code')) {
+                document.getElementById('stock_code').innerText = SpecData[i]['stock_code'];
+            }
             if (document.getElementById('ey_stock_v602291')) {
                 document.getElementById('ey_stock_v602291').value = SpecData[i]['spec_stock'];
             }

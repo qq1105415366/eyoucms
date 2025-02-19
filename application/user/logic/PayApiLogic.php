@@ -252,7 +252,7 @@ class PayApiLogic extends Model
                     if ((0 < intval($OrderData['prom_type']) || (0 === intval($OrderData['prom_type']) && 2 === intval($OrderData['logistics_type']))) && in_array($OrderData['order_status'], [2, 3]) && 'wechat' === trim($OrderData['pay_name'])) {
                         model('ShopPublicHandle')->pushWxShippingInfo($this->users_id, $OrderData['order_code'], 2);
                     }
-                    $this->success('订单已支付，即将跳转', $url, $returnData['data']);
+                    $this->success('订单已支付，即将跳转', $url, true);
                 } else if ($OrderData['order_status'] == 4) {
                     $this->success('订单已过期，即将跳转', $url, true);
                 } else if ($OrderData['order_status'] == -1) {
@@ -292,6 +292,12 @@ class PayApiLogic extends Model
                 }
                 // 订单无需处理，直接返回结束
                 else if (isset($OrderData['order_status']) && 0 !== intval($OrderData['order_status'])) {
+                    // 订单支付通知
+                    $params = [
+                        'users_id' => $OrderData['users_id'],
+                        'result_id' => $OrderData['order_id'],
+                    ];
+                    eyou_send_notice(9, $params);
                     // 订单已完成
                     if ((0 < intval($OrderData['prom_type']) || (0 === intval($OrderData['prom_type']) && 2 === intval($OrderData['logistics_type']))) && in_array($OrderData['order_status'], [2, 3]) && 'wechat' === trim($OrderData['pay_name'])) {
                         model('ShopPublicHandle')->pushWxShippingInfo($this->users_id, $OrderData['order_code'], 2, $config);
@@ -837,6 +843,7 @@ class PayApiLogic extends Model
         else if (2 === intval($Post['transaction_type'])) {
             // 付款成功后，订单并未修改状态时，修改订单状态并返回
             if (empty($Order['order_status'])) {
+                // async为true时表示同步，否则异步
                 $async = $this->fromAsync ? false : true;
                 $returnData = pay_success_logic($this->users_id, $Order['order_code'], $PayDetails, $Order['pay_name'], $async, [], $config);
                 if (is_array($returnData)) {

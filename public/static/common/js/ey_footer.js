@@ -120,7 +120,7 @@ function tag_userinfo_1608459452(result)
         $.ajax({
             type : 'post',
             url : result.root_dir+"/index.php?m=api&c=Diyajax&a=check_userinfo",
-            data : {aid:ey_aid},
+            data : {aid:ey_aid, viewfile:result.viewfile},
             dataType : 'json',
             success : function(res){
                 loginafter_1610585975(res, htmlObj, before_display, ey_login_vertify_display, third_party_login_display, third_party_wxlogin_display, third_party_wblogin_display, third_party_qqlogin_display);
@@ -136,7 +136,7 @@ function tag_userinfo_1608459452(result)
         // 如果需要像 HTML 表单那样 POST 数据，请使用 setRequestHeader() 来添加 HTTP 头。然后在 send() 方法中规定您希望发送的数据：
         ajax.setRequestHeader("Content-type","application/x-www-form-urlencoded");
         //步骤三:发送请求+数据
-        ajax.send("aid="+ey_aid);
+        ajax.send("aid="+ey_aid+"&viewfile="+result.viewfile);
         //步骤四:注册事件 onreadystatechange 状态改变就会调用
         ajax.onreadystatechange = function () {
             //步骤五 如果能够进到这个判断 说明 数据 完美的回来了,并且请求的页面是存在的

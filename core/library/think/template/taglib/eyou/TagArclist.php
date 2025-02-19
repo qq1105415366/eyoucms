@@ -238,7 +238,6 @@ class TagArclist extends Base
             } else {
                 $channeltype = $param['channel'] = M('arctype')->where('id', intval($param['typeid']))->getField('current_channel');
             }
-
         } else {
             if (!empty($channeltype)) { // 如果指定了频道ID，则频道下的所有文档都展示
                 unset($param['typeid']);
@@ -463,9 +462,9 @@ class TagArclist extends Base
             default:
             {
                 $where2 = [];
-                if (empty($typeid)) {
+                // if (empty($typeid)) {
                     $where2['a.lang'] = self::$home_lang;
-                }
+                // }
                 // 提取特定文档（文档ID）
                 if (!empty($idlist)) {
                     $where_str = [
@@ -481,7 +480,7 @@ class TagArclist extends Base
 
                 if (($web_cmsmode == 1 || 'Buildhtml' == CONTROLLER_NAME ) && !is_dir('./weapp/TimingTask/') && 'rand()' != $orderby && !empty($result)){
                     $querysql = cache("buildhtml_arc_querysql_".$cache_key_suffix);
-                }else{
+                } else {
                     if ('rand()' == $orderby) { // 如果是随便获取数据，将先查询1000条，然后再从其中随机，提高大数据情况下的性能
                         if (empty($group_user_where)){
                             $result = $this->archives_db
@@ -583,14 +582,14 @@ class TagArclist extends Base
                         $val['sales_num'] = $val['sales_all']; // 总虚拟销量
 
                         // 栏目链接
-                        if ($val['is_part'] == 1) {
+                        if (!empty($val['is_part']) && $val['is_part'] == 1) {
                             $val['typeurl'] = $val['typelink'];
                         } else {
                             $val['typeurl'] = typeurl('home/'.$controller_name."/lists", $val);
                         }
 
                         // 文档链接
-                        if ($val['is_jump'] == 1) {
+                        if (!empty($val['is_jump']) && $val['is_jump'] == 1) {
                             $val['arcurl'] = $val['jumplinks'];
                         } else {
                             $val['arcurl'] = arcurl('home/'.$controller_name.'/view', $val);
@@ -806,9 +805,9 @@ class TagArclist extends Base
                 $product_spec = group_same_key($product_spec, 'aid');
                 
                 // 查询用户信息
-                $Users = GetUsersLatestData();
-                $DiscountRate = !empty($Users) ? $Users['level_discount'] / 100 : 1;
-                
+                $usersInfo = GetUsersLatestData();
+                $discountRate = !empty($usersInfo['level_discount']) ? floatval($usersInfo['level_discount']) / floatval(100) : 1;
+
                 // 处理价格及库存
                 $Spec = [];
                 foreach ($result as $key => $value) {
@@ -817,8 +816,8 @@ class TagArclist extends Base
                         $Spec = $product_spec[$value['aid']][0];
                         // 规格价格
                         if (!empty($Spec) && $Spec['spec_price'] >= 0) {
-                            $result[$key]['old_price'] = floatval(sprintf("%.2f", $Spec['spec_price']));
-                            $result[$key]['users_price'] = floatval(sprintf("%.2f", $Spec['spec_price'] * $DiscountRate));
+                            $result[$key]['old_price'] = unifyPriceHandle($Spec['spec_price']);
+                            $result[$key]['users_price'] = unifyPriceHandle($Spec['spec_price'] * $discountRate);
                         }
                         // 规格库存
                         if (!empty($Spec) && $Spec['spec_stock'] >= 0) $result[$key]['stock_count'] = $Spec['spec_stock'];
@@ -826,12 +825,15 @@ class TagArclist extends Base
                         $result[$key]['ShopAddCart'] = " onclick=\"ShopAddCart1625194556('{$value['aid']}', '{$Spec['spec_value_id']}', 1, '{$this->root_dir}');\" ";
                     } else {
                         // 无规格
-                        $result[$key]['old_price'] = floatval(sprintf("%.2f", $value['users_price']));
-                        $result[$key]['users_price'] = floatval(sprintf("%.2f", $value['users_price'] * $DiscountRate));
+                        $result[$key]['old_price'] = unifyPriceHandle($value['users_price']);
+                        $result[$key]['users_price'] = unifyPriceHandle($value['users_price'] * $discountRate);
                         // 加入购物车 onclick
                         $result[$key]['ShopAddCart'] = " onclick=\"ShopAddCart1625194556('{$value['aid']}', null, 1, '{$this->root_dir}');\" ";
                     }
                 }
+
+                // 如果存在分销插件则处理分销商商品URL(携带分销商参数，用于绑定分销商上下级)
+                $result = $this->handleDealerGoodsURL($result, $usersInfo);
             }
         }
 

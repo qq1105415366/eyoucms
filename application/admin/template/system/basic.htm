@@ -63,6 +63,17 @@
             </dl>
             <dl class="row">
                 <dt class="tit">
+                    <label for="file_uploadname_open">附件名称</label>
+                </dt>
+                <dd class="opt">
+                    <label class="curpoin"><input type="radio" name="file_uploadname_open" value="1" {if condition='isset($config.file_uploadname_open) && $config.file_uploadname_open eq 1'}checked="checked"{/if}>不做变动</label>
+                    &nbsp;
+                    <label class="curpoin"><input type="radio" name="file_uploadname_open" value="0" {if condition='empty($config.file_uploadname_open)'}checked="checked"{/if}>随机重命名</label>
+                    <p class="notic">附件名称设置不做变动即为上传的随机+原来名称，随机重命名就是会被系统随便更改名称。</p>
+                </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit">
                     <label>内容图片附加功能</label>
                 </dt>
                 <dd class="opt">

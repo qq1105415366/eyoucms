@@ -1,3 +1,19 @@
+.ml5 {
+    margin-left: 5px !important;
+}
+.basics-color{
+    color: #3398cc !important;
+}
+.ey-select{
+    margin: 0px;
+    padding: 4px 6px;
+    color: #555555;
+    background-color: #FFF;
+    border: solid 1px #eee;
+    resize: none;
+    outline: none;
+    vertical-align: middle;
+}
 .upload-body {
     position: relative;
 }

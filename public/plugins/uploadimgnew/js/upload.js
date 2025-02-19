@@ -212,12 +212,15 @@ $(function(){
 
     // 确定选中图片
     $(".layui-btn-yes").click(function() {
+        var input_top_tab = $('#input_top_tab').val();
+        if ('ai' == input_top_tab) {
+            return false;
+        }
         var fileurl_tmp = [];
         var filename_tmp = [];
         if (callback != "undefined") {
             var arrimg = new Array();
             var arrimgname = new Array();
-            var input_top_tab = $('#input_top_tab').val();
             var imgremoteurl = $.trim($('input[name=imgremoteurl]').val());
             var errmsg = '';
             if ('tiqu' == input_top_tab) { // 不提取图片，而直接点击确定，获取远程图片地址
@@ -315,26 +318,29 @@ $(function(){
             evaljs += '  console.log(5);window.parent.'+callback+'(fileurl_tmp,filename_tmp)';
             evaljs += '}';
             eval(evaljs);
-            if ('uploadImgProimgCallBack' !== String(callback)) {
-                window.parent.layer.closeAll();
-            }
+            window.parent.layer.closeAll();
+            // if ('uploadImgProimgCallBack' !== String(callback)) {
+            //     window.parent.layer.closeAll();
+            // }
             // eval('window.parent.'+callback+'(fileurl_tmp,filename_tmp)');
             return;
         } else {
             showErrorMsg('图片地址不能为空！');
         }
-        if ('uploadImgProimgCallBack' !== String(callback)) {
-            window.parent.layer.closeAll();
-        }
+        window.parent.layer.closeAll();
+        // if ('uploadImgProimgCallBack' !== String(callback)) {
+        //     window.parent.layer.closeAll();
+        // }
     });
 
     // 关闭图片选择框
     $(".layui-btn-off").click(function(){
         $.cookie("img_id_upload", "");
         $.cookie("imgname_id_upload", "");
-        if ('uploadImgProimgCallBack' !== String(callback)) {
-            window.parent.layer.closeAll();
-        }
+        window.parent.layer.closeAll();
+        // if ('uploadImgProimgCallBack' !== String(callback)) {
+        //     window.parent.layer.closeAll();
+        // }
     });
 });
 

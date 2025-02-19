@@ -3,12 +3,6 @@
 <div id="toolTipLayer" style="position: absolute; z-index: 9999; display: none; visibility: visible; left: 95px; top: 573px;"></div>
 <div id="append_parent"></div>
 <div id="ajaxwaitid"></div>
-<style type="text/css">
-    #layerid_1645756024 textarea
-    {
-        height: 220px;
-    }
-</style>
 <div class="page" style="min-width:auto; ">
     <div class="fixed-bar">
         <div class="item-title">
@@ -49,7 +43,7 @@
                 </div>
             </div>
             <div class="ncap-form-default">
-                <dl class="row">
+                <!-- <dl class="row">
                     <dt class="tit">
                         <label for="web_sqldatapath">数据备份路径</label>
                     </dt>
@@ -57,14 +51,14 @@
                         __ROOT_DIR__<input id="web_sqldatapath" name="web_sqldatapath" value="{$global.web_sqldatapath|default=config('DATA_BACKUP_PATH')}" class="input-txt" type="text" autocomplete="off" />
                         <p class="notic"></p>
                     </dd>
-                </dl>
+                </dl> -->
                 <dl class="row">
                     <dt class="tit">
-                        <label for="adminbasefile">后台登录路径</label>
+                        <label for="adminbasefile"><em>*</em>后台登录路径</label>
                     </dt>
                     <dd class="opt">
-                        __SITE_URL____ROOT_DIR__/<input type="hidden" name="adminbasefile_old" value="{$adminbasefile|default='login'}"><input id="adminbasefile" name="adminbasefile" value="{$adminbasefile|default='login'}" type="text" data-site_url="__SITE_URL__" onKeyUp="this.value=this.value.replace(/[^\w\_\-]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^\w\_\-]/g,''));" style="width: 120px;" autocomplete="off" />.php
-                        <p class="notic">为了提高后台的安全性，请及时更改后台入口文件。</p>
+                        __SITE_URL____ROOT_DIR__/<input type="hidden" name="adminbasefile_old" value="{$adminbasefile|default='login'}"><input id="adminbasefile" name="adminbasefile" value="{$adminbasefile|default='login'}" type="text" data-site_url="__SITE_URL__" onKeyUp="this.value=this.value.replace(/[^\w\_\-]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^\w\_\-]/g,''));" style="width: 210px;" autocomplete="off" />.php
+                        <p class="notic2">为了提高系统的安全性，请更改后台入口文件，可使用英文字母大小写+数字。</p>
                     </dd>
                 </dl>
                 <dl class="row">
@@ -132,7 +126,7 @@
                         <label class="curpoin"><input id="web_anti_brushing0" name="web_anti_brushing" value="0" type="radio" {if condition="empty($global.web_anti_brushing)"} checked="checked"{/if}>关闭</label>
                         <span class="err"></span>
                         <p class="notic">开启后可以防止域名后缀加?wb=违禁词也能访问并被收录等情况</p>
-                        <p class="notic2">注意：静态模式下，首页生成应该改为“动态预览”才有效果</p>
+                        <p class="notic2">注意：静态模式下，首页生成应该改为“动态预览”才有效果，仅对首页URL有效</p>
                     </dd>
                 </dl>
                 <dl class="row">
@@ -272,8 +266,6 @@
             }
         }
         
-        var adminbasefileObj = $('input[name=adminbasefile]');
-        var adminbasefile_oldObj = $('input[name=adminbasefile_old]');
         if(adminbasefile_oldObj.val() != adminbasefileObj.val()){
             var flag = false;
             var site_url = adminbasefileObj.data('site_url');

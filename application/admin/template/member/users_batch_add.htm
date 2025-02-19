@@ -41,7 +41,7 @@
                 </dd>
             </dl>
 
-            {if condition="1 == $userConfig.level_member_upgrade"}
+            {if condition="1 == $usersConfig.level_member_upgrade"}
                 <dl class="row" style="display: none;" id='users_days'>
                     <dt class="tit">
                         <label for="users_days"><em>*</em>会员天数</label>
@@ -53,7 +53,7 @@
                     </dd>
                 </dl>
             {/if}
-            <input type="hidden" id="level_member_upgrade" value="{$userConfig.level_member_upgrade|default='0'}">
+            <input type="hidden" id="level_member_upgrade" value="{$usersConfig.level_member_upgrade|default='0'}">
 
             {notempty name='$users_para'}
             <dl class="row"><dt class="tit"><label><b>更多资料</b></label></dt></dl>

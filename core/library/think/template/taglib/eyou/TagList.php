@@ -369,9 +369,9 @@ class TagList extends Base
                 $usersArr = array();
                 $query_get = array();
                 $where2 = [];
-                if (empty($typeid)) {
+                // if (empty($typeid)) {
                     $where2['a.lang'] = self::$home_lang;
-                }
+                // }
 
                 /*列表分页URL问号的查询部分*/
                 $get_arr = input('get.');
@@ -510,20 +510,20 @@ class TagList extends Base
                     $val['sales_num'] = $val['sales_all']; // 总虚拟销量
 
                     /*获取指定路由模式下的URL*/
-                    if ($val['is_part'] == 1) {
+                    if (!empty($val['is_part']) && $val['is_part'] == 1) {
                         $val['typeurl'] = $val['typelink'];
                     } else {
                         $val['typeurl'] = typeurl('home/'.$controller_name."/lists", $val);
                     }
                     /*--end*/
                     /*文档链接*/
-                    if ($val['is_jump'] == 1) {
+                    if (!empty($val['is_jump']) && $val['is_jump'] == 1) {
                         $val['arcurl'] = $val['jumplinks'];
                     } else {
                         $val['arcurl'] = arcurl('home/'.$controller_name.'/view', $val);
                     }
                     /*--end*/
-                    /*封面图*/
+                    // 封面图
 /*                    if (empty($val['litpic'])) {
                         $val['is_litpic'] = 0; // 无封面图
                     } else {
@@ -715,8 +715,8 @@ class TagList extends Base
                         $product_spec = group_same_key($product_spec, 'aid');
 
                         // 查询用户信息
-                        $Users = GetUsersLatestData();
-                        $DiscountRate = !empty($Users) ? $Users['level_discount'] / 100 : 1;
+                        $usersInfo = GetUsersLatestData();
+                        $discountRate = !empty($usersInfo['level_discount']) ? floatval($usersInfo['level_discount']) / floatval(100) : 1;
 
                         // 处理价格及库存
                         $Spec = [];
@@ -726,8 +726,8 @@ class TagList extends Base
                                 $Spec = $product_spec[$value['aid']][0];
                                 // 规格价格
                                 if (!empty($Spec) && $Spec['spec_price'] >= 0) {
-                                    $list[$key]['old_price'] = floatval(sprintf("%.2f", $Spec['spec_price']));
-                                    $list[$key]['users_price'] = floatval(sprintf("%.2f", $Spec['spec_price'] * $DiscountRate));
+                                    $list[$key]['old_price'] = unifyPriceHandle($Spec['spec_price']);
+                                    $list[$key]['users_price'] = unifyPriceHandle($Spec['spec_price'] * $discountRate);
                                 }
                                 // 规格库存
                                 if (!empty($Spec) && $Spec['spec_stock'] >= 0) $list[$key]['stock_count'] = $Spec['spec_stock'];
@@ -735,13 +735,16 @@ class TagList extends Base
                                 $list[$key]['ShopAddCart'] = " onclick=\"ShopAddCart1625194556('{$value['aid']}', '{$Spec['spec_value_id']}', 1, '{$this->root_dir}');\" ";
                             } else {
                                 // 无规格
-                                $list[$key]['old_price'] = floatval(sprintf("%.2f", $value['users_price']));
-                                $list[$key]['users_price'] = floatval(sprintf("%.2f", $value['users_price'] * $DiscountRate));
+                                $list[$key]['old_price'] = unifyPriceHandle($value['users_price']);
+                                $list[$key]['users_price'] = unifyPriceHandle($value['users_price'] * $discountRate);
                                 // 加入购物车 onclick
                                 $list[$key]['ShopAddCart'] = " onclick=\"ShopAddCart1625194556('{$value['aid']}', null, 1, '{$this->root_dir}');\" ";
                             }
                         }
                     }
+
+                    // 如果存在分销插件则处理分销商商品URL(携带分销商参数，用于绑定分销商上下级)
+                    $list = $this->handleDealerGoodsURL($list, $usersInfo);
                 }
 
                 $result['pages'] = $pages; // 分页显示输出
@@ -1100,20 +1103,20 @@ class TagList extends Base
                 $arcval['sales_num'] = $arcval['sales_all']; // 总虚拟销量
 
                 /*获取指定路由模式下的URL*/
-                if ($arcval['is_part'] == 1) {
+                if (!empty($arcval['is_part']) && $arcval['is_part'] == 1) {
                     $arcval['typeurl'] = $arcval['typelink'];
                 } else {
                     $arcval['typeurl'] = typeurl('home/'.$controller_name."/lists", $arcval);
                 }
                 /*--end*/
                 /*文档链接*/
-                if ($arcval['is_jump'] == 1) {
+                if (!empty($arcval['is_jump']) && $arcval['is_jump'] == 1) {
                     $arcval['arcurl'] = $arcval['jumplinks'];
                 } else {
                     $arcval['arcurl'] = arcurl('home/'.$controller_name."/view", $arcval);
                 }
                 /*--end*/
-                /*封面图*/
+                // 封面图
                 /*if (empty($arcval['litpic'])) {
                     $arcval['is_litpic'] = 0; // 无封面图
                 } else {
@@ -1237,6 +1240,10 @@ class TagList extends Base
             }
             /*--end*/
         }
+
+        // 如果存在分销插件则处理分销商商品URL(携带分销商参数，用于绑定分销商上下级)
+        $list = $this->handleDealerGoodsURL($list);
+
         $result['pages'] = $pages; // 分页显示输出
         $result['list'] = $list; // 赋值数据集
 
@@ -1678,20 +1685,20 @@ class TagList extends Base
                 $arcval['sales_num'] = $arcval['sales_all']; // 总虚拟销量
                 
                 /*获取指定路由模式下的URL*/
-                if ($arcval['is_part'] == 1) {
+                if (!empty($arcval['is_part']) && $arcval['is_part'] == 1) {
                     $arcval['typeurl'] = $arcval['typelink'];
                 } else {
                     $arcval['typeurl'] = typeurl('home/'.$controller_name."/lists", $arcval);
                 }
                 /*--end*/
                 /*文档链接*/
-                if ($arcval['is_jump'] == 1) {
+                if (!empty($arcval['is_jump']) && $arcval['is_jump'] == 1) {
                     $arcval['arcurl'] = $arcval['jumplinks'];
                 } else {
                     $arcval['arcurl'] = arcurl('home/'.$controller_name."/view", $arcval);
                 }
                 /*--end*/
-                /*封面图*/
+                // 封面图
                 if (empty($arcval['litpic'])) {
                     $arcval['is_litpic'] = 0; // 无封面图
                 } else {
@@ -1815,6 +1822,10 @@ class TagList extends Base
             }
             /*--end*/
         }
+
+        // 如果存在分销插件则处理分销商商品URL(携带分销商参数，用于绑定分销商上下级)
+        $list = $this->handleDealerGoodsURL($list);
+
         $result['pages'] = $pages; // 分页显示输出
         $result['list'] = $list; // 赋值数据集
 

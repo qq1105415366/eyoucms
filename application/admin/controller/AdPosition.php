@@ -19,10 +19,12 @@ use think\Cache;
 
 class AdPosition extends Base
 {
+    private $times = 0; // 当前时间戳
     private $ad_position_system_id = array(); // 系统默认位置ID，不可删除
 
     public function _initialize() {
         parent::_initialize();
+        $this->times = getTime();
     }
 
     public function index()
@@ -273,11 +275,13 @@ class AdPosition extends Base
         $this->assign('upload_max_filesize', $upload_max_filesize);
 
         // 视频类型
-        $media_type = tpCache('global.media_type');
-        $media_type = !empty($media_type) ? $media_type : config('global.media_ext');
+        $media_type = !empty($this->globalConfig['media_type']) ? $this->globalConfig['media_type'] : config('global.media_ext');
         $media_type = str_replace(",", "|", $media_type);
-        $this->assign('media_type', $media_type);
+        $assign_data['media_type'] = $media_type;
+        $file_upload_media_type = '.'.str_replace("|", ",.", $media_type);
+        $assign_data['file_upload_media_type'] = $file_upload_media_type;
 
+        $this->assign($assign_data);
         return $this->fetch();
     }
 
@@ -290,6 +294,7 @@ class AdPosition extends Base
         if (IS_POST) {
             $post = input('post.');
             if (!empty($post['id'])) {
+                $post['title'] = trim($post['title']);
                 $post['id'] = intval($post['id']);
                 if (array_key_exists($post['id'], $this->ad_position_system_id)) {
                     $this->error("不可更改系统预定义位置", url('AdPosition/edit',array('id'=>$post['id'])));
@@ -298,7 +303,7 @@ class AdPosition extends Base
                 /* 判断除自身外是否还有相同广告名称已存在 */
                 $map = array(
                     'id'    => array('NEQ', $post['id']),
-                    'title' => trim($post['title']),
+                    'title' => $post['title'],
                     'lang'  => $this->admin_lang,
                 );
                 if (Db::name('ad_position')->where($map)->count() > 0) $this->error('该广告名称已存在，请检查');
@@ -473,7 +478,7 @@ class AdPosition extends Base
             }
         }
 
-        $assign_data = array();
+        $assign_data = [];
 
         $id = input('id/d');
         $field = Db::name('ad_position')->field('a.*')->alias('a')->where(array('a.id'=>$id))->find();
@@ -517,7 +522,7 @@ class AdPosition extends Base
         $this->assign('WeappOpen', $WeappOpen);
 
         // 系统最大上传视频的大小
-        $file_size  = tpCache('global.file_size');
+        $file_size  = empty($this->globalConfig['file_size']) ? 0 : $this->globalConfig['file_size'];
         $postsize   = @ini_get('file_uploads') ? ini_get('post_max_size') : -1;
         $fileupload = @ini_get('file_uploads') ? ini_get('upload_max_filesize') : -1;
         $min_size   = strval($file_size) < strval($postsize) ? $file_size : $postsize;
@@ -526,10 +531,11 @@ class AdPosition extends Base
         $assign_data['upload_max_filesize'] = $upload_max_filesize;
 
         // 视频类型
-        $media_type = tpCache('global.media_type');
-        $media_type = !empty($media_type) ? $media_type : config('global.media_ext');
+        $media_type = !empty($this->globalConfig['media_type']) ? $this->globalConfig['media_type'] : config('global.media_ext');
         $media_type = str_replace(",", "|", $media_type);
         $assign_data['media_type'] = $media_type;
+        $file_upload_media_type = '.'.str_replace("|", ",.", $media_type);
+        $assign_data['file_upload_media_type'] = $file_upload_media_type;
 
         $this->assign($assign_data);
         return $this->fetch();
@@ -571,8 +577,7 @@ class AdPosition extends Base
 
             $r = Db::name('ad')->where([
                     'id' => ['IN', $id_arr],
-                ])
-                ->delete();
+                ])->delete();
             if ($r !== false) {
                 /*多语言*/
                 if (!empty($attr_name_arr)) {
@@ -682,12 +687,9 @@ class AdPosition extends Base
                 Cache::clear('ad');
                 adminLog('删除广告-id：'.implode(',', $id_arr));
                 $this->success('删除成功');
-            } else {
-                $this->error('删除失败');
             }
-        }else{
-            $this->error('参数有误');
         }
+        $this->error('删除失败');
     }
 
     /**

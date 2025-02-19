@@ -77,8 +77,8 @@
                                     </div>
                                     <div class="on-off_btn_r">
                                         <input type="checkbox" name="users[users_open_release]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest"
-                                               data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$userConfig.users_open_release" value="1"}checked="" {/eq}
-                                               data-type="users" data-name="users_open_release" data-lmenuid="Archives_index_draft" value="{$userConfig.users_open_release}">
+                                               data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$usersConfig.users_open_release" value="1"}checked="" {/eq}
+                                               data-type="users" data-name="users_open_release" data-lmenuid="Archives_index_draft" value="{$usersConfig.users_open_release}">
                                     </div>
                                 </div>
                             </li>
@@ -89,8 +89,8 @@
                                     </div>
                                     <div class="on-off_btn_r">
                                         <input type="checkbox" name="level[level_member_upgrade]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest"
-                                               data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$userConfig.level_member_upgrade" value="1"}checked="" {/eq}
-                                        data-type="level" data-name="level_member_upgrade" data-lmenuid="off" value="{$userConfig.level_member_upgrade}">
+                                               data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$usersConfig.level_member_upgrade" value="1"}checked="" {/eq}
+                                        data-type="level" data-name="level_member_upgrade" data-lmenuid="off" value="{$usersConfig.level_member_upgrade}">
                                     </div>
                                 </div>
                             </li>
@@ -105,8 +105,8 @@
                                     </div>
                                     <div class="on-off_btn_r">
                                         <input type="checkbox" name="shop[shop_open]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest"
-                                               data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$userConfig.shop_open" value="1"}checked="" {/eq}
-                                        data-type="shop" data-name="shop_open" data-lmenuid="Shop_home" value="{$userConfig.shop_open}">
+                                               data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$usersConfig.shop_open" value="1"}checked="" {/eq}
+                                        data-type="shop" data-name="shop_open" data-lmenuid="Shop_home" value="{$usersConfig.shop_open}">
                                     </div>
                                 </div>
                             </li>
@@ -121,8 +121,8 @@
                                 </div>
                                 <div class="on-off_btn_r">
                                     <input type="checkbox" name="pay[pay_open]" lay-skin="switch" lay-text="开启|关闭" lay-filter="switchTest"
-                                           data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$userConfig.pay_open" value="1"}checked="" {/eq}
-                                    data-type="pay" data-name="pay_open" data-lmenuid="off" value="{$userConfig.pay_open}">
+                                           data-authortoken="{$is_eyou_authortoken}" data-is_online="{$is_online}" {eq name="$usersConfig.pay_open" value="1"}checked="" {/eq}
+                                    data-type="pay" data-name="pay_open" data-lmenuid="off" value="{$usersConfig.pay_open}">
 
                                 </div>
                             </div>
@@ -486,6 +486,25 @@
                  </div>
                  <div class="on-off_list" id="gaojixuanxiang_child" style="display: block;">
                      <ul class="flex-dir-row  flex-wrap">
+                         {eq name="'Security@index'|is_check_access" value="1"}
+                             {eq name='$main_lang' value='$admin_lang'}
+                             <li class="more_li" id="li_2004017" {if condition="in_array('2004017',$admin_menu_id_arr) || in_array('2004017',$not_role_menu_id_arr)"}style="display:none"{/if}>
+                                 <div class="flex-dir-row flex-a-center">
+                                     <div class="icon_bg icon_bg_no">
+                                         <i class="iconfont e-anquan f-20 col-f3398cc" ></i>
+                                     </div>
+                                     <div class="ml-8 white-space">
+                                         <a href="javascript:void(0);" data-href="{:url('Security/index')}"  onclick="gourl2(this,1);">安全中心</a>
+                                     </div>
+                                 </div>
+                                 {notempty name="$is_founder"}
+                                 <div class="icon-link_add">
+                                     <div title="加入导航显示" data-menu_id="2004017" class="iconfont e-jiahao2"></div>
+                                 </div>
+                                 {/notempty}
+                             </li>
+                             {/eq}
+                         {/eq}
                          {eq name="'System@index'|is_check_access" value="1"}
                              <li class="more_li" id="li_2001"  {if condition="in_array('2001',$admin_menu_id_arr) || in_array('2001',$not_role_menu_id_arr)"}style="display:none"{/if}>
                                  <div class="flex-dir-row flex-a-center">
@@ -525,25 +544,23 @@
                          {/eq}
 
                          {eq name="'RecycleBin@arctype_index'|is_check_access" value="1"}
-                             {if condition="$main_lang == $admin_lang || !empty($global['language_split'])"}
-                                 {neq name="$global['web_recycle_switch']" value='1'}
-                                 <li class="more_li" id="li_2004006" {if condition="in_array('2004006',$admin_menu_id_arr) || in_array('2004006',$not_role_menu_id_arr)"}style="display:none"{/if}>
-                                     <div class="flex-dir-row flex-a-center">
-                                         <div class="icon_bg icon_bg_no">
-                                             <i class="iconfont e-huishouzhan f-20 col-848484" ></i>
-                                         </div>
-                                         <div class="ml-8 white-space">
-                                             <a href="javascript:void(0);" data-href="{:url('RecycleBin/archives_index')}"  onclick="gourl2(this,1);">回收站</a>
-                                         </div>
+                             {neq name="$global['web_recycle_switch']" value='1'}
+                             <li class="more_li" id="li_2004006" {if condition="in_array('2004006',$admin_menu_id_arr) || in_array('2004006',$not_role_menu_id_arr)"}style="display:none"{/if}>
+                                 <div class="flex-dir-row flex-a-center">
+                                     <div class="icon_bg icon_bg_no">
+                                         <i class="iconfont e-huishouzhan f-20 col-848484" ></i>
                                      </div>
-                                     {notempty name="$is_founder"}
-                                     <div class="icon-link_add">
-                                         <div title="加入导航显示" data-menu_id="2004006" class="iconfont e-jiahao2"></div>
+                                     <div class="ml-8 white-space">
+                                         <a href="javascript:void(0);" data-href="{:url('RecycleBin/archives_index')}"  onclick="gourl2(this,1);">回收站</a>
                                      </div>
-                                     {/notempty}
-                                 </li>
-                                 {/neq}
-                             {/if}
+                                 </div>
+                                 {notempty name="$is_founder"}
+                                 <div class="icon-link_add">
+                                     <div title="加入导航显示" data-menu_id="2004006" class="iconfont e-jiahao2"></div>
+                                 </div>
+                                 {/notempty}
+                             </li>
+                             {/neq}
                          {/eq}
 
                          {eq name="'Tools@index'|is_check_access" value="1"}
@@ -666,27 +683,7 @@
                              </li>
                             {/eq}
                          {/eq}
-
-                         {eq name="'Security@index'|is_check_access" value="1"}
-                             {eq name='$main_lang' value='$admin_lang'}
-                             <li class="more_li" id="li_2004017" {if condition="in_array('2004017',$admin_menu_id_arr) || in_array('2004017',$not_role_menu_id_arr)"}style="display:none"{/if}>
-                                 <div class="flex-dir-row flex-a-center">
-                                     <div class="icon_bg icon_bg_no">
-                                         <i class="iconfont e-anquanshezhi f-20 col-848484" ></i>
-                                     </div>
-                                     <div class="ml-8 white-space">
-                                         <a href="javascript:void(0);" data-href="{:url('Security/index')}"  onclick="gourl2(this,1);">安全中心</a>
-                                     </div>
-                                 </div>
-                                 {notempty name="$is_founder"}
-                                 <div class="icon-link_add">
-                                     <div title="加入导航显示" data-menu_id="2004017" class="iconfont e-jiahao2"></div>
-                                 </div>
-                                 {/notempty}
-                             </li>
-                             {/eq}
-                         {/eq}
-
+            
                          {eq name="'Order@index'|is_check_access" value="1"}
                              {eq name='$main_lang' value='$admin_lang'}
                              <li class="more_li" id="li_2004021" {if condition="in_array('2004021',$admin_menu_id_arr) || in_array('2004021',$not_role_menu_id_arr)"}style="display:none"{/if}>
@@ -727,7 +724,7 @@
                              {/notempty}
                         {/eq}
 
-                        {if condition="in_array('memgift', $useFunc) && $php_servicemeal > 1 && !empty($userConfig['memgift_open']) && $main_lang == $admin_lang"}
+                        {if condition="in_array('memgift', $useFunc) && $php_servicemeal > 1 && !empty($usersConfig['memgift_open']) && $main_lang == $admin_lang"}
                             {eq name="'Memgift@gift_exchange_list'|is_check_access" value="1"}
                             <li class="more_li" id="li_2004023" {if condition="in_array('2004023',$admin_menu_id_arr) || in_array('2004023',$not_role_menu_id_arr)"}style="display:none"{/if}>
                                 <div class="flex-dir-row flex-a-center">
@@ -1041,13 +1038,13 @@
     </div>
 
     <script type="text/javascript">
+        var update_admin_menu_url = "{:url('Ajax/update_admin_menu', ['_ajax'=>1])}";   //添加、删除入口地址
+        var is_founder = {$is_founder|default=0};
         var all_menu_list = {$all_menu_list|json_encode};
         var module_rele_menu = {$module_rele_menu|json_encode};
         var module_default_menu = {$module_default_menu|json_encode};
         var module_reverse_menu = {$module_reverse_menu|json_encode};
         var not_role_menu_id_arr = {$not_role_menu_id_arr|json_encode};
-        var update_admin_menu_url = "{:url('Ajax/update_admin_menu', ['_ajax'=>1])}";   //添加、删除入口地址
-        var is_founder = {$is_founder};
         /*
          * 1、给gengduogongneng类第2N个元素加上class,
          * 2、其中一个子元素的高大于100，其他的高也设置为相同
@@ -1114,14 +1111,15 @@
             add_show2n_class('.on-off_list_bg','#gengduogongneng');
         }
         //添加模块菜单到导航和左侧菜单
-        function add_menu(menu_id,controller_name,action_name,param,icon,title) {
+        function add_menu(menu_id,controller_name,action_name,param,icon,title,original_title) {
             $.ajax({
                 type: "POST",
                 url: update_admin_menu_url,
-                data: {title:title,controller_name:controller_name,action_name:action_name,menu_id:menu_id,icon:icon,param:param,type:1},
+                data: {title:title,original_title:original_title,controller_name:controller_name,action_name:action_name,menu_id:menu_id,icon:icon,param:param,type:1},
                 dataType: 'json',
                 success:function (res) {
                     if(res.code == 1){
+                        layer.closeAll();
                         $('#li_'+menu_id).hide();
 //                        $('#li_'+menu_id).find(".e-jiahao2").removeClass("e-jianhao");
                         //添加"我的菜单"
@@ -1217,7 +1215,7 @@
                     return false;
                 }
                 var menu_id = $(this).data('menu_id');
-                var title = all_menu_list[menu_id]['name'] ;
+                var title = original_title = $.trim(all_menu_list[menu_id]['name']);
                 var controller_name = all_menu_list[menu_id]['controller'] ;
                 var action_name = all_menu_list[menu_id]['action'] ;
                 var param = all_menu_list[menu_id]['param'] === undefined ? '' :  all_menu_list[menu_id]['param'];
@@ -1242,7 +1240,35 @@
                         }
                     });
                 }else{              //原本为“未添加”，添加;添加到"我的菜单",修改下面块为"添加"模式，且隐藏
-                    add_menu(menu_id,controller_name,action_name,param,icon,title);
+                    layer.prompt({
+                        title: '加入左侧菜单',
+                        id: 'layerid_1733984832',
+                        value: title,
+                        btn: ['确定'],
+                        shade: layer_shade,
+                        closeBtn: 3,
+                        success: function(layero, index) {
+                            var before_str = "<div style='margin: -8px 0px 10px 0px;font-weight: bold;'>原名称："+title+"</div>";
+                            $("#layerid_1733984832").prepend(before_str);
+                            $("#layerid_1733984832").find('input').attr('placeholder', '请填写简短的菜单名称');
+                            $("#layerid_1733984832").find('input').bind('keydown', function(event) {
+                                if (event.keyCode == 13) {
+                                    if ($(this).val()) {
+                                        title = $(this).val();
+                                    }
+                                    add_menu(menu_id,controller_name,action_name,param,icon,title,original_title);
+                                }
+                            });
+                        },
+                        btn2: function(index, layero){
+                            return false;
+                        }
+                    }, function(value, index) {
+                        if (value) {
+                            title = value;
+                        }
+                        add_menu(menu_id,controller_name,action_name,param,icon,title,original_title);
+                    });
                 }
 //                $(this).toggleClass("e-jianhao");
                 return false;

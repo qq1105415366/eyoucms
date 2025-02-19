@@ -220,9 +220,11 @@
                                             $('#arc_level_id').html(users_level_html);
 
                                             if('local' != download.upload_flag) {
-                                                // 第三方
-                                                var upload_button_html = '<button type="button" class="layui-btn layui-btn-normal" style="position: relative;z-index: 1;">\n'+download.upload_flag_name+'选择多文件\n<input type="file" name="file" id="'+download.upload_flag+'File" multiple="multiple" onchange="'+download.upload_flag+'_download__upload(this);" style="position: absolute;top: 0;right: 0;opacity: 0;width: 110px;height: 30px;"/>\n</button>';
+                                                if (-1 == $('#download-layui-upload').html().indexOf('onchange="'+download.upload_flag+'_download__upload(this);"')) {
+                                                    // 第三方
+                                                    var upload_button_html = '<button type="button" class="layui-btn layui-btn-normal" style="position: relative;z-index: 1;">\n'+download.upload_flag_name+'选择多文件\n<input type="file" name="file" id="'+download.upload_flag+'File" multiple="multiple" onchange="'+download.upload_flag+'_download__upload(this);" style="position: absolute;top: 0;right: 0;opacity: 0;width: 110px;height: 30px;"/>\n</button>';
                                                     $('#download-layui-upload').html(upload_button_html);
+                                                }
                                             } else {
                                                 $("#buttonList").show();
                                             }
@@ -271,7 +273,7 @@
                                                         '         <div class="help-hot-list" style="display: none;" id="search_keywords_list_servername_local_'+n+'"></div>\n' +
                                                         '    </td>\n' +
                                                         '    <td>'+v.file_size+'</td>\n' +
-                                                        '    <td class="th_server_state"><span style="color: #5FB878;">上传成功</span></td>\n' +
+                                                        '    <td class="th_server_state"><span style="color: #5FB878;">'+ey_foreign_system10+'</span></td>\n' +
                                                         '    <td>\n' +
                                                         '          <span class="layui-btn layui-btn-xs layui-btn-danger" style="line-height:unset;height: unset;" onclick="DeleteFile(this)">移除</span>\n' +
                                                         '          <input type="hidden" name="fileupload[file_url][]" value="'+v.file_url+'">\n' +

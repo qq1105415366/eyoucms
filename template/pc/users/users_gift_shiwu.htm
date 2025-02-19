@@ -95,7 +95,7 @@
                 },
                 error: function(e){
                     layer.closeAll();
-                    layer.alert('网络失败，请刷新页面后重试', {icon: 5, title:false});
+                    layer.alert(e.responseText, {icon: 5, title:false});
                 }
             })
         });

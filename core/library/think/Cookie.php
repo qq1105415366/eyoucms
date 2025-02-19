@@ -42,7 +42,25 @@ class Cookie
         if (empty($config)) {
             $config = Config::get('cookie');
         }
-
+/*
+        $cookies_config_file = WEAPP_PATH.'Cookies'.DS.'conf'.DS.'config.php';
+        if (file_exists($cookies_config_file)) {
+            require_once($cookies_config_file);
+            if (defined('WEAPP_COOKIES_OPEN') && WEAPP_COOKIES_OPEN == 1) {
+                defined('WEAPP_COOKIES_PREFIX') && self::$config['prefix'] = WEAPP_COOKIES_PREFIX;
+                defined('WEAPP_COOKIES_EXPIRE') && self::$config['expire'] = WEAPP_COOKIES_EXPIRE;
+                defined('WEAPP_COOKIES_PATH') && self::$config['path'] = WEAPP_COOKIES_PATH;
+                defined('WEAPP_COOKIES_DOMAIN') && self::$config['domain'] = WEAPP_COOKIES_DOMAIN;
+                defined('WEAPP_COOKIES_SECURE') && self::$config['secure'] = WEAPP_COOKIES_SECURE;
+                defined('WEAPP_COOKIES_SETCOOKIE') && self::$config['setcookie'] = WEAPP_COOKIES_SETCOOKIE;
+                if (session('?ey_cookie_httponly')) {
+                    $ey_cookie_httponly = session('ey_cookie_httponly');
+                    $ey_cookie_httponly = !empty($ey_cookie_httponly) ? true : false;
+                    self::$config['httponly'] = $ey_cookie_httponly;
+                }
+            }
+        }
+*/
         self::$config = array_merge(self::$config, array_change_key_case($config));
 
         if (!empty(self::$config['httponly'])) {

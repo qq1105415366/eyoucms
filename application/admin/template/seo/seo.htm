@@ -100,7 +100,7 @@
             </div>
             <dl class="row {if condition='isset($config.seo_pseudo) && $config.seo_pseudo != 3'}none{/if}" id="dl_seo_rewrite_format">
                 <dt class="tit">
-                    <label>URL格式</label>
+                    <label>栏目URL</label>
                 </dt>
                 <dd class="opt">
                     <label class="curpoin">
@@ -114,7 +114,7 @@
             </dl>
             <dl class="row {if condition='!isset($config.seo_pseudo) OR $config.seo_pseudo != 3 OR $config.seo_rewrite_format == 2'}none{/if}" id="dl_seo_rewrite_view_format">
                 <dt class="tit">
-                    <label>文档隶属URL</label>
+                    <label>文档URL</label>
                 </dt>
                 <dd class="opt">
                     <label class="curpoin"><input type="radio" name="seo_rewrite_view_format" value="1" {if condition="(!isset($config.seo_rewrite_format) OR $config.seo_rewrite_format eq 1) OR (!isset($config.seo_rewrite_view_format) OR $config.seo_rewrite_view_format == 1)"}checked="checked"{/if}>父目录（<a href="javascript:void(0);" onclick="view_exp('view_3_3');">示例</a><span id="view_3_3" class="none">：__SITE_URL____ROOT_DIR__/news/20.html</span>）</label>&nbsp;
@@ -128,7 +128,7 @@
             </dl>
             <dl class="row">
                 <dt class="tit">
-                    <label>栏目标题格式</label>
+                    <label>栏目标题</label>
                 </dt>
                 <dd class="opt">
                     <label class="curpoin"><input type="radio" name="seo_liststitle_format" value="3" {if condition="isset($config.seo_liststitle_format) AND $config.seo_liststitle_format eq 3"}checked="checked"{/if}>栏目名称</label>&nbsp;
@@ -144,7 +144,7 @@
             </dl>
             <dl class="row">
                 <dt class="tit">
-                    <label>文档标题格式</label>
+                    <label>文档标题</label>
                 </dt>
                 <dd class="opt">
                     <label class="curpoin"><input type="radio" name="seo_viewtitle_format" value="1" {if condition="isset($config.seo_viewtitle_format) AND $config.seo_viewtitle_format eq 1"}checked="checked"{/if}>内容标题</label>&nbsp;
@@ -158,7 +158,7 @@
             </dl>
             <dl class="row">
                 <dt class="tit">
-                    <label for="seo_title_symbol">标题连接符号</label>
+                    <label for="seo_title_symbol">标题间连接符</label>
                 </dt>
                 <dd class="opt">
                     <input id="seo_title_symbol" name="seo_title_symbol" {if condition="!isset($config['seo_title_symbol'])"}value="_"{else /}value="{$config.seo_title_symbol|default=''}"{/if} type="text" />
@@ -167,7 +167,7 @@
             </dl>
             <dl class="row {if condition='isset($config.seo_pseudo) && $config.seo_pseudo != 2'}none{/if}" id="dl_seo_uphtml_after">
                 <dt class="tit">
-                    <label>发布文档后</label>
+                    <label>发布文档</label>
                 </dt>
                 <dd class="opt">
                     <label class="curpoin"><input type="checkbox" name="seo_uphtml_after_home" value="1" {if condition="!isset($config.seo_uphtml_after_home) OR $config.seo_uphtml_after_home eq 1"}checked="checked"{/if}>更新首页</label>&nbsp;&nbsp;
@@ -179,7 +179,7 @@
             </dl>
             <dl class="row {if condition='isset($config.seo_pseudo) && $config.seo_pseudo != 2'}none{/if}" id="dl_seo_uphtml_editafter">
                 <dt class="tit">
-                    <label>编辑文档后</label>
+                    <label>编辑文档</label>
                 </dt>
                 <dd class="opt">
                     <label class="curpoin"><input type="checkbox" name="seo_uphtml_editafter_home" value="1" {if condition="!isset($config.seo_uphtml_editafter_home) OR $config.seo_uphtml_editafter_home eq 1"}checked="checked"{/if}>更新首页</label>&nbsp;&nbsp;
@@ -191,7 +191,7 @@
             </dl>
             <dl class="row {if condition='isset($config.seo_pseudo) && $config.seo_pseudo == 2'}none{/if}" id="dl_seo_uphtml_after13">
                 <dt class="tit">
-                    <label>发布编辑文档后</label>
+                    <label>发布/编辑文档</label>
                 </dt>
                 <dd class="opt {if condition="$global['web_cmsmode'] != 1"}grey{/if}" {if condition="$global['web_cmsmode'] != 1"}title="开启运营模式生效" {/if}>
                     <label class="curpoin {if condition="$global['web_cmsmode'] != 1"}grey{/if}"><input type="checkbox" name="seo_uphtml_after_home13" value="1" {if condition="!isset($config.seo_uphtml_after_home13) OR $config.seo_uphtml_after_home13 eq 1"}checked="checked"{/if} class="{if condition="$global['web_cmsmode'] != 1"}grey{/if}" {if condition="$global['web_cmsmode'] != 1"}disabled="disabled"{/if}>清除首页缓存</label>&nbsp;&nbsp;
@@ -207,7 +207,7 @@
             <!-- <dl class="row {if condition="empty($config['seo_inlet']) OR (1 == $config['seo_inlet'] AND 1 == $config['seo_force_inlet'])"}{else /}none{/if}" id="dl_seo_force_inlet"> -->
             <dl class="row none" id="dl_seo_force_inlet">
                 <dt class="tit">
-                    <label for="site_url">强制去除index.php</label>
+                    <label for="site_url">去除index.php</label>
                 </dt>
                 <dd class="opt">
                     <div class="onoff">

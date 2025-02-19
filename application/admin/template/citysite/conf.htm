@@ -91,6 +91,17 @@
             </dl>
             <dl class="row">
                 <dt class="tit">
+                    <label>全国文档URL</label>
+                </dt>
+                <dd class="opt" style="width: auto;">
+                    <label class="curpoin"><input id="site_arcurl_showall0" name="site_arcurl_showall" value="0" type="radio" {if condition="empty($row.site_arcurl_showall)"} checked="checked"{/if}>主站域名</label>
+                    &nbsp;
+                    <label class="curpoin"><input id="site_arcurl_showall1" name="site_arcurl_showall" value="1" type="radio" {if condition="!empty($row.site_arcurl_showall)"} checked="checked"{/if}>跟随分站域名</label>
+                    <p class="notic">默认分站跟随主站域名，也可以设置跟随分站域名</p>
+                </dd>
+            </dl>
+            <dl class="row">
+                <dt class="tit">
                     <label>分站模板风格</label>
                 </dt>
                 <dd class="opt" style="width: auto;">

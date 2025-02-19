@@ -29,7 +29,6 @@ class AppEndBehavior {
         self::$controllerName = request()->controller();
         self::$moduleName = request()->module();
         self::$method = request()->method();
-        // file_put_contents ( DATA_PATH."log.txt", date ( "Y-m-d H:i:s" ) . "  " . var_export('admin_CoreProgramBehavior',true) . "\r\n", FILE_APPEND );
         $this->_initialize();
     }
 

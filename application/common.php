@@ -32,6 +32,23 @@ if (!function_exists('switch_exception'))
     }
 }
 
+if (!function_exists('is_adminlogin')) 
+{
+    /**
+     * 检验后台登陆
+     * @param
+     * @return bool
+     */
+    function is_adminlogin(){
+        $admin_id = session('admin_id');
+        if(isset($admin_id) && $admin_id > 0){
+            return $admin_id;
+        }else{
+            return false;
+        }
+    }
+}
+
 if (!function_exists('adminLog')) 
 {
     /**
@@ -54,6 +71,44 @@ if (!function_exists('adminLog'))
                 $add['log_ip'] = clientIP();
                 $add['log_url'] = request()->baseUrl() ;
                 M('admin_log')->add($add);
+            }
+        } catch (\Exception $e) {
+            
+        }
+    }
+}
+
+if (!function_exists('adminlogin_lock_clear')) 
+{
+    /**
+     * 清理管理员登录锁定的无效数据
+     * @param  string $clear_type [description]
+     * @return [type]             [description]
+     */
+    function adminlogin_lock_clear($clear_type = 'default')
+    {
+        try {
+            $name_arr = [];
+            $list = \think\Db::name('admin')->field('user_name,last_ip')->where(['status'=>1])->select();
+            foreach ($list as $key => $val) {
+                $name_arr[] = 'adminlogin_'.md5('login_lock_'.$val['user_name'].$val['last_ip']);
+            }
+            $web_login_errexpire = (int)tpCache('web.web_login_errexpire');
+            $web_login_errexpire = $web_login_errexpire > 300 ? 300 : $web_login_errexpire;
+            $where = [
+                'inc_type'=>'adminlogin',
+                'name'=>['NOTIN', $name_arr],
+                'update_time'=>['lt', getTime() - $web_login_errexpire],
+            ];
+            if ('all' == $clear_type) {
+                unset($where['update_time']);
+            }
+            $r = \think\Db::name('setting')->where($where)->delete();
+            if ($r !== false) {
+                if (config('database.type') != 'dm') { // 达梦优化
+                    \think\Db::query("REPAIR TABLE " . config('database.prefix') . "setting");
+                    \think\Db::query("ALTER TABLE " . config('database.prefix') . " AUTO_INCREMENT 1");
+                }
             }
         } catch (\Exception $e) {
             
@@ -177,7 +232,7 @@ if (!function_exists('tpCache'))
                     if(!isset($temp[$newK])){
                         array_push($add_data, $newArr); //新key数据插入数据库
                     }else{
-                        if ($v != $temp[$newK]) {
+                        if (strval($v) !== strval($temp[$newK])) {
                             $table_db->where([
                                 'name'  => $newK,
                                 'lang'  => $lang,
@@ -310,7 +365,7 @@ if (!function_exists('tpSetting'))
                     if(!isset($temp[$newK])){
                         array_push($add_data, $newArr); //新key数据插入数据库
                     }else{
-                        if ($v != $temp[$newK]) {
+                        if (strval($v) !== strval($temp[$newK])) {
                             $table_db->where([
                                 'name'  => $newK,
                                 'lang'  => $lang,
@@ -375,9 +430,10 @@ if (!function_exists('write_global_params'))
      */
     function write_global_params($lang = '', $options = null)
     {
+        $inc_type = 'web';
         empty($lang) && $lang = get_admin_lang();
         $webConfigParams = \think\Db::name('config')->where([
-            'inc_type'  => 'web',
+            'inc_type'  => $inc_type,
             'lang'  => $lang,
             'is_del'    => 0,
         ])->getAllWithIndex('name');
@@ -407,7 +463,6 @@ if (!function_exists('write_global_params'))
         $param['web_eyoucms'] = str_replace('#', '', '#h#t#t#p#:#/#/#w#w#w#.#e#y#o#u#c#m#s#.#c#o#m#'); // eyou网址
 
         /*将内置的全局变量(页面上没有入口更改的全局变量)存储到web版块里*/
-        $inc_type = 'web';
         foreach ($param as $key => $val) {
             if (preg_match("/^".$inc_type."_(.)+/i", $key) !== 1) {
                 $nowKey = strtolower($inc_type.'_'.$key);
@@ -802,9 +857,9 @@ if (!function_exists('get_head_pic'))
         }
 
         if (empty($pic_url)) {
-            $pic_url = $default_pic;
+            $pic_url = handle_subdir_pic($default_pic, 'img', true);
         } else if (!is_http_url($pic_url)) {
-            $pic_url = handle_subdir_pic($pic_url);
+            $pic_url = handle_subdir_pic($pic_url, 'img', true);
         } else if (is_http_url($pic_url)) {
             $pic_url = str_ireplace(['http://thirdqq.qlogo.cn','http://qzapp.qlogo.cn'], ['https://thirdqq.qlogo.cn','https://qzapp.qlogo.cn'], $pic_url);
         }
@@ -871,7 +926,7 @@ if (!function_exists('get_default_pic'))
             if (!$domain){
                 static $absolute_path_open = null;
                 null === $absolute_path_open && $absolute_path_open = tpCache('web.absolute_path_open'); //是否开启绝对链接
-                if ($absolute_path_open  && request()->module() != 'admin'){
+                if ($absolute_path_open && request()->module() != 'admin'){
                     $domain = true;
                 }
             }
@@ -996,11 +1051,31 @@ if (!function_exists('handle_subdir_pic'))
                 preg_match_all('/(\&lt\;|\<)img.*(\/)?(\>|\&gt\;)/iUs', $str, $imginfo);//摘出图片
                 $imgArr = empty($imginfo[0]) ? [] : $imginfo[0];
                 if (!empty($imgArr)) {
+                    // 插件列表
+                    static $weappList = null;
+                    if (null == $weappList) {
+                        $weappList = \think\Db::name('weapp')->where([
+                            'status'    => 1,
+                        ])->cache(true, EYOUCMS_CACHE_TIME, 'weapp')
+                        ->getAllWithIndex('code');
+                    }
                     foreach ($imgArr as $key => $value) {
                         preg_match_all("#src=('|\")(.*)('|\")#isU", $value, $img_val);
                         if (isset($img_val[2][0]) && !is_http_url($img_val[2][0])) { // 是否本地图片
                             $handle_img = preg_replace('#(/[/\w\-]+)?(/public/upload/|/public/static/|/uploads/|/weapp/)#i', $add_root_dir.'$2', $value);
                             $str = str_ireplace($value, $handle_img, $str);
+                        } else if (isset($img_val[2][0]) && is_http_url($img_val[2][0])) {
+                            $StrData = parse_url($img_val[2][0]);
+                            if (!empty($weappList['Qiniuyun']) && 1 == $weappList['Qiniuyun']['status']) {
+                                $qnyData = json_decode($weappList['Qiniuyun']['data'], true);
+                                $weappConfig = json_decode($weappList['Qiniuyun']['config'], true);
+                                if ($qnyData['domain'] != $StrData['host']) {
+                                    // 若切换了存储空间或访问域名，与数据库中存储的图片路径域名不一致时，访问本地路径，保证图片正常
+                                    $str = str_ireplace('//' . $StrData['host'], '', $str);
+                                    $str = str_ireplace('http://' . $StrData['host'], '', $str);
+                                    $str = str_ireplace('https://' . $StrData['host'], '', $str);
+                                }
+                            }
                         }
                     }
                 }
@@ -1010,7 +1085,7 @@ if (!function_exists('handle_subdir_pic'))
 
             case 'soft':
                 if (!is_http_url($str) && !empty($str)) {
-                    $str = preg_replace('#^(/[/\w\-]+)?(/public/upload/soft/|/uploads/soft/)#i', $add_root_dir.'$2', $str);
+                    $str = preg_replace('#^(/[/\w\-]+)?(/public/upload/soft/|/uploads/soft/|/weapp/)#i', $add_root_dir.'$2', $str);
                 } else if (is_http_url($str) && !empty($str)) {
                     $StrData = parse_url($str);
                     $StrData['path'] = preg_replace('#^(/[/\w\-]+)?(/public/upload/soft/|/uploads/soft/)#i', '$2', $StrData['path']);
@@ -1077,7 +1152,7 @@ if (!function_exists('handle_subdir_pic'))
 
             case 'media':  //多媒体文件
                 if (!is_http_url($str) && !empty($str)) {
-                    $str = preg_replace('#^(/[/\w\-]+)?(/uploads/media/)#i', $add_root_dir.'$2', $str);
+                    $str = preg_replace('#^(/[/\w\-]+)?(/uploads/media/|/weapp/)#i', $add_root_dir.'$2', $str);
                 }
                 break;
 
@@ -1875,25 +1950,6 @@ if (!function_exists('get_admin_lang'))
 
         return $admin_lang;
     }
-//    function get_admin_lang()
-//    {
-//        static $admin_lang = null;
-//        if (null === $admin_lang || $is_force) {
-//            $admin_lang = input('param.lang/s');
-//            $keys = \think\Config::get('global.admin_lang');
-//            if (empty($admin_lang)){
-//                $admin_lang = \think\Cookie::get($keys);
-//                $admin_lang = addslashes($admin_lang);
-//                if (empty($admin_lang) || (!empty($admin_lang) && !preg_match('/^[a-z]{2}$/i', $admin_lang))) {
-//                    empty($admin_lang) && $admin_lang = get_main_lang();
-//                }
-//            }
-//            $admin_lang = preg_replace('/([^a-z])/i', '', $admin_lang);
-//            \think\Cookie::set($keys, $admin_lang);
-//        }
-//
-//        return $admin_lang;
-//    }
 }
 
 if (!function_exists('get_home_lang')) 
@@ -1920,7 +1976,6 @@ if (!function_exists('get_home_lang'))
             }
             $home_lang = preg_replace('/([^a-z])/i', '', $home_lang);
             \think\Cookie::set($keys, $home_lang);
-
         }
 
         return $home_lang;
@@ -1974,9 +2029,10 @@ if (!function_exists('switch_language'))
         }
 
         $pathinfo = $request->pathinfo();
-        /*验证语言标识是否合法---PS：$request->param('site/s','')一定要放在$request->pathinfo()后面，非则会造成分页错误（链接带有"s"变量）*/
+        /*验证语言标识是否合法---PS：$request->param('lang/s','')一定要放在$request->pathinfo()后面，非则会造成分页错误（链接带有"s"变量）*/
         $var_lang = $request->param('lang/s');
         $var_lang = trim($var_lang, '/');
+        $var_lang = trim($var_lang);
         if (!empty($var_lang)) {
             if (!preg_match('/^([a-z]+)$/i', $var_lang)) {
                 abort(404,'页面不存在');
@@ -2025,6 +2081,7 @@ if (!function_exists('switch_language'))
             if ('m' == $s_arr[0]) {
                 $s_arr[0] = $s_arr[1];
             }
+            $s_arr[0] = addslashes($s_arr[0]);
             $count = $language_db->where(['mark'=>$s_arr[0]])->cache(true, EYOUCMS_CACHE_TIME, 'language')->count();
             if (!empty($count)) {
                 $current_lang = $s_arr[0];
@@ -2208,6 +2265,7 @@ if (!function_exists('switch_citysite'))
             if ('m' == $s_arr[0]) {
                 $s_arr[0] = $s_arr[1];
             }
+            $s_arr[0] = addslashes($s_arr[0]);
             $count = $citysite_db->where(['domain'=>$s_arr[0]])->cache(true, EYOUCMS_CACHE_TIME, 'citysite')->count();
             if (!empty($count)) {
                 $current_site = $s_arr[0];
@@ -2333,7 +2391,7 @@ if (!function_exists('getUsersConfigData'))
                     if(!isset($temp[$newK])){
                         array_push($add_data, $newArr); //新key数据插入数据库
                     }else{
-                        if ($v != $temp[$newK]) {
+                        if (strval($v) !== strval($temp[$newK])) {
                             $table_db->where([
                                 'name'  => $newK,
                                 'lang'  => $lang,
@@ -2419,6 +2477,36 @@ if (!function_exists('sendSms'))
     {
         $smsLogic = new \app\common\logic\SmsLogic($sms_config);
         return $smsLogic->sendSms($scene, $sender, $params, $unique_id);
+    }
+}
+
+if (!function_exists('get_country_list')){
+    /**
+     * 获得全部国家列表
+     */
+    function get_country_list()
+    {
+        $result = extra_cache('global_get_country_list');
+        if ($result == false) {
+            $result = \think\Db::name('country')->field('id, name')
+                ->where('status',1)
+                ->order('sort_order asc')
+                ->getAllWithIndex('id');
+            extra_cache('global_get_country_list', $result);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('get_country_name')){
+    /**
+     * 根据国家ID获得国家名称
+     */
+    function get_country_name($id = 0)
+    {
+        $result = get_country_list();
+        return empty($result[$id]['name']) ? '' : $result[$id]['name'];
     }
 }
 
@@ -2965,7 +3053,9 @@ if (!function_exists('download_file'))
             $ext = end($arr);
             $arr1 = explode('.', $file_name);
             unset($arr1[count($arr1) - 1]);
-            $filename = implode('.', $arr1).'.'.$ext;
+            $arr1_str = implode('.', $arr1);
+            $arr1_str = !empty($arr1_str) ? implode('.', $arr1) : getTime();
+            $filename = $arr1_str.'.'.$ext;
         }
 
         // 文件上传后系统自定义的文件名下载--目前多种文件名称类型测试均无问题
@@ -4048,7 +4138,10 @@ if (!function_exists('getNextArchives'))
 if (!function_exists('getAllContent'))
 {
     //获取指定文档列表的内容附加表字段值
-    function getAllContent($archivesList = []){
+    function getAllContent($archivesList = [], $field = '*'){
+        if (is_dir('./weapp/CompressContent/')) {                
+            $compressLogic = new \weapp\CompressContent\logic\CompressContentLogic;                
+        } 
         $contentList = [];
         $db = new \think\Db;
         $channeltype_list = config('global.channeltype_list');
@@ -4057,11 +4150,18 @@ if (!function_exists('getAllContent'))
             $table = array_search($nid, $channeltype_list);
             if (!empty($table)) {
                 $aids = get_arr_column($list, 'aid');
-                $row = $db::name($table.'_content')->field('*')
+                $row = $db::name($table.'_content')->field($field)
                     ->where(['aid'=>['IN', $aids]])
                     ->select();
                 $result = [];
                 foreach ($row as $_k => $_v) {
+                    if (!empty($compressLogic)) {                
+                        // 调用逻辑层
+                        try {
+                            $_v = $compressLogic->decrypt_base64_encode(2,$_v);              
+                        } catch (Exception $e) {
+                        }                
+                    }      
                     unset($_v['id']);
                     unset($_v['add_time']);
                     unset($_v['update_time']);
@@ -4396,7 +4496,15 @@ if (!function_exists('GetUsersLatestData'))
                     }
                     // 分销商绑定客户处理
                     if (isMobile()/* && isWeixin()*/) {
-                        $dealerParam = cookie('dealerParam') ? cookie('dealerParam') : session('dealerParam');
+                        $dealerParam = input('param.dealerParam/s', '', 'trim');
+                        if (!empty($dealerParam)) {
+                            cookie('dealerParam', null);
+                            session('dealerParam', null);
+                            cookie('dealerParam', $dealerParam);
+                            session('dealerParam', $dealerParam);
+                        } else {
+                            $dealerParam = cookie('dealerParam') ? cookie('dealerParam') : session('dealerParam');
+                        }
                         if (!empty($dealerParam)) {
                             $dealerPluginLogic = new \app\plugins\logic\DealerPluginLogic($users);
                             $dealerPluginLogic->dealerAction('h5', 'bindUsers');
@@ -4497,28 +4605,33 @@ if (!function_exists('GetTotalArc'))
             $cache_key = md5("common-GetTotalArc-{$typeid}");
             $count = cache($cache_key);
             if (empty($count)) {
-                $row = model('Arctype')->getHasChildren($typeid);
-                if (empty($row)) return 0;
+                if(version_compare(getCmsVersion(),'v1.6.6','>')) {
+                    $count = \think\Db::name('arctype')->where(['id'=>$typeid])->value('total_arc');
+                    cache($cache_key, $count, null, 'arctype');
+                } else {
+                    $row = model('Arctype')->getHasChildren($typeid);
+                    if (empty($row)) return 0;
 
-                $typeids = array_keys($row);
-                $allow_release_channel = config('global.allow_release_channel');
-                $condition = [
-                    'typeid' => ['IN', $typeids],
-                    'channel' => ['IN', $allow_release_channel],
-                    'arcrank' => ['gt', -1],
-                    'status' => 1,
-                    'is_del' => 0,
-                ];
-                /*定时文档显示插件*/
-                if (is_dir('./weapp/TimingTask/')) {
-                    $TimingTaskRow = model('Weapp')->getWeappList('TimingTask');
-                    if (!empty($TimingTaskRow['status']) && 1 == $TimingTaskRow['status']) {
-                        $condition['add_time'] = ['elt', getTime()]; // 只显当天或之前的文档
+                    $typeids = array_keys($row);
+                    $allow_release_channel = config('global.allow_release_channel');
+                    $condition = [
+                        'typeid' => ['IN', $typeids],
+                        'channel' => ['IN', $allow_release_channel],
+                        'arcrank' => ['gt', -1],
+                        'status' => 1,
+                        'is_del' => 0,
+                    ];
+                    /*定时文档显示插件*/
+                    if (is_dir('./weapp/TimingTask/')) {
+                        $TimingTaskRow = model('Weapp')->getWeappList('TimingTask');
+                        if (!empty($TimingTaskRow['status']) && 1 == $TimingTaskRow['status']) {
+                            $condition['add_time'] = ['elt', getTime()]; // 只显当天或之前的文档
+                        }
                     }
+                    /*end*/
+                    $count = \think\Db::name('archives')->where($condition)->count('aid');
+                    cache($cache_key, $count, null, 'archives');
                 }
-                /*end*/
-                $count = \think\Db::name('archives')->where($condition)->count('aid');
-                cache($cache_key, $count, null, 'archives');
             }
 
             return intval($count);
@@ -4712,6 +4825,15 @@ if (!function_exists('pay_success_logic'))
                     $data['email'] = GetEamilSendData(tpCache('smtp'), $users, $orderData, 1, $paycode);
                     // 手机发送
                     $data['mobile'] = GetMobileSendData(tpCache('sms'), $users, $orderData, 1, $paycode);
+                }
+                
+                if (true !== $notify || 'balance' == $paycode) { // 异步处理
+                    // 订单支付通知
+                    $params = [
+                        'users_id' => $orderData['users_id'],
+                        'result_id' => $orderData['order_id'],
+                    ];
+                    eyou_send_notice(9, $params);
                 }
 
                 // 保存微信发货推送表记录(需要物流发货订单)
@@ -5237,6 +5359,7 @@ if (!function_exists('pc_to_mobile_url'))
     {
         $url = '';
         $webData = tpCache('web');
+        $seo_pseudo = tpCache('seo.seo_pseudo');
         if (file_exists('./template/'.TPL_THEME.'mobile')) { // 分离式模板
 
             $domain = request()->host(true);
@@ -5252,13 +5375,19 @@ if (!function_exists('pc_to_mobile_url'))
             } else if (!empty($tid)) { // 列表页
                 $url = url('home/Lists/index', ['tid' => $tid], true, $domain, 1, 1, 0);
             } else { // 首页
-                $url = request()->scheme().'://'. $domain . ROOT_DIR . '/index.php';
+                $url = request()->scheme().'://'. $domain . ROOT_DIR . '/';
+                if ($seo_pseudo == 2) {
+                    $url .= 'index.php';
+                }
             }
         } else { // 响应式模板
             // 开启手机站域名，且配置
             if (!empty($webData['web_mobile_domain_open']) && !empty($webData['web_mobile_domain'])) {
                 if (empty($pageurl)) {
-                    $url = request()->subDomain($webData['web_mobile_domain']) . ROOT_DIR . '/index.php';
+                    $url = request()->subDomain($webData['web_mobile_domain']) . ROOT_DIR . '/';
+                    if ($seo_pseudo == 2) {
+                        $url .= 'index.php';
+                    }
                 } else {
                     $url = !preg_match('/^(http(s?):)?\/\/(.*)$/i', $pageurl) ? request()->domain() . $pageurl : $pageurl;
                     $url = preg_replace('/^(.*)(\/\/)([^\/]*)(\.?)(' . request()->rootDomain() . ')(.*)$/i', '${1}${2}' . $webData['web_mobile_domain'] . '.${5}${6}', $url);
@@ -5464,8 +5593,13 @@ if (!function_exists('adminLoginAfter')) {
 
             $last_login_time = getTime();
             $last_login_ip = clientIP();
-            $login_cnt = $admin_info['login_cnt'] + 1;
-            \think\Db::name('admin')->where(['admin_id'=>$admin_info['admin_id']])->save(array('last_login'=>$last_login_time, 'last_ip'=>$last_login_ip, 'login_cnt'=>$login_cnt, 'session_id'=>$session_id));
+            $saveData = [
+                'last_login'    => $last_login_time, 
+                'last_ip'       => $last_login_ip, 
+                'login_cnt'     => $admin_info['login_cnt'] + 1, 
+                'session_id'    => $session_id,
+            ];
+            \think\Db::name('admin')->where(['admin_id'=>$admin_info['admin_id']])->save($saveData);
             $admin_info['last_login'] = $last_login_time;
             $admin_info['last_ip'] = $last_login_ip;
 
@@ -5508,6 +5642,7 @@ if (!function_exists('adminLoginAfter')) {
 
             $admin_info_new = $admin_info;
             /*过滤存储在session文件的敏感信息*/
+            unset($admin_info['password']);
             foreach (['user_name','true_name','password'] as $key => $val) {
                 unset($admin_info_new[$val]);
             }
@@ -5517,13 +5652,46 @@ if (!function_exists('adminLoginAfter')) {
             session('admin_id', $admin_info['admin_id']);
             session('admin_info', $admin_info_new);
             session('admin_login_expire', getTime()); // 登录有效期
-            return $admin_info_new;
+            cookie('from_url', null);
+
+            // Im客服系统
+            if (is_dir('./weapp/Im/') && file_exists('./application/plugins/logic/ImLogic.php')) {
+                try {
+                    $imLogic = new \app\plugins\logic\ImLogic;
+                    $imLogic->opt_admin_token('save', $admin_id);
+                } catch (\Exception $e) {
+                    
+                }
+            }
+
+            return $admin_info;
         }
         else {
             session('admin_id', null);
             session('admin_info', null);
             session('admin_login_expire', null);
             return false;
+        }
+    }
+}
+
+if (!function_exists('adminLogoutAfter')) {
+    /**
+     * 管理员退出成功的前置业务逻辑
+     * @return [type] [description]
+     */
+    function adminLogoutAfter($admin_id = 0)
+    {
+        cookie('from_url', null);
+        
+        // Im客服系统
+        if (is_dir('./weapp/Im/') && file_exists('./application/plugins/logic/ImLogic.php')) {
+            try {
+                $imLogic = new \app\plugins\logic\ImLogic;
+                $imLogic->opt_admin_token('save', $admin_id, '');
+            } catch (\Exception $e) {
+                
+            }
         }
     }
 }
@@ -5658,6 +5826,7 @@ if (!function_exists('clearHtmlCache')) {
     function clearHtmlCache($aids = [], $typeids = [])
     {
         $filelist = [];
+        $all_typeids = [];
         $seoData = tpCache('seo');
 
         if (!empty($aids)) {
@@ -5695,16 +5864,21 @@ if (!function_exists('clearHtmlCache')) {
                 $arctypeM = new \app\common\model\Arctype;
                 $typeid_list = $arctypeM->getAllPidByids($typeids);
                 foreach ($typeid_list as $_k => $_v) {
+                    $all_typeids[] = $_v['id'];
                     $arr = glob(HTML_ROOT.'lists'.DS."*_{$_v['id']}.html");
                     if (is_array($arr)) {
                         $filelist = array_merge($filelist, $arr);
                     }
                 }
             }
+            $all_typeids = array_merge($all_typeids, $typeids);
+            $all_typeids = array_unique($all_typeids);
+            \think\Db::name('arctype')->where(['id'=>['IN', $all_typeids]])->update(['update_time'=>getTime()]);
         }
 
+
         // 删除页面缓存文件
-        if (!empty($filelist)) {
+        if (!empty($filelist) || !empty($aids) || !empty($typeids)) {
             foreach ($filelist as $_k => $_v) {
                 @unlink($_v);
             }
@@ -6735,6 +6909,22 @@ if (!function_exists('get_weixin_access_token'))
                     'msg' => '102: 请先完成小程序API中的微信小程序配置',
                 ];
             }
+        } else{
+            $data = \think\Db::name('weapp')->where(['code' => 'Logisticswx', 'status' => 1])->value('data');
+            if (!empty($data)) {
+                 $decodedData = unserialize($data);    
+                if (isset($decodedData['appid'])) {
+                      $data = [
+                            'appid' => $decodedData['appid'],
+                            'appsecret' => $decodedData['appsecret']
+                        ];
+                } else {
+                    return [
+                        'code'  => 0,
+                        'msg' => '101: 请先完成设置微信商城小程序appid和密钥',
+                    ];
+                }
+            }
         }
 
         if (false === $resetToken && !empty($data['access_token']) && !empty($data['expire_time']) && $data['expire_time'] > getTime()) {
@@ -6989,6 +7179,43 @@ if (!function_exists('equal_pop_login'))
             $str = $equalLogic->popLogin($type);
         }
         return $str;
+    }
+}
+
+if (!function_exists('get_seo_description_length')) 
+{
+    /**
+     * 获取文档seo描述截取的长度
+     */
+    function get_seo_description_length()
+    {
+        $foreign_is_status = tpSetting('foreign.foreign_is_status', '', 'cn');
+        if (!empty($foreign_is_status)) {
+            $seoConfig = tpCache('seo');
+            if (isset($seoConfig['seo_description_length'])) {
+                return intval($seoConfig['seo_description_length']);
+            }
+        }
+
+        return config('global.arc_seo_description_length');
+    }
+}
+
+if (!function_exists('is_template_opt'))
+{
+    /**
+     * 判断是否有权限操作模板文件
+     * @param  [type]  $ip [description]
+     * @return boolean     [description]
+     */
+    function is_template_opt() {
+        static $template_opt = null;
+        if (null === $template_opt) {
+            $file = DATA_PATH.'conf'.DS.'template_opt.txt';
+            $template_opt = file_exists($file) ? true : false;
+        }
+
+        return $template_opt;
     }
 }
 

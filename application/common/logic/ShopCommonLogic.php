@@ -134,6 +134,8 @@ class ShopCommonLogic extends Model
             $LogNote = '商家已退款到余额，' . $service_type . '维权完成！';
         } else if (7 === intval($param['status']) && in_array($param['service_type'], [2, 3]) && 2 === intval($param['refund_way'])) {
             $LogNote = '商家已线下退款，' . $service_type . '维权完成！';
+        } else if (7 === intval($param['status']) && in_array($param['service_type'], [2, 3]) && 3 === intval($param['refund_way'])) {
+            $LogNote = '商家已原路退回(微信)，' . $service_type . '维权完成！';
         } else if (8 === intval($param['status'])) {
             $LogNote = '关闭' . $service_type . '申请！';
         } else if (9 === intval($param['status'])) {

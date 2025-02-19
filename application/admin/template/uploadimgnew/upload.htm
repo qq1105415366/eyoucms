@@ -61,11 +61,14 @@
                 <div class="upload-main">
                     <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
                         <ul class="layui-tab-title">
-                            <li id="bendi" class="layui-this">本地图片</li>
-                            <li id="tiqu">远程图片</li>
+                            <li id="bendi" {eq name="$info.open_source" value="bendi"} class="layui-this" {/eq}>本地图片</li>
+                            <li id="tiqu" {eq name="$info.open_source" value="tiqu"} class="layui-this" {/eq}>远程图片</li>
+                            {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/uploadimgnew/ai_tab.htm')" /}
+                                {include file="/weapp/Ai/template/uploadimgnew/ai_tab.htm" /}
+                            {/if}
                         </ul>
                         <div class="layui-tab-content" style="height: 100%;">
-                            <div class="layui-tab-item layui-show" id="bendi_cont">
+                            <div class="layui-tab-item {eq name="$info.open_source" value="bendi"} layui-show {/eq}" id="bendi_cont">
                                 <div class="upload-con">
                                     <div class="upload-group">
                                         <div>
@@ -114,7 +117,7 @@
                                     <iframe name="content_body" id="content_body" src="{$current_upload_list_url}&unneed_syn={$Request.param.unneed_syn}" width="100%" height="100%" frameborder="0" style="height: 460px;"></iframe>
                                 </div>
                             </div>
-                            <div class="layui-tab-item" id="tiqu_cont">
+                            <div class="layui-tab-item {eq name="$info.open_source" value="tiqu"} layui-show {/eq}" id="tiqu_cont">
                                 <div class="upload-con">
                                     <div class="image-selector-network">
                                         <form class="layui-form" id="layui-form" action="{:url('Uploadimgnew/ajax_remote_to_imglocal')}" method="post">
@@ -137,6 +140,9 @@
                                     </div>
                                 </div>
                             </div>
+                            {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/uploadimgnew/ai_drawing.htm')" /}
+                                {include file="/weapp/Ai/template/uploadimgnew/ai_drawing.htm" /}
+                            {/if}
                         </div>
                     </div>
                 </div>
@@ -154,6 +160,10 @@
             var callback = "{$info.func}";
             var num = "{$info.num|default=1}";
         </script>
-        <script type="text/javascript" src="__PUBLIC__/plugins/uploadimgnew/js/upload.js?v={$version}1"></script>
+        <script type="text/javascript" src="__PUBLIC__/plugins/uploadimgnew/js/upload.js?v={$version}"></script>
+        <script type="text/javascript" src="__SKIN__/js/clipboard.min.js"></script>
+        {if condition="file_exists(ROOT_PATH.'weapp/Ai/template/uploadimgnew/skin/js/ai_upload.js')" /}
+        <script type="text/javascript" src="__ROOT_DIR__/weapp/Ai/template/uploadimgnew/skin/js/ai_upload.js?v={:getTime()}"></script>
+        {/if}
     </body>
 </html>

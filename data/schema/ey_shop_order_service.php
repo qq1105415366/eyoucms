@@ -180,10 +180,19 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'refund_way' => 
+  array (
+    'name' => 'refund_way',
+    'type' => 'tinyint(1) unsigned',
+    'notnull' => false,
+    'default' => '0',
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'refund_price' => 
   array (
     'name' => 'refund_price',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -192,7 +201,7 @@ return array (
   'refund_balance' => 
   array (
     'name' => 'refund_balance',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,

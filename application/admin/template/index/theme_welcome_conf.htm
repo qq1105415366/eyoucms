@@ -34,7 +34,7 @@
                         {/volist}
                     </span>
                     <p class="notic">模板格式：welcome_自定义.htm<br/>模板目录：__ROOT_DIR__/application/admin/template/theme/</p>
-                    &nbsp;<a href="javascript:void(0);" onclick="welcome_tplname_add();" class="ncap-btn ncap-btn-green">新建模板</a>
+                    <!-- &nbsp;<a href="javascript:void(0);" onclick="welcome_tplname_add();" class="ncap-btn ncap-btn-green">新建模板</a> -->
                 </dd>
             </dl>
             <dl class="row">
@@ -82,17 +82,52 @@
 
         function welcome_tplname_add()
         {
-            var url = "{:url('Index/ajax_theme_tplfile_add',['type'=>'welcome'])}";
-            //iframe窗
-            layer.open({
-                type: 2,
-                title: '新建欢迎页模板',
-                fixed: true, //不固定
-                shadeClose: false,
-                shade: layer_shade,
-                maxmin: false, //开启最大化最小化按钮
-                area: ['100%', '100%'],
-                content: url
+            $.ajax({
+                url: "{:url('Security/ajax_security_ask_open', ['_ajax'=>1])}",
+                type: 'GET',
+                dataType: 'JSON',
+                data: {},
+                success: function(res){
+                    var security_ask_open = res.data.security_ask_open;
+                    if (0 == security_ask_open) {
+                        showConfirm('需要设置密保问题验证才可以继续', {btn:['去设置', '取消']}, function(){
+                            layer.closeAll();
+                            var iframes = layer.open({
+                                type: 2,
+                                title: '安全验证中心',
+                                fixed: true, //不固定
+                                shadeClose: false,
+                                shade: layer_shade,
+                                offset: 'auto',
+                                // maxmin: true, //开启最大化最小化按钮
+                                area: ['100%', '100%'],
+                                content: "{:url('Security/second_ask_init')}"+"&source=theme_welcome",
+                                success: function(layero, index){
+
+                                }
+                            });
+                            layer.full(iframes);
+                        });
+                        return false;
+                    }
+
+                    var url = "{:url('Index/ajax_theme_tplfile_add',['type'=>'welcome'])}";
+                    //iframe窗
+                    layer.open({
+                        type: 2,
+                        title: '新建欢迎页模板',
+                        fixed: true, //不固定
+                        shadeClose: false,
+                        shade: layer_shade,
+                        maxmin: false, //开启最大化最小化按钮
+                        area: ['100%', '100%'],
+                        content: url
+                    });
+                },
+                error: function(e){
+                    showErrorMsg(e.responseText);
+                    return false;
+                }
             });
         }
 

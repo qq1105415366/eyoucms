@@ -136,7 +136,7 @@ class TagSpsubmitorder extends Base
             // 已安装多商家插件并开启则执行
             if (!empty($isMultiMerchant)) {
                 // 获取多商家ID
-                $merchantID = array_unique(get_arr_column($result['list'], 'merchant_id'));
+                $merchantID = array_filter(array_unique(get_arr_column($result['list'], 'merchant_id')));
                 $where = [
                     'merchant_id' => ['IN', $merchantID]
                 ];
@@ -298,7 +298,7 @@ class TagSpsubmitorder extends Base
                     ];
                     $ProductSpecData = Db::name("product_spec_data")->where($SpecWhere)->field('spec_name, spec_value')->select();
                     foreach ($ProductSpecData as $spec_value) {
-                        if ('v2.x' == $this->usersTplVersion) {
+                        if ('v2.x' == $this->usersTplVersion || in_array($this->usersTplVersion, ['v5'])) {
                             $result['list'][$key]['product_spec'] .= $spec_value['spec_value'].'; ';
                         } else {
                             $result['list'][$key]['product_spec'] .= $spec_value['spec_value'].'&nbsp; ';
@@ -312,12 +312,34 @@ class TagSpsubmitorder extends Base
             }
             $result['list'][$key]['product_spec_list'] = $product_spec_list;
 
+            // 如果安装了核销插件则执行
+            $verify_open = 0;
+            if (is_dir('./weapp/Verify/')) {
+                // 核销插件数据信息
+                $verifyInfo = model('Weapp')->getWeappList('Verify');
+                if (!empty($verifyInfo['status']) && !empty($verifyInfo['data']['openVerify'])) {
+                    $verify_open = 1;
+                }
+            }
+
             // 仅到店核销
-            if ('2' === $value['logistics_type']) $result['data']['onlyVerify'] = true;
+            if ('2' === $value['logistics_type']) {
+                if (!empty($verify_open)) {
+                    $result['data']['onlyVerify'] = true;
+                }
+            }
             // 仅物流配送
-            if ('1' === $value['logistics_type']) $result['data']['onlyDelivery'] = true;
+            if ('1' === $value['logistics_type']) {
+                $result['data']['onlyDelivery'] = true;
+            }
             // 物流配送 和 到店核销 都支持
-            if ('1,2' === $value['logistics_type']) $result['data']['allLogisticsType'] = true;
+            if ('1,2' === $value['logistics_type']) {
+                if (!empty($verify_open)) {
+                    $result['data']['allLogisticsType'] = true;
+                } else {
+                    $result['data']['onlyDelivery'] = true;
+                }
+            }
         }
 
         // 切换配送方式 - 点击快递配送
@@ -457,6 +479,7 @@ class TagSpsubmitorder extends Base
         $data['shop_centre_url'] = url('user/Shop/shop_centre');
         $data['pich_up_list_url'] = url('user/Shop/get_pick_up_list');
         $data['verifyStore'] = url('user/Shop/select_verify_store');
+        $data['usersTplVersion'] = $this->usersTplVersion;
         $data['usersTpl2xVersion'] = !empty($this->usersTpl2xVersion) ? $this->usersTpl2xVersion : '';
         $data['totalAmountOld'] = !empty($result['data']['TotalAmount']) ? unifyPriceHandle($result['data']['TotalAmount']) : 0;
         // 会员模板版本号
@@ -472,7 +495,7 @@ class TagSpsubmitorder extends Base
             $data['addr_width']  = '100%';
             $data['addr_height'] = '100%';
         } else {
-            if (in_array($this->usersTplVersion, ['v3']) || in_array($this->usersTpl2xVersion, ['v2.x'])) {
+            if (in_array($this->usersTplVersion, ['v3', 'v5']) || in_array($this->usersTpl2xVersion, ['v2.x'])) {
                 $data['addr_width']  = '660px';
                 $data['addr_height'] = '392px';
             } else {

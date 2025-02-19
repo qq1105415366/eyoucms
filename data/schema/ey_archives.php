@@ -264,7 +264,7 @@ return array (
   'users_price' => 
   array (
     'name' => 'users_price',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -300,7 +300,7 @@ return array (
   'old_price' => 
   array (
     'name' => 'old_price',
-    'type' => 'decimal(10,2)',
+    'type' => 'decimal(20,2)',
     'notnull' => false,
     'default' => '0.00',
     'primary' => false,
@@ -580,6 +580,15 @@ return array (
   array (
     'name' => 'reason',
     'type' => 'text',
+    'notnull' => false,
+    'default' => NULL,
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'stock_code' => 
+  array (
+    'name' => 'stock_code',
+    'type' => 'varchar(100)',
     'notnull' => false,
     'default' => NULL,
     'primary' => false,

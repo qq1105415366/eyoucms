@@ -34,6 +34,9 @@ class Index extends Base
     
     public function index()
     {
+        // diy_database_column();
+        // diy_source_filelist();
+
         // $dbtables = Db::query('SHOW TABLE STATUS');
         // $list = array();
         // foreach ($dbtables as $k => $v) {
@@ -91,7 +94,7 @@ class Index extends Base
         /*小程序开关*/
         $diyminipro_list = [];
         if ($this->admin_lang == $this->main_lang) {
-            $diyminipro_list = Db::name('weapp')->field('id,code,name,config')->where(['code'=>['IN',['Diyminipro','DiyminiproMall','BdDiyminipro','TtDiyminipro']],'status'=>1])->order('code desc')->select();
+            $diyminipro_list = Db::name('weapp')->field('id,code,name,config')->where(['code'=>['IN',['Diyminipro','DiyminiproMall','BdDiyminipro','TtDiyminipro','ZfbDiyminipro']],'status'=>1])->order('code desc')->select();
             foreach ($diyminipro_list as $key => $val) {
                 $val['config'] = (array)json_decode($val['config']);
                 $val['litpic'] = empty($val['config']['litpic']) ? '' : handle_subdir_pic($val['config']['litpic']);
@@ -103,7 +106,9 @@ class Index extends Base
                     $val['name'] = '百度企业小程序';
                 } else if ('TtDiyminipro' == $val['code']) {
                     $val['name'] = '抖音企业小程序';
-                }
+                } else if ('ZfbDiyminipro' == $val['code']) {
+                    $val['name'] = '支付宝企业小程序';
+                } 
                 $diyminipro_list[$key] = $val;
             }
         }
@@ -134,6 +139,8 @@ class Index extends Base
                 $val['title'] = '百度企业小程序';
             } else if (stristr($val['param'], '|sm|TtDiyminipro|')) {
                 $val['title'] = '抖音企业小程序';
+            } else if (stristr($val['param'], '|sm|ZfbDiyminipro|')) {
+                $val['title'] = '支付宝企业小程序';
             }
             $menu_list[$key] = $val;
 
@@ -208,6 +215,23 @@ class Index extends Base
         $assign_data['system_explanation_welcome_2'] = $system_explanation_welcome_2;
         /*end*/
 
+        // 定期检查多久没有扫描
+        $system_explanation_welcome_3 = 0;
+        $ddos_scan_expire_day = 0;
+        $ddos_scan_last_time = (int)tpSetting('ddos.ddos_scan_last_time', [], 'cn');
+        if (!empty($ddos_scan_last_time)) {
+            $ddos_scan_day = 30;
+            $ddos_scan_expire_time = getTime() - ($ddos_scan_last_time + ($ddos_scan_day * 86400));
+            if ($ddos_scan_expire_time < 0) {
+                $system_explanation_welcome_3 = 1;
+            } else {
+                $ddos_scan_expire_day = ceil($ddos_scan_expire_time / 86400);
+            }
+        }
+        $assign_data['ddos_scan_last_time'] = $ddos_scan_last_time;
+        $assign_data['ddos_scan_expire_day'] = $ddos_scan_expire_day;
+        $assign_data['system_explanation_welcome_3'] = $system_explanation_welcome_3;
+
         /*代理贴牌功能限制-s*/
         $assign_data['upgrade'] = true;
         if (function_exists('checkAuthRule')) {
@@ -227,25 +251,12 @@ class Index extends Base
         $this->synExecuteSql();
 
         $ajaxLogic = new \app\admin\logic\AjaxLogic;
-        // $ajaxLogic->update_template('users'); // 升级前台会员中心的模板文件
         $ajaxLogic->system_langnum_file(); // 记录当前是多语言还是单语言到文件里
         $ajaxLogic->system_citysite_file(); // 记录当前是否多站点到文件里
 
         $ajaxLogic->admin_logic_1609900642(); // 内置方法
         // 纠正SQL缓存表结果字段类型(v1.6.1节点去掉--陈风任)
         $ajaxLogic->admin_logic_1623036205();
-        // 评价主表评分由原先的(好评、中评、差评)转至实际星评数(1、2、3、4、5)(v1.6.1节点去掉--陈风任)
-        $ajaxLogic->admin_logic_1651114275();
-        //融合多商家模板升级数据库表、字段变动
-        $ajaxLogic->admin_logic_1658220528();
-        // 添加商城订单主表字段(消费获得积分数(obtain_scores)；订单是否已赠送积分(is_obtain_scores))
-        $ajaxLogic->admin_logic_1677653220();
-        // 更新会员积分数据表，积分类型字段 type
-        $ajaxLogic->admin_logic_1680749290();
-        // 纠正文章模型发布的文章数据中【付费预览】-【自动截取】的大小，由KB改为字节，article_pay表的size字段(1024字节=1KB)
-        $ajaxLogic->admin_logic_1685094852();
-        // 运费模板数据同步--陈风任
-        $ajaxLogic->admin_logic_1687687709();
 
         $viewfile = 'welcome';
         $web_theme_welcome_tplname = empty($this->globalConfig['web_theme_welcome_tplname']) ? '' : $this->globalConfig['web_theme_welcome_tplname'];
@@ -601,10 +612,10 @@ class Index extends Base
             @copy($source, $destination);
 
             adminLog('验证授权');
-            $this->success('授权校验成功', $this->request->baseFile(), '', 1, [], '_parent');
+            $this->success('授权校验成功', request()->baseFile(), '', 1, [], '_parent');
         }
-        $msg = empty($redata['msg']) ? '域名（'.$this->request->host(true).'）未授权' : $redata['msg'];
-        $this->error($msg, $this->request->baseFile(), '', 5, [], '_parent');
+        $msg = empty($redata['msg']) ? '域名（'.request()->host(true).'）未授权' : $redata['msg'];
+        $this->error($msg, request()->baseFile(), '', 5, [], '_parent');
     }
 
     /**
@@ -781,6 +792,9 @@ class Index extends Base
                 case 'archives_flag':
                     {
                         if (in_array($field, ['flag_name'])) {
+                            if(empty($value)){
+                                $this->error('属性名称不能为空', null, [],2);
+                            }
                             $value = htmlspecialchars($value);
                         }
                         if ('sort_order' == $field) {
@@ -938,7 +952,7 @@ class Index extends Base
                                 model('ShopPublicHandle')->pointsGoodsPassiveHandle([$id_value]);
                             }
                             // 清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表
-                            Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                            Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                             model('SqlCacheTable')->InsertSqlCacheTable(true);
                         }
                         break;
@@ -979,7 +993,17 @@ class Index extends Base
                         \think\Cache::clear('ad');
                         break;
                     }
-                    
+                
+                    // 多语言
+                    case 'language':
+                    {
+                        if ('status' == $field) {
+                            /*统计多语言数量*/
+                            model('Language')->setLangNum();
+                            break;
+                        }
+                    }
+
                     default:
                         // 清除logic逻辑定义的缓存
                         extra_cache('admin_'.$table.'_list_logic', null);
@@ -1015,26 +1039,22 @@ class Index extends Base
             $name = input('post.name/s');
             $value = input('post.value/s');
             $is_force = input('post.is_force/d'); // 是否强制开启，跳过检测提示，目前用于（多语言、多站点）
+            $langRow = \think\Db::name('language')->order('id asc')->select();
 
             $data = [];
             switch ($inc_type) {
                 case 'pay':
                 case 'shop':
                 {
-                    getUsersConfigData($inc_type, [$name => $value]);
+                    foreach ($langRow as $key => $val) {
+                        getUsersConfigData($inc_type, [$name => $value], $val['mark']);
+                    }
 
                     // 开启商城
                     if (1 == $value) {
                         /*多语言 - 同时开启会员中心*/
-                        if (is_language()) {
-                            $langRow = \think\Db::name('language')->order('id asc')
-                                ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                                ->select();
-                            foreach ($langRow as $key => $val) {
-                                tpCache('web', ['web_users_switch' => 1], $val['mark']);
-                            }
-                        } else { // 单语言
-                            tpCache('web', ['web_users_switch' => 1]);
+                        foreach ($langRow as $key => $val) {
+                            tpCache('web', ['web_users_switch' => 1], $val['mark']);
                         }
                         /*--end*/
 
@@ -1121,21 +1141,16 @@ class Index extends Base
                             'update_time' => getTime(),
                         ]);
                     if ($r !== false) {
-                        getUsersConfigData($inc_type, [$name => $value]);
+                        foreach ($langRow as $key => $val) {
+                            getUsersConfigData($inc_type, [$name => $value], $val['mark']);
+                        }
 
                         if (1 == $value) {
-                            /*多语言 - 同时开启会员中心*/
-                            if (is_language()) {
-                                $langRow = \think\Db::name('language')->order('id asc')
-                                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                                    ->select();
-                                foreach ($langRow as $key => $val) {
-                                    tpCache('web', ['web_users_switch' => 1], $val['mark']);
-                                }
-                            } else { // 单语言
-                                tpCache('web', ['web_users_switch' => 1]);
+                            // 多语言 - 同时开启会员中心
+                            foreach ($langRow as $key => $val) {
+                                tpCache('web', ['web_users_switch' => 1], $val['mark']);
                             }
-                            /*--end*/
+                            // end
                         }
                     }
                     break;
@@ -1161,21 +1176,17 @@ class Index extends Base
                             'update_time' => getTime(),
                         ]);
                     if ($r) {
-                        getUsersConfigData($inc_type, [$name => $value]);
+                        foreach ($langRow as $key => $val) {
+                            getUsersConfigData($inc_type, [$name => $value], $val['mark']);
+                        }
 
                         if (1 == $value) {
-                            /*多语言 - 同时开启会员中心*/
-                            if (is_language()) {
-                                $langRow = \think\Db::name('language')->order('id asc')
-                                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                                    ->select();
-                                foreach ($langRow as $key => $val) {
-                                    tpCache('web', ['web_users_switch' => 1], $val['mark']);
-                                }
-                            } else { // 单语言
-                                tpCache('web', ['web_users_switch' => 1]);
+                            // 多语言 - 同时开启会员中心
+                            $langRow = \think\Db::name('language')->order('id asc')->select();
+                            foreach ($langRow as $key => $val) {
+                                tpCache('web', ['web_users_switch' => 1], $val['mark']);
                             }
-                            /*--end*/
+                            // end
                         }
                     }
                     break;
@@ -1196,15 +1207,8 @@ class Index extends Base
                     }
 
                     /*多语言*/
-                    if (is_language()) {
-                        $langRow = \think\Db::name('language')->order('id asc')
-                            ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                            ->select();
-                        foreach ($langRow as $key => $val) {
-                            tpCache($inc_type, [$name => $value], $val['mark']);
-                        }
-                    } else { // 单语言
-                        tpCache($inc_type, [$name => $value]);
+                    foreach ($langRow as $key => $val) {
+                        tpCache($inc_type, [$name => $value], $val['mark']);
                     }
                     /*--end*/
 
@@ -1233,18 +1237,9 @@ class Index extends Base
                         // 强制关闭多站点
                         if (!empty($is_force)) {
                             $data['reload'] = 1;
-                            /*多语言*/
-                            if (is_language()) {
-                                $langRow = \think\Db::name('language')->order('id asc')
-                                    ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                                    ->select();
-                                foreach ($langRow as $key => $val) {
-                                    tpCache('web', ['web_citysite_open' => 0], $val['mark']);
-                                }
-                            } else { // 单语言
-                                tpCache('web', ['web_citysite_open' => 0]);
+                            foreach ($langRow as $key => $val) {
+                                tpCache('web', ['web_citysite_open' => 0], $val['mark']);
                             }
-                            /*--end*/
                             model('Citysite')->setCitysiteOpen();
                         }
                         // 清除页面缓存
@@ -1256,30 +1251,15 @@ class Index extends Base
                             $data['reload'] = 1;
                             $msg = "已开启城市分站<br/>1、仅支持动态URL、伪静态这两种模式；<br/>2、可在下方的【高级扩展】进入城市分站；";
                         }
-                        /*多语言*/
-                        if (is_language()) {
-                            $langRow = \think\Db::name('language')->order('id asc')
-                                ->cache(true, EYOUCMS_CACHE_TIME, 'language')
-                                ->select();
-                            foreach ($langRow as $key => $val) {
-                                tpCache('web', ['web_language_switch' => 0], $val['mark']);
-                                if (!empty($value) && 2 == $seo_pseudo) {
-                                    tpCache('seo', ['seo_pseudo'=>1, 'seo_dynamic_format'=>1], $val['mark']);
-                                    if (file_exists('./index.html')) {
-                                        @unlink('./index.html');
-                                    }
-                                }
-                            }
-                        } else { // 单语言
-                            tpCache('web', ['web_language_switch' => 0]);
+                        foreach ($langRow as $key => $val) {
+                            tpCache('web', ['web_language_switch' => 0], $val['mark']);
                             if (!empty($value) && 2 == $seo_pseudo) {
-                                tpCache('seo', ['seo_pseudo'=>1, 'seo_dynamic_format'=>1]);
+                                tpCache('seo', ['seo_pseudo'=>1, 'seo_dynamic_format'=>1], $val['mark']);
                                 if (file_exists('./index.html')) {
                                     @unlink('./index.html');
                                 }
                             }
                         }
-                        /*--end*/
                         // 统计多语言数量
                         model('Language')->setLangNum();
                         // 重新生成sitemap.xml
@@ -1303,11 +1283,10 @@ class Index extends Base
         $this->assign('weapp_switch', $weapp_switch);
         /*代理贴牌功能限制-e*/
 
-        $UsersConfigData = getUsersConfigData('all');
         if (file_exists('./data/conf/memgift_open.txt')) {
-            $UsersConfigData['memgift_open'] = 1;
+            $this->usersConfig['memgift_open'] = 1;
+            $this->assign('usersConfig',$this->usersConfig);
         }
-        $this->assign('userConfig',$UsersConfigData);
 
         $is_online = 0;
         if (is_realdomain()) {
@@ -1420,7 +1399,7 @@ class Index extends Base
             $ArchivesMaxID = Db::name('archives')->max('aid');
             if ($ArchivesMaxID != $CacheMaxID) {
                 /*清空sql_cache_table数据缓存表 并 添加查询执行语句到mysql缓存表*/
-                Db::name('sql_cache_table')->execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
+                Db::execute('TRUNCATE TABLE '.config('database.prefix').'sql_cache_table');
                 model('SqlCacheTable')->InsertSqlCacheTable(true);
                 /* END */
             }
@@ -1481,7 +1460,7 @@ class Index extends Base
             $image_ext_arr = explode(',', $image_ext);
             foreach ($post as $key => $val) {
                 $val = trim($val);
-                if (in_array($key, ['admin_logo','login_logo','login_bgimg'])) { // 后台LOGO/登录LOGO
+                if (in_array($key, ['admin_logo','login_logo','login_bgimg','web_ico'])) { // 后台LOGO/登录LOGO
                     $source = preg_replace('#^'.$this->root_dir.'#i', '', $val); // 支持子目录
                     $source_ext = pathinfo('.'.$source, PATHINFO_EXTENSION);
                     if (!empty($source_ext) && !in_array($source_ext, $image_ext_arr)) {
@@ -1654,6 +1633,7 @@ class Index extends Base
      */
     public function ajax_theme_tplfile_add()
     {
+        $this->error('出于安全考虑已禁用，请使用ftp或易优助手插件修改模板');
         $type = input('param.type/s', '');
         $view_suffix = config('template.view_suffix');
         $tpldirpath = '';
@@ -1759,6 +1739,7 @@ class Index extends Base
      */
     public function ajax_theme_tplfile_edit()
     {
+        $this->error('出于安全考虑已禁用，请使用ftp或易优助手插件修改模板');
         $type = input('param.type/s', '');
         if ('welcome' == $type) {
             $select_input_id = 'welcome_tplname';

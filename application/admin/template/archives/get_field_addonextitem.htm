@@ -18,6 +18,7 @@
             url: "{:url('Archives/ajax_get_addonextitem')}",
             data: {typeid: typeidNew, channeltype: channeltypeNew, aid: aidNew, controller_name: ControllerName, action_name:ActionName, _ajax:1},
             type:'get',
+            dataType : 'json',
             success:function(res) {
                 layer.closeAll();
                 if (res.code == 0) {

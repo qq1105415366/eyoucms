@@ -39,12 +39,10 @@
                                 <!-- 标题 begin -->
 								<h1>{$eyou.field.title}</h1>
                                 <!-- 标题 end -->
-								<div class="blank"></div>
-								<div class="text-gray padding-big-bottom text-default">
+								<div class="meta text-gray text-default">
 									<span class="margin-right">作者：{$eyou.field.author}</span>
 									<span class="margin-right">更新时间：{$eyou.field.update_time|MyDate='Y-m-d',###}</span>
 									<span class="margin-right">点击数：{eyou:arcclick /}</span>
-                                    
 								</div>
 								<hr class="bg-gray">
 								<div class="blank"></div>
@@ -119,7 +117,6 @@
 						<div class="title-l">
 							<h2>产品推荐</h2>
 						</div>
-
 						<div class="list-post-x">
 							{eyou:artlist typeid='3' loop='5'}
 								<div class="media media-x">
@@ -129,7 +126,8 @@
 									</div>
 									{/eyou:eq}
 									<div class="media-body">
-										<h3><a href="{$field.arcurl}" class="text-middle">{$field.title}</a></h3>
+										<h3><a href="{$field.arcurl}" class="text-default">{$field.title}</a></h3>
+                                        <div class="text-yellow"><span class="Conv_DINCondensedC text-middle">￥{$field.users_price}</span></div>
 									</div>
 								</div>
 							{/eyou:artlist}

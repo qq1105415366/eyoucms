@@ -1,12 +1,21 @@
 <?php 
 return array (
+  'handle_id' => 
+  array (
+    'name' => 'handle_id',
+    'type' => 'int(11)',
+    'notnull' => false,
+    'default' => NULL,
+    'primary' => true,
+    'autoinc' => true,
+  ),
   'value_id' => 
   array (
     'name' => 'value_id',
     'type' => 'int(20)',
     'notnull' => false,
     'default' => '0',
-    'primary' => true,
+    'primary' => false,
     'autoinc' => false,
   ),
   'aid' => 
@@ -60,6 +69,15 @@ return array (
     'type' => 'int(10)',
     'notnull' => false,
     'default' => '0',
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'stock_code' => 
+  array (
+    'name' => 'stock_code',
+    'type' => 'varchar(100)',
+    'notnull' => false,
+    'default' => NULL,
     'primary' => false,
     'autoinc' => false,
   ),

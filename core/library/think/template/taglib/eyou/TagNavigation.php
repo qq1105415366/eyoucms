@@ -31,7 +31,7 @@ class TagNavigation extends Base
     {
         parent::_initialize();
         $this->buildhtmlLogic = new BuildhtmlLogic;
-        $this->arctypeAll = $this->buildhtmlLogic->get_arctype_all("id,current_channel,parent_id,dirname,typename,dirpath,diy_dirpath,rulelist"); // 获取全部的栏目信息
+        $this->arctypeAll = $this->buildhtmlLogic->get_arctype_all("id,current_channel,parent_id,dirname,typename,dirpath,diy_dirpath,rulelist,typelink"); // 获取全部的栏目信息
         if (null === self::$ReturnData) {
             self::$ReturnData = [
                 'web_cmsurl'        => $this->root_dir."/",

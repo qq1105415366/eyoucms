@@ -54,8 +54,8 @@
                 </dt>
                 <dd class="opt">
                     <input type="text" value="{$field.dirname|default=''}" name="dirname" id="dirname" class="input-txt" onkeyup="this.value=this.value.replace(/[^a-zA-Z0-9_-]/g,'');" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^a-zA-Z0-9_-]/g,''));">
-                    <p class="notic">用于伪静态和静态页面生成！</p>
-                    <p class="">留空系统默认全拼音+随机数，仅支持字母、数字、下划线、连接符</p>
+                    <p class="notic">用于URL，仅支持字母、数字、下划线、连接！</p>
+                    <p class="notic2">清空系统自动匹配栏目名称拼音，如有重复拼音后加随机数</p>
                 </dd>
             </dl>
             <dl class="row">
@@ -261,7 +261,7 @@
                     </select>
                     <span class="err"></span>
                     <p class="notic">模板命名规则：<br/>lists_<font class="font_nid">模型标识</font>.htm<br/>lists_<font class="font_nid">模型标识</font>_自定义.htm</p>
-                    &nbsp;<a href="javascript:void(0);" onclick="newtpl('lists');" class="ncap-btn ncap-btn-green">新建模板</a>
+                    <!-- &nbsp;<a href="javascript:void(0);" onclick="newtpl('lists');" class="ncap-btn ncap-btn-green">新建模板</a> -->
                 </dd>
             </dl>
             <dl class="row" id="dl_tempview">
@@ -273,7 +273,7 @@
                     </select>
                     <span class="err"></span>
                     <p class="notic">模板命名规则：<br/>view_<font class="font_nid">模型标识</font>.htm<br/>view_<font class="font_nid">模型标识</font>_自定义.htm</p>
-                    &nbsp;<a href="javascript:void(0);" onclick="newtpl('view');" class="ncap-btn ncap-btn-green">新建模板</a>
+                    <!-- &nbsp;<a href="javascript:void(0);" onclick="newtpl('view');" class="ncap-btn ncap-btn-green">新建模板</a> -->
                 </dd>
             </dl>
             <dl class="row {if $is_diyseo_htmlpath == 0 || $seo_html_listname != 4} none {/if}" id="dl_rulelist">
@@ -321,6 +321,7 @@
                     <textarea rows="5" cols="60" id="seo_description" name="seo_description" style="height:54px;" class="keywordsTextarea" onkeyup="monitorInputStr();" onkeypress="monitorInputStr();">{$field.seo_description|default=''}</textarea>
                     <span class="err"></span>
                     <p class="notic">一般不超过100个字符，不填写时系统自动提取正文的前100个字符</p>
+                    <p class="notic2 {if condition="empty($global.web_citysite_open)"} none {/if}">{region}分站区域，{regionAll}分站完整区域，{parent}分站上级区域，{top}分站顶级区域</p>
                     <p class="notic2 {empty name='$field.seo_description'}none{/empty}" id="beenWritten">你已输入<span id="beenWrittenStr">0</span>个字符</p>
                 </dd>
             </dl>

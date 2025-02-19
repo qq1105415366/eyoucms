@@ -12,7 +12,7 @@
                     <label>搜索模式</label>
                 </dt>
                 <dd class="opt" style="width: auto;">
-                    <label class="curpoin"><input type="radio" name="search_model" value="default" {if condition="empty($search.search_model) || 'default' == $search.search_model"} checked="checked" {/if} onclick="searchModel(this);" />标题分词</label>&nbsp;&nbsp;
+                    <label class="curpoin" {if condition="!empty($foreign_is_status)"} title="已启用外贸助手，不支持标题分词" {/if}><input type="radio" name="search_model" value="default" {if condition="empty($search.search_model) || 'default' == $search.search_model"} checked="checked" {/if} onclick="searchModel(this);" {if condition="!empty($foreign_is_status)"} disabled="disabled" {/if} />标题分词</label>&nbsp;&nbsp;
                     <br/>
                     <label class="curpoin"><input type="radio" name="search_model" value="accurate" {if condition="!empty($search.search_model) && 'accurate' == $search.search_model"} checked="checked" {/if} onclick="searchModel(this);" />标题完全匹配</label>&nbsp;&nbsp;
                     <br/>

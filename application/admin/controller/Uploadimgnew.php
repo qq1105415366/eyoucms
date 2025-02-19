@@ -36,6 +36,33 @@ class Uploadimgnew extends Base
         $this->php_sessid = !empty($_COOKIE['PHPSESSID']) ? $_COOKIE['PHPSESSID'] : '';
     }
 
+    //获取上传目录列表
+    public function get_type()
+    {
+        if (IS_AJAX){
+            $type_list = Db::name('uploads_type')->field('id,upload_type')->select();
+            if (empty($type_list)){
+                $this->error('请先创建目录');
+            }else{
+                $this->success('success','',$type_list);
+            }
+        }
+    }
+
+    public function update_type_id()
+    {
+        $id_arr = input('img_id/a');
+        $id_arr = eyIntval($id_arr);
+        if (IS_AJAX && !empty($id_arr)) {
+            $type_id = input('param.type_id/d', 0);
+            $r = Db::name('uploads')->where('img_id','in',$id_arr)->update(['type_id'=>$type_id,'update_time'=>getTime()]);
+            if ($r !== false) {
+                $this->success('移动成功');
+            }
+        }
+        $this->error('移动失败');
+    }
+
     /**
      * 通用的上传图片
      */
@@ -53,6 +80,7 @@ class Uploadimgnew extends Base
         $path = input('path','allimg');
         $num  = input('num/d', 1);
         $is_water  = input('is_water/d', 1);
+        $open_source  = input('open_source/s', 'bendi');
         $default_size = intval($basicConfig['file_size'] * 1024 * 1024); // 单位为b
         $size = input('size/d'); // 单位为kb
         $size = empty($size) ? $default_size : $size*1024;
@@ -63,6 +91,7 @@ class Uploadimgnew extends Base
             'func'     => $func,
             'path'     => $path,
             'is_water' => $is_water,
+            'open_source' => preg_replace('/([^\w\-]+)/i', '', $open_source),
         );
         $assign_data['info'] = $info;
         $assign_data['default_upload_list_url'] = url('Uploadimgnew/get_upload_list', ['type_id'=>0, 'info'=>mchStrCode(json_encode($info), 'ENCODE')]);
@@ -84,6 +113,62 @@ class Uploadimgnew extends Base
 
         $this->assign($assign_data);
         return $this->fetch('uploadimgnew/upload');
+    }
+
+    /**
+     * 完整的上传模板展示
+     */
+    public function upload_full()
+    {
+        $func = input('func');
+        $path = input('path','allimg');
+        $path = preg_replace('/([^\w\-\/\\\]*)/i', '', $path);
+        $num = input('num/d', '1');
+        $default_size = intval(tpCache('basic.file_size') * 1024 * 1024); // 单位为b
+        $size = input('size/d'); // 单位为kb
+        $size = empty($size) ? $default_size : $size*1024;
+        $width = input('width/d', 0);
+        $height = input('height/d', 0);
+        $info = array(
+            'num'=> $num,
+            'upload' =>url('Ueditor/imageUp',array('savepath'=>$path,'pictitle'=>'banner','dir'=>'images')),
+            'size' => $size,
+            'type' => $this->image_type,
+            'input' => preg_replace('/([^\w\-]*)/i', '', input('input')),
+            'func' => empty($func) ? 'undefined' : preg_replace('/([^\w\-]*)/i', '', $func),
+            'path'     => $path,
+            'width'     => $width,
+            'height'     => $height,
+        );
+        $assign_data['info'] = $info;
+
+        // 图片列表
+        $imglist = [];
+        if (in_array($path, ['adminlogo','loginlogo','loginbgimg','ico'])) {
+            $redata = $this->fileList('Images', $path);
+            if ('SUCCESS' == $redata['state']) {
+                $imglist = $redata['list'];
+            }
+            // 已选中的值
+            $select_img = input('param.img_path/s');
+            if (empty($select_img)) {
+                if ('adminlogo' == $path) {
+                    $select_img = $this->globalConfig['web_adminlogo'];
+                } else if ('loginlogo' == $path) {
+                    $select_img = $this->globalConfig['web_loginlogo'];
+                } else if ('loginbgimg' == $path) {
+                    $select_img = $this->globalConfig['web_loginbgimg'];
+                } else if ('ico' == $path) {
+                    $select_img = $this->globalConfig['web_adminico'];
+                }
+            }
+            $assign_data['select_img'] = $select_img;
+            cookie('uploadimgnew_select_img', $select_img);
+        }
+        $assign_data['imglist'] = $imglist;
+
+        $this->assign($assign_data);
+        return $this->fetch();
     }
 
     /**
@@ -150,6 +235,7 @@ class Uploadimgnew extends Base
         $info['func'] = preg_replace('/([^\w\-]*)/i', '', $info['func']);
         $info['path'] = preg_replace('/([^\w\-\/\\\]*)/i', '', $info['path']);
         $info['is_water'] = intval($info['is_water']);
+        $info['open_source'] = preg_replace('/([^\w\-]+)/i', '', $info['open_source']);
         $info['upload'] = url('Ueditor/imageUp',array('savepath'=>$info['path'],'type_id'=>$type_id,'pictitle'=>'banner','dir'=>'images','is_water'=>$info['is_water']));
         $info['image_accept'] = $this->image_accept;
         $assign_data['info'] = $info;
@@ -345,6 +431,98 @@ class Uploadimgnew extends Base
         echo 1;
         exit;
     }
+    
+    public function fileList($type = 'Images', $path = 'allimg'){
+        /* 判断类型 */
+        $type = input('type', $type);
+        switch ($type){
+            /* 列出图片 */
+            case 'Images' : $allowFiles = str_replace(',', '|', $this->image_type);break;
+        
+            case 'Flash' : $allowFiles = 'flash|swf';break;
+        
+            /* 列出文件 */
+            default : 
+            {
+                $file_type = tpCache('basic.file_type');
+                $media_type = tpCache('basic.media_type');
+                $allowFiles = $file_type.'|'.$media_type;
+            }
+        }
+
+        $listSize = 102400000;
+        
+        $key = empty($_GET['key']) ? '' : $_GET['key'];
+        
+        /* 获取参数 */
+        $size = isset($_GET['size']) ? htmlspecialchars($_GET['size']) : $listSize;
+        $start = isset($_GET['start']) ? htmlspecialchars($_GET['start']) : 0;
+        $end = $start + $size;
+        
+        $path = input('path', $path);
+        if (1 == preg_match('#\.#', $path)) {
+            $res = array(
+                "state" => "路径不符合规范",
+                "list" => array(),
+                "start" => $start,
+                "total" => 0
+            );
+            if (IS_AJAX) {
+                echo json_encode($res);
+                exit;
+            } else {
+                return $res;
+            }
+        }
+        if ('adminlogo' == $path) {
+            $path = 'public/static/admin/logo';
+        } else if ('loginlogo' == $path) {
+            $path = 'public/static/admin/login';
+        } else if ('loginbgimg' == $path) {
+            $path = 'public/static/admin/loginbg';
+        } else if ('ico' == $path) {
+            $path = 'public/static/admin/ico';
+        } else {
+            $path = UPLOAD_PATH.$path;
+        }
+
+        /* 获取文件列表 */
+        $files = $this->getfiles($path, $allowFiles, $key);
+        if (empty($files)) {
+            $res = array(
+                "state" => "没有相关文件",
+                "list" => array(),
+                "start" => $start,
+                "total" => count($files)
+            );
+            if (IS_AJAX) {
+                echo json_encode($res);
+                exit;
+            } else {
+                return $res;
+            }
+        }
+        
+        /* 获取指定范围的列表 */
+        $len = count($files);
+        for ($i = min($end, $len) - 1, $list = array(); $i < $len && $i >= 0 && $i >= $start; $i--){
+            $list[] = $files[$i];
+        }
+        
+        /* 返回数据 */
+        $res = array(
+            "state" => "SUCCESS",
+            "list" => $list,
+            "start" => $start,
+            "total" => count($files)
+        );
+        if (IS_AJAX) {
+            echo json_encode($res);
+            exit;
+        } else {
+            return $res;
+        }
+    }
 
     /**
      * 遍历获取目录下的指定类型的文件
@@ -363,10 +541,16 @@ class Uploadimgnew extends Base
                     $this->getfiles($path2, $allowFiles, $key, $files);
                 } else {
                     if (preg_match("/\.(".$allowFiles.")$/i", $file) && preg_match("/.*". $key .".*/i", $file)) {
+                        //获取图像信息
+                        $info = @getimagesize(ROOT_PATH.'/'.$path2);
                         $files[] = array(
+                            'id'=> mchStrCode($path2, 'ENCODE'),
                             'url'=> ROOT_DIR.'/'.$path2, // 支持子目录
                             'name'=> $file,
-                            'mtime'=> filemtime($path2)
+                            'mtime'=> filemtime($path2),
+                            'width'=> empty($info[0]) ? 0 : $info[0],
+                            'height'=> empty($info[1]) ? 0 : $info[1],
+                            'mime'=> empty($info['mime']) ? '' : $info['mime'],
                         );
                     }
                 }
@@ -671,11 +855,29 @@ class Uploadimgnew extends Base
     // 批量删除
     public function del_uploadsimg() 
     {
-        $img_id = input('img_id/a');
-        $img_id = eyIntval($img_id);
-        if (IS_POST && !empty($img_id)) {
-            $rs = Db::name('uploads')->where("img_id", 'IN', $img_id)->delete();
-            // $rs = Db::name('uploads')->where("img_id", 'IN', $img_id)->update(['is_del' => 1, 'update_time'=>getTime()]);
+        $del_type = 'img_id';
+        $img_ids = input('img_id/a');
+        foreach ($img_ids as $key => $val) {
+            if (!is_numeric($val)) {
+                $del_type = 'image_url';
+                $val = mchStrCode($val, 'DECODE');
+                if (empty($val) || !preg_match("/^([\w\-\/\.]+)\.(".str_replace(',', '|', $this->image_type).")$/i", $val)) {
+                    unset($img_ids[$key]);
+                }
+            } else {
+                $val = intval($val);
+            }
+            $img_ids[$key] = $val;
+        }
+        if (IS_POST && !empty($img_ids)) {
+            if ('image_url' == $del_type) {
+                foreach ($img_ids as $key => $val) {
+                    $rs = @unlink(ROOT_PATH.$val);
+                }
+            } else {
+                $rs = Db::name('uploads')->where("img_id", 'IN', $img_ids)->delete();
+                // $rs = Db::name('uploads')->where("img_id", 'IN', $img_ids)->update(['is_del' => 1, 'update_time'=>getTime()]);
+            }
             if ($rs !== false) {
                 $this->success("删除成功");
             }

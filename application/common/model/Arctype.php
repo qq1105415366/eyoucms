@@ -779,6 +779,11 @@ class Arctype extends Model
             // 获取栏目空闲ID作为本次添加ID
             $idleID = $this->getArcTypeIdleID();
             if (!empty($idleID)) $data = array_merge(['id'=>$idleID], $data);
+            if (config('database.type') == 'dm') { // 达梦优化
+                if (isset($data['id'])) {
+                    unset($data['id']);
+                }
+            }
             // 添加栏目
             $insertId = Db::name('arctype')->insertGetId($data);
             if (!empty($insertId)) {
@@ -792,6 +797,8 @@ class Arctype extends Model
                         'title' => $data['typename'],
                         'typeid'=> $insertId,
                         'channel'   => $data['current_channel'],
+                        'seo_description' => '',
+                        'reason' => '',
                         'sort_order'    => 100,
                         'editor_remote_img_local'=> !isset($editor['editor_remote_img_local']) ? 1 : $editor['editor_remote_img_local'],
                         'editor_img_clear_link'  => !isset($editor['editor_img_clear_link']) ? 1 : $editor['editor_img_clear_link'],
@@ -1293,7 +1300,7 @@ class Arctype extends Model
         return $typeids;
     }
 
-    //统计栏目文档数 只统计 开放浏览 且 未删除 的
+    //统计栏目文档数 只统计 未删除 的
     public function hand_type_count($param = [])
     {
         $typeids = [];
@@ -1301,12 +1308,12 @@ class Arctype extends Model
             $typeids = $this->get_arc_type($param);
         }
         $where['is_del'] = 0;
-        $where['arcrank'] = 0;
+        // $where['arcrank'] = 0;
+        $where['channel'] = ['not in',[6,8]];
         $where['lang'] = !empty($param['lang']) ? $param['lang'] : get_admin_lang();
         if (!empty($typeids)) $where['typeid'] = ['in', $typeids];
         $arc_count = Db::name('archives')->where($where)->field('count(aid) as count,typeid')->group('typeid')->getAllWithIndex('typeid');
-        if (empty($arc_count)) return true;
-
+//        if (empty($arc_count)) return true;
         $channel_ids = Db::name('channeltype')->where('nid', 'in', ['single', 'ask'])->column('id');
 
         $type_where['is_del'] = 0;
@@ -1320,7 +1327,7 @@ class Arctype extends Model
             if (!empty($v['child']) && !in_array($v['current_channel'], $channel_ids)) {
                 $sum = 0;
                 foreach ($v['child'] as $k1 => $v1) {
-                    $sum += $arc_count[$v1]['count'];
+                    $sum += !empty($arc_count[$v1]) ? $arc_count[$v1]['count'] : 0;
                 }
                 if ($sum > 0) {
                     $type_count[$k]['sum'] = $sum;
@@ -1347,6 +1354,7 @@ class Arctype extends Model
         }
         if (!empty($saveAll)) {
             model('Arctype')->saveAll($saveAll);
+            \think\Cache::clear("arctype");
         }
     }
 }

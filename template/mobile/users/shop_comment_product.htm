@@ -222,9 +222,9 @@
                     layer.msg(res.msg);
                 }
             },
-            error : function() {
+            error : function(e) {
                 layer.closeAll();
-                layer.alert('未知错误！', {title:false, icon:5, closeBtn: 0});
+                layer.alert(e.responseText, {title:false, icon:5, closeBtn: 0});
             }
         });
     }

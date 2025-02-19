@@ -26,10 +26,6 @@ class UsersNotice extends Base
         parent::__construct();
 
         $this->language_access(); // 多语言功能操作权限
-        
-        // 会员中心配置信息
-        $this->UsersConfigData = getUsersConfigData('all');
-        $this->assign('userConfig',$this->UsersConfigData);
     }
 
     /**

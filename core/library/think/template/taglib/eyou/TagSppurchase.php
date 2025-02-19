@@ -68,8 +68,7 @@ class TagSppurchase extends Base
             $where = array('aid' => intval($aid));
         }
         $where['lang'] = self::$home_lang;
-        $field = 'aid, title, channel, users_price, crossed_price, users_discount_type, old_price, stock_count, stock_show, sales_num, virtual_sales, sales_all, merchant_id';
-        $archivesInfo = Db::name('archives')->where($where)->field($field)->find();
+        $archivesInfo = Db::name('archives')->where($where)->find();
         if (!empty($archivesInfo['channel']) && 2 != $archivesInfo['channel']) {
             echo '标签sppurchase报错：购物功能只能在产品模型的内容页中使用！';
             return false;
@@ -84,7 +83,8 @@ class TagSppurchase extends Base
         // 商品真实销量
         $result['real_sales'] = $archivesInfo['sales_num'];
         // 商品总销量
-        $archivesInfo['sales_all'] = $archivesInfo['sales_num'] = intval($archivesInfo['sales_num']) + intval($archivesInfo['sales_all']);
+        $result['sales_num'] = $archivesInfo['sales_all'];
+        // $archivesInfo['sales_all'] = $archivesInfo['sales_num'] = intval($archivesInfo['sales_num']) + intval($archivesInfo['sales_all']);
         // 规格价格、规格选中ID组合
         $SpecData = $SpecValueIds = '';
         // 返回规格名称、规格值
@@ -136,6 +136,7 @@ class TagSppurchase extends Base
                     $archivesInfo['stock_count'] = $product_spec_value[0]['spec_stock'];
                     // 已售销量
                     $archivesInfo['sales_num'] = $product_spec_value[0]['spec_sales_num']; // + intval($archivesInfo['virtual_sales']);
+                    $archivesInfo['stock_code'] = $product_spec_value[0]['stock_code']; //商品编码
                     $archivesInfo['sales_all'] = array_sum(get_arr_column($product_spec_value, 'spec_sales_num'));
                     // 价格最低的规格值ID
                     $SpecValueIds = $product_spec_value[0]['spec_value_id'];
@@ -163,6 +164,7 @@ class TagSppurchase extends Base
         }
 
         $result['sales_num'] = "<span id='sales_num'>".$archivesInfo['sales_num']."</span>";
+        $result['stock_code'] = "<span id='stock_code'>".$archivesInfo['stock_code']."</span>";
         $result['sales_all'] = "<span id='sales_all'>".$archivesInfo['sales_all']."</span>";
         $result['stock_count'] = "<span id='stock_count'>".$archivesInfo['stock_count']."</span>";
         $result['stock_show'] = !empty($archivesInfo['stock_show']) ? "" : "style='display: none;'";

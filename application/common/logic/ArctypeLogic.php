@@ -123,14 +123,14 @@ class ArctypeLogic extends Model
                 $end_level  = $first_item['level'] + $level;
             }
     
-            /* 保留level小于end_level的部分 */
-            foreach ($options AS $key => $val)
-            {
-                if ($val['level'] >= $end_level)
-                {
-                    unset($options[$key]);
-                }
-            }
+            /* 保留level小于end_level的部分20241219和尚 */
+            // foreach ($options AS $key => $val)
+            // {
+            //     if ($val['level'] >= $end_level)
+            //     {
+            //         unset($options[$key]);
+            //     }
+            // }
         }
     
         $pre_key = 0;

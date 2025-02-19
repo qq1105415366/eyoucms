@@ -247,7 +247,7 @@
                 <!-- 单张图 start -->
                 <div class="form-group group_z">
                     <div class="input-group input-group-icon">
-                        <input type="text" class="  form-control" id="{$vo.fieldArr}_{$vo.name|default=''}" name="{$vo.fieldArr}[{$vo.name|default=''}]" value="" style="display: none;"><!--{$vo.info|default=''}-->
+                        <input type="text" class="form-control" id="{$vo.fieldArr}_{$vo.name|default=''}" name="{$vo.fieldArr}[{$vo.name|default=''}]" value="12123123" style="display: none;"><!--{$vo.info|default=''}-->
                         <input class=" form-control {$vo.fieldArr}_{$vo.name|default=''}_input" placeholder="{$vo.title}" onClick="GetUploadify(1,'','allimg','{$vo.fieldArr}_{$vo.name|default=''}_call_back','{:url('user/Uploadify/upload',['resource'=>'reg'])}')">
                     </div>
                 </div>
@@ -269,17 +269,16 @@
                         {$vo.title}<span style="float: right;font-size: 16px;">点击上传</span>
                     </button>
                 </div>
-                <div style="margin: 5px 0;padding: 3px;border: 1px dashed #ebeced;display: none;" id="upload_imgs_{$vo.fieldArr}_{$vo.name|default=''}">
-                    <!--上传填充-->
+                <div style="margin: 5px 0;border: 1px dashed #ebeced;display: none; flex-wrap: wrap;" id="upload_imgs_{$vo.fieldArr}_{$vo.name|default=''}"><!--上传填充-->
                 </div>
                 
                 <!-- 上传图片显示的样板 start -->
                 <div class="{$vo.fieldArr}_{$vo.name|default=''}_upload_tpl" style="display: none;">
-                    <div class="fieldext_upload fieldext_upload_html">
+                    <div class="fieldext_upload fieldext_upload_html" style="margin:0 6px 6px 0;">
                         <div class="images_upload_item">
                             <input type="hidden" name="{$vo.fieldArr}[{$vo.name|default=''}][]" value="">
                             <a href="" target="_blank">
-                                <img src="__STATIC__/admin/images/add-button.jpg" width="42" height="42">
+                                <img src="__STATIC__/admin/images/add-button.jpg">
                             </a>
                             <a class="delete" href="javascript:void(0)" title="删除"></a>
                         </div>
@@ -296,7 +295,7 @@
                     for (var i=0;i<paths.length ;i++ )
                     {
                         if ($("#upload_imgs_{$vo.fieldArr}_{$vo.name|default=''} .fieldext_upload_html").length == 0) {
-                            $("#upload_imgs_{$vo.fieldArr}_{$vo.name|default=''}").css('display','');
+                            $("#upload_imgs_{$vo.fieldArr}_{$vo.name|default=''}").css('display','flex');
                         }
                         $("#upload_imgs_{$vo.fieldArr}_{$vo.name|default=''}").append(last_div);  // 插入一个 新图片
             
@@ -345,14 +344,14 @@
                         //执行实例
                         upload.render({
                             elem: "#upload_{$vo.fieldArr}_{$vo.name|default=''}" //绑定元素
-                            ,url: "{:url('user/Uploadify/DownloadUploadFileAjax')}"
+                            ,url: "{:url('user/Uploadify/DownloadUploadFileAjax', ['resource'=>'reg'])}"
                             ,exts: '{$vo.ext}'
                             ,size: {$vo.filesize} //限制文件大小，单位 KB
                             ,accept: 'file' //普通文件
                             ,done: function(res){
                                 //上传完毕回调
                                 if (res.state=="SUCCESS"){
-                                    layer.msg('上传成功!')
+                                    layer.msg(ey_foreign_system10)
                                     $("#btntxt_file_{$vo.fieldArr}_{$vo.name|default=''}").text('已上传');
                                     // $("#{$vo.fieldArr}_{$vo.name|default=''}").val(res.url);
                                     // $("#download_file_{$vo.fieldArr}_{$vo.name|default=''}").css('display','');

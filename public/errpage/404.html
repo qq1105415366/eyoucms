@@ -41,6 +41,13 @@
         font-size: 16px;
         margin-top: 10px;
     }
+    .error404-con .title-navbar{
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    .error404-con .title-navbar a{
+        color: #666666;
+    }
     .error404-con .oper-btn{
         margin-top: 20px;
     }
@@ -72,6 +79,12 @@
          .error404-con .title-sub{
              font-size: 13px;
          }
+         .error404-con .title-navbar{
+             font-size: 12px;
+         }
+        .error404-con .title-navbar a{
+            color: #666666;
+        }
          .error404-con .oper-btn .btn{
              padding: 10px 20px;
              font-size: 16px;
@@ -87,8 +100,12 @@
         <div class="title">哎呀！找不到页面了！</div>
         <div class="title-sub">不要伤心，可能是网址错了呢，重新核对一下吧。</div>
         <div class="oper-btn">
-            <a class="btn btn1" href="javascript:history.go(-1);">回到上一页</a>
+            <a class="btn btn1" href="javascript:history.go(-1);" rel="nofollow">回到上一页</a>
             <a class="btn btn2" href="__ROOT_DIR__/">回到首页</a>
+        </div>
+        <div class="title-navbar">
+            <a href="__ROOT_DIR__/sitemap.html" target="_blank">网站地图</a> 
+            <a href="__ROOT_DIR__/sitemap.xml" target="_blank">XML地图</a> 
         </div>
     </div>
 </body>

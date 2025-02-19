@@ -21,7 +21,7 @@ return array (
   'label_pic' => 
   array (
     'name' => 'label_pic',
-    'type' => 'varchar(60)',
+    'type' => 'varchar(250)',
     'notnull' => false,
     'default' => '',
     'primary' => false,

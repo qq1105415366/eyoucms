@@ -89,16 +89,20 @@ if (!function_exists('lang')) {
     function lang($name, $vars = [], $lang = '')
     {
         if (in_array($name, ['sys1','sys2','sys3','sys4','sys5'])) {
-            static $foreignData = null;
-            if (null === $foreignData) {
-                $foreignData = tpSetting('foreign', [], 'cn');
-            }
-            $foreign_is_status = empty($foreignData['foreign_is_status']) ? 0 : intval($foreignData['foreign_is_status']);
-            if (!empty($foreign_is_status)) {
-                if (preg_match('/^sys(\d+)$/i', $name)) {
-                    $name = str_replace('sys', 'page', $name);
+            if (defined('BIND_MODULE') && 'admin' == BIND_MODULE) {
+                $lang = 'cn';
+            } else {
+                static $foreignData = null;
+                if (null === $foreignData) {
+                    $foreignData = tpSetting('foreign', [], 'cn');
                 }
-                return foreign_lang($name, $lang);
+                $foreign_is_status = empty($foreignData['foreign_is_status']) ? 0 : intval($foreignData['foreign_is_status']);
+                if (!empty($foreign_is_status)) {
+                    if (preg_match('/^sys(\d+)$/i', $name)) {
+                        $name = str_replace('sys', 'page', $name);
+                    }
+                    return foreign_lang($name, $lang);
+                }
             }
         }
         return Lang::get($name, $vars, $lang);

@@ -1,4 +1,3 @@
-
 <div class="fixed-bar">
     <div class="item-title">
         <a class="back_xin" href="{notempty name='$menu'}{:url('Index/switch_map')}{else /}{:url('Archives/index')}{/notempty}" title="返回"><i class="iconfont e-fanhui"></i></a>
@@ -6,11 +5,8 @@
             <h3>回收站</h3>
             <h5></h5>
         </div>
-        <ul class="tab-base nc-row">
-            {if condition="$main_lang == $admin_lang"}
-            <li><a href="{:url('RecycleBin/archives_index')}" {eq name='$Request.action' value='archives_index'}class="current"{/eq}><span>文档管理</span></a></li>
-            {/if}
-
+        <ul class="tab-base nc-row">        
+            <li><a href="{:url('RecycleBin/archives_index')}" {eq name='$Request.action' value='archives_index'}class="current"{/eq}><span>文档管理</span></a></li>            
             {if condition="$main_lang == $admin_lang || !empty($global['language_split'])"}
             <li><a href="{:url('RecycleBin/arctype_index')}" {eq name='$Request.action' value='arctype_index'}class="current"{/eq}><span>栏目管理</span></a></li>
             {/if}
@@ -29,5 +25,54 @@
             <li><a href="{:url('RecycleBin/gbookattr_index')}" {eq name='$Request.action' value='gbookattr_index'}class="current"{/eq}><span>留言属性</span></a></li>
             {/if}
         </ul>
+        <a class="fr ncap-btn-blue p2-12" href="javascript:void(0);" id="web_recycle_switch"><i class="iconfont e-quxiao f-13"></i>关闭回收站</a>
     </div>
 </div>
+<script type="text/javascript">
+    $(function(){
+        $('#web_recycle_switch').click(function(){
+            layer.confirm('关闭后将清空所有的回收站数据！后续删除的数据将不进入回收站。', {
+                shade: layer_shade,
+                area: ['480px', '190px'],
+                move: false,
+                title: '提示',
+                btnAlign:'r',
+                closeBtn: 3,
+                btn: ['确定', '取消'] ,//按钮
+                success: function () {
+                    $(".layui-layer-content").css('text-align', 'left');
+                }
+            }, function (index) {
+                layer.close(index);
+                set_web_recycle_switch(1, 1);
+            }, function (index) {
+                layer.close(index);                
+            });
+        });
+
+        function set_web_recycle_switch(value, recycle_is_clear)
+        {
+            layer_loading('正在处理');
+            $.ajax({
+                type : 'post',
+                url : "{:url('RecycleBin/set_web_recycle_switch', ['_ajax'=>1])}",
+                data : {value:value, recycle_is_clear:recycle_is_clear},
+                dataType : 'json',
+                success : function(res){
+                    layer.closeAll();
+                    if(res.code == 1){
+                        layer.msg(res.msg, {shade: layer_shade, time: 1000}, function(){
+                            top.window.location.reload();
+                        });
+                    }else{
+                        showErrorMsg(res.msg);
+                    }
+                },
+                error: function(e){
+                    layer.closeAll();
+                    showErrorAlert(e.responseText);
+                }
+            });
+        }
+    });
+</script>

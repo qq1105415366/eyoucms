@@ -14,15 +14,15 @@
             </dl>
 
             <dl class="row">
-                <dt class="tit"><label>快速生成菜单</label></dt>
+                <dt class="tit"><label>生成菜单</label></dt>
                 <dd class="opt">
                     <select class="small form-control" onchange="functionData(this);">
-                        <option value="0" id="default" {notempty name="$navigList.type_id"} selected="true" {/notempty}>功能页面</option>
+                        <option value="0" id="default" {notempty name="$navigList.type_id"} selected="true" {/notempty}>栏目链接</option>
                         {volist name="$function" id="vo"}
                         <option value="{$vo.url}" data-title="{$vo.title}" {eq name="$navigList.nav_url" value="$vo.url"}selected="true"{/eq}>{$vo.title}</option>
                         {/volist}
                     </select>
-                    <span id="huozhe" {empty name="$navigList.type_id"} style="display: none;" {/empty}>或者</span>
+                    <span id="huozhe" {empty name="$navigList.type_id"} style="display: none;" {/empty}></span>
                     <span id="choose_type" {empty name="$navigList.type_id"} style="display: none;" {/empty}>
                         {$arctypeHtml}
                     </span>
@@ -46,7 +46,7 @@
             </dl>
 
             <dl class="row">
-                <dt class="tit"><label for="en_name">菜单副名</label></dt>
+                <dt class="tit"><label for="en_name">副名称</label></dt>
                 <dd class="opt">
                     <input type="text" name="en_name" id="en_name" value="{$navigList.en_name}" class="input-txt">
                     <p class="notic">副名可用作栏目英文名、副标题等用途，若不用可不必填写</p>

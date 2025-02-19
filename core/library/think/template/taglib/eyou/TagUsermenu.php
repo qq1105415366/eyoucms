@@ -35,8 +35,10 @@ class TagUsermenu extends Base
      */
     public function getUsermenu($currentclass = '', $limit = '')
     {
-        if ($this->usersTplVersion == 'v2') {
+        if ('v2' == $this->usersTplVersion) {
             return $this->get_usermenu_v2($currentclass, $limit);
+        } else if ('v5' == $this->usersTplVersion) {
+            return $this->get_usermenu_v5($currentclass, $limit);
         } else {
             return $this->get_usermenu_v1($currentclass, $limit);
         }
@@ -90,6 +92,62 @@ class TagUsermenu extends Base
         $map = array();
         $map['status'] = 1;
         $map['version'] = ['IN', ['v2']];
+
+        $menuRow = Db::name("users_menu")->where($map)
+            ->order('sort_order asc,id ASC')
+            ->limit($limit)
+            ->select();
+        $result = [];
+        $left_menu_id = cookie('left_menu_2024');
+        $cur_key = -1;
+        foreach ($menuRow as $key => $val) {
+            if (7 != $val['type']){
+                $val['url'] = url($val['mca']);
+                if ($val['active_url']) $val['active_url'] = explode('|', $val['active_url']);
+
+                if (in_array(MODULE_NAME.'/'.CONTROLLER_NAME.'/'.ACTION_NAME,$val['active_url'])) {
+                    $val['currentclass'] = $val['currentstyle'] = $currentclass;
+                    cookie('left_menu_2024',0);
+                    if (-1 < $cur_key){
+                        $menuRow[$cur_key]['currentclass'] = '';
+                    }
+                }else{
+                    $val['currentclass'] = $val['currentstyle'] = '';
+                }
+            }else{
+                static $request = null;
+                if (null === $request) {
+                    $request = \think\Request::instance();
+                }
+                $root_dir = ROOT_DIR.'/';
+                //自定义
+                if (!is_http_url($val['mca'])){
+                    $val['url'] = $request->domain().$root_dir.$val['mca'];
+                }else{
+                    $val['url'] = $val['mca'];
+                }
+                if ($left_menu_id == $val['id']){
+                    $val['currentclass'] = $val['currentstyle'] = $currentclass;
+                    $cur_key = $key;
+                }else{
+                    $val['currentclass'] = $val['currentstyle'] = '';
+                }
+            }
+            $menuRow[$key] = $val;
+        }
+
+        return $menuRow;
+    }
+
+    /**
+     * 获取会员菜单
+     * @author wengxianhu by 2018-4-20
+     */
+    private function get_usermenu_v5($currentclass = '', $limit = '')
+    {
+        $map = array();
+        $map['status'] = 1;
+        $map['version'] = ['IN', ['v5']];
 
         $menuRow = Db::name("users_menu")->where($map)
             ->order('sort_order asc,id ASC')

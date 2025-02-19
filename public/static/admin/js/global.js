@@ -18,11 +18,13 @@ var ueditor_toolbars = [[
 ]];
 // 手机端编辑器工具 previewmobile
 var ueditor_toolbars_ey_m = [[
-    'fullscreen', 'source', '|', 'removeformat' , 'undo', 'redo', '|',
-    'fontsize', 'forecolor', 'bold', 'italic', 'underline', '|',
+    'fullscreen', 'source', '|', 'undo', 'redo', '|',
+    'bold', 'italic', 'underline', 'removeformat', '|',
+    'forecolor' , 'lineheight', 'fontsize', '|' , 
+    'directionalityltr', 'directionalityrtl', 'indent', '|',
     'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|',
-    'lineheight', 'simpleupload', 'insertimage', 'link', 'unlink', 'anchor', '|',
-    'insertvideo'
+    'link', 'unlink', 'anchor', '|',
+    'simpleupload', 'insertimage', 'insertvideo'
 ]];
 
 var layer_tips; // 全局提示框的对象
@@ -839,9 +841,10 @@ function checkMobile(tel) {
  * @callback string  回调函数(单张图片返回保存路径字符串，多张则为路径数组 )
  */
 var layer_GetUploadify;
-function GetUploadify(num,elementid,path,callback,url)
+function GetUploadify(num,elementid,path,callback,url,obj)
 {
     if (!url) url = GetUploadify_url;
+    if (!obj) obj = '';
 
     var is_water = 1;
     if ('water' == url) {
@@ -858,7 +861,7 @@ function GetUploadify(num,elementid,path,callback,url)
     // 新版上传图片框的转折点
     if (url.indexOf('&c=Uploadimgnew&a=') != -1) {
         if (0 == is_water) url = 'water';
-        GetUploadimgnew(num,elementid,path,callback,url);
+        GetUploadimgnew(num,elementid,path,callback,url,obj);
         return false;
     }
 
@@ -868,7 +871,7 @@ function GetUploadify(num,elementid,path,callback,url)
     if (num > 0) {
         var width = '85%';
         var height = '85%';
-        if ('adminlogo' == path || 'loginlogo' == path || 'loginbgimg' == path) { // 上传后台logo
+        if (0 <= $.inArray(path, ['adminlogo','loginlogo','loginbgimg','ico'])) { // 上传后台logo
             width = '50%';
             height = '66%';
         }
@@ -897,7 +900,7 @@ function GetUploadify(num,elementid,path,callback,url)
  * @path  string 指定上传保存文件夹,默认存在public/upload/temp/目录
  * @callback string  回调函数(单张图片返回保存路径字符串，多张则为路径数组 )
  */
-function GetUploadimgnew(num,elementid,path,callback,url)
+function GetUploadimgnew(num,elementid,path,callback,url,obj)
 {
     if (layer_GetUploadify){
         top.layer.close(layer_GetUploadify);
@@ -920,13 +923,30 @@ function GetUploadimgnew(num,elementid,path,callback,url)
 
         var width = '1000px';
         var height = '620px';
+        var img_path = '';
+        if (path == 'adminlogo') {
+            img_path = $('input#admin_logo').val();
+        } else if (path == 'loginlogo') {
+            img_path = $('input#login_logo').val();
+        } else if (path == 'loginbgimg') {
+            img_path = $('input#login_bgimg').val();
+        } else if (path == 'ico') {
+            img_path = $('input#web_ico').val();
+            if (img_path.indexOf('favicon.ico') > -1) {
+                img_path = '';
+            }
+        }
 
         $.cookie("img_id_upload", ""); // 清除选中的图片
         
-        var upurl = url+'num='+num+'&input='+elementid+'&path='+path+'&func='+callback+'&is_water='+is_water;
+        var upurl = url+'num='+num+'&input='+elementid+'&path='+path+'&func='+callback+'&is_water='+is_water+'&img_path='+img_path;
         if (0 == is_water) {
             //不需要上传第三方
             upurl += '&unneed_syn=1'
+        }
+        var open_source = $(obj).data('open_source');
+        if (open_source) {
+            upurl += '&open_source='+open_source;
         }
         layer_GetUploadify = top.layer.open({
             id: 'layer_GetUploadimgnew',
@@ -1229,6 +1249,20 @@ function showConfirm(msg, options, callback){
         callback();
     }, function (index) {
         layer.close(index);
+    });
+}
+
+function showUnifiedAlert(msg) {
+    layer.alert(msg, {
+        shade: layer_shade,
+        area: ['480px', '220px'],
+        move: false,
+        title: '提示',
+        closeBtn: 3,
+        btnAlign: 'r',
+        success: function () {
+            $(".layui-layer-content").css('text-align', 'left');
+        }
     });
 }
 
@@ -1645,7 +1679,6 @@ function openHelpframe(obj,title,width,height,offset) {
     }
 }
 
-
 /**
  * 选择每页数量进行检索
  * @param  {[type]} obj [description]
@@ -1911,7 +1944,7 @@ function check_title_repeat(obj,aid) {
 
 function set_author(value)
 {
-    layer.prompt({
+    top.layer.prompt({
             title:'设置作者默认名称',
             shade: layer_shade,
             btnAlign:'r',
@@ -1926,8 +1959,8 @@ function set_author(value)
                 data: {field:'pen_name',value:val},
                 success: function(res){
                     if (res.code == 1) {
-                        $('#author').val(val);
-                        layer.msg(res.msg, {icon: 1, time:1000});
+                        $('#pen_name').val(val);
+                        top.layer.msg(res.msg, {icon: 1, time:1000});
                     } else {
                         showErrorMsg(res.msg);
                         return false;
@@ -1938,7 +1971,7 @@ function set_author(value)
                     return false;
                 }
             });
-            layer.close(index);
+            top.layer.close(index);
         }
     );
 }
@@ -2300,3 +2333,145 @@ function security_answer_verify(answer)
     });
 }
 /*----------------------------------密保问题答案验证 end--------------------*/
+
+/**
+ * 获取修改之前的内容
+ */
+function get_aids()
+{
+    return aids;
+}
+
+var build_typeid_arr = [];   //已经生成过静态的typeid
+var build_finish = false;  //是否已经全部生成静态
+//检查是否已经生成静态，刷新页面
+function build_finish_polling(){
+    if(build_finish === true){
+        layer.closeAll();
+        layer.msg('操作成功', {icon: 1});
+        window.location.reload();
+    }
+}
+
+/**
+ * 批量审核
+ */
+function batch_check(obj, name) {
+
+    var url = $(obj).attr('data-url');
+    var data_type = $(obj).attr('data-type');//uncheck
+    var a = [];
+    $('input[name^='+name+']').each(function(i,o){
+        if($(o).is(':checked')){
+            a.push($(o).val());
+        }
+    });
+    if(a.length == 0){
+        layer.alert('请至少选择一项', {
+            shade: layer_shade,
+            area: ['480px', '190px'],
+            move: false,
+            title: '提示',
+            btnAlign:'r',
+            closeBtn: 3,
+            success: function () {
+                  $(".layui-layer-content").css('text-align', 'left');
+              }
+        });
+        return;
+    }
+
+    // title = '批量审核';
+    // btn = ['确定', '取消']; //按钮
+    // // 删除按钮
+    // layer.confirm(title, {
+    //     title: false,
+    //     btn: btn //按钮
+    // }, function () {
+        layer_loading('正在处理');
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {ids:a, _ajax:1},
+            dataType: 'json',
+            success: function (res) {
+                if(res.code == 1){
+                    var last = false;
+                    if (data_type === 'check'){
+                        if (2 == __seo_pseudo__) {
+                            for(var i=0;i<a.length;i++){
+                                var id_value = a[i];
+                                var typeid =$("#aid_"+id_value).data('typeid');
+                                if ((i+1) == a.length){
+                                    last = true;
+                                }
+                                build_up_html(id_value,typeid,last);
+                            }
+                            window.setTimeout(build_finish_polling, 3000);
+                        } else {
+                            layer.closeAll();
+                            layer.msg(res.msg, {icon: 1, time:1000}, function(){
+                                window.location.reload();
+                            });
+                        }
+                    }else{
+                        layer.closeAll();
+                        layer.msg(res.msg, {icon: 1, time:1000}, function(){
+                            window.location.reload();
+                        });
+                    }
+                }else{
+                    layer.closeAll();
+                    layer.alert(res.msg, {icon: 2, title:false});
+                }
+            },
+            error:function(e){
+                layer.closeAll();
+                layer.alert(e.responseText, {icon: 2, title:false});
+            }
+        });
+    // }, function (index) {
+    //     layer.closeAll(index);
+    // });
+}
+//生成静态页面
+function build_up_html(id_value,typeid,last){
+    $.ajax({
+        url:__root_dir__+"/index.php?m=home&c=Buildhtml&a=upHtml&lang="+__lang__+"&id="+id_value+"&t_id="+typeid+"&type=view&ctl_name=Archives&_ajax=1",
+        type:'GET',
+        dataType:'json',
+        data:{},
+        success:function(res1){
+//                layer.closeAll();
+//                layer.msg('生成完成', {icon: 1, time: 1500});
+            if (build_typeid_arr.indexOf(typeid) === -1){
+                build_typeid_arr.push(typeid);
+                $.ajax({
+                    url:__root_dir__+"/index.php?m=home&c=Buildhtml&a=upHtml&lang="+__lang__+"&id="+id_value+"&t_id="+typeid+"&type=lists&ctl_name=Archives&_ajax=1",
+                    type:'GET',
+                    dataType:'json',
+                    data:{},
+                    success:function(res2){
+                        if (last === true){
+                            build_finish = true;
+                        }
+//                        layer.closeAll();
+//                        layer.msg('生成完成', {icon: 1, time: 1500});
+                    },
+                    error: function(e){
+                    layer.closeAll();
+                    layer.alert('生成当前栏目HTML失败，请手工生成栏目静态！', {icon: 5, title: false});
+                    }
+                });
+            }else{
+                if (last === true){
+                    build_finish = true;
+                }
+            }
+        },
+        error: function(e){
+            layer.closeAll();
+            layer.alert('生成HTML失败，请手工生成静态HTML！', {icon: 5, title: false});
+        }
+    });
+}

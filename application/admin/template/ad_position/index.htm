@@ -7,17 +7,17 @@
     <div class="flexigrid">
         <div class="mDiv">
             <div class="ftitle">
-				{if condition="$main_lang == $admin_lang || !empty($global['language_split'])"}
-				    {eq name="$Think.const.CONTROLLER_NAME.'@add'|is_check_access" value="1"}
-        				 <div class="fbutton">
-        				     <a href="javascript:void(0);" data-href="{:url('AdPosition/add')}" onclick="openFullframe(this, '新增广告', '100%', '100%');">
-        				         <div class="add">
-        				             <span><i class="layui-icon layui-icon-addition"></i>新增广告</span>
-        				         </div>
-        				     </a>
-        				 </div>
-				    {/eq}
-				 {/if}
+                {if condition="$main_lang == $admin_lang || !empty($global['language_split'])"}
+                    {eq name="$Think.const.CONTROLLER_NAME.'@add'|is_check_access" value="1"}
+                         <div class="fbutton">
+                             <a href="javascript:void(0);" data-href="{:url('AdPosition/add')}" onclick="openFullframe(this, '新增广告', '100%', '100%');">
+                                 <div class="add">
+                                     <span><i class="layui-icon layui-icon-addition"></i>新增广告</span>
+                                 </div>
+                             </a>
+                         </div>
+                    {/eq}
+                 {/if}
             </div>
             <form id="searchForm" class="navbar-form form-inline" action="{:url('AdPosition/index')}" method="get" onsubmit="layer_loading('正在处理');">
                 {$searchform.hidden|default=''}
@@ -152,7 +152,7 @@
                                                 <a class="btn red"  href="javascript:void(0);" data-url="{:url('AdPosition/del')}" data-id="{$vo.id}" onClick="delfun(this);">删除</a>
                                             {/eq} <i></i>
                                         {/if}
-    									
+                                        
                                         <a class="btn blue" href="javascript:void(0);" onclick="copyToClipBoard({$main_adv_list[$vo['id']]['id']|default=$vo['id']}, 1, {$vo['type']})">标签调用</a>
                                     </div>
                                 </td>

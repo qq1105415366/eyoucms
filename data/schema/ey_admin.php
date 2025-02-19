@@ -162,6 +162,15 @@ return array (
     'primary' => false,
     'autoinc' => false,
   ),
+  'wechat_appid' => 
+  array (
+    'name' => 'wechat_appid',
+    'type' => 'varchar(50)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
   'wechat_followed' => 
   array (
     'name' => 'wechat_followed',
@@ -174,6 +183,15 @@ return array (
   'wechat_open_id' => 
   array (
     'name' => 'wechat_open_id',
+    'type' => 'varchar(50)',
+    'notnull' => false,
+    'default' => '',
+    'primary' => false,
+    'autoinc' => false,
+  ),
+  'union_id' => 
+  array (
+    'name' => 'union_id',
     'type' => 'varchar(50)',
     'notnull' => false,
     'default' => '',
